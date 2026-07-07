@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="680" height="415" viewBox="0 0 680 415">
+<style>
+text { font-family: Arial, sans-serif; font-size: 13px; }
+.title { font-size: 18px; font-weight: 700; }
+.node { fill: #f8fafc; stroke: #334155; stroke-width: 1.4; }
+.leaf { fill: #ecfdf5; stroke: #047857; stroke-width: 1.4; }
+.edge { stroke: #64748b; stroke-width: 1.2; fill: none; }
+.edge-label { fill: #475569; font-size: 11px; }
+</style>
+<text class="title" x="340.0" y="28" text-anchor="middle">evaluation-case-1 greedy tree</text>
+<line class="edge" x1="170.0" y1="227" x2="85" y2="298" />
+<text class="edge-label" x="127.5" y="256.5" text-anchor="middle">discard f1</text>
+<line class="edge" x1="170.0" y1="227" x2="255" y2="298" />
+<text class="edge-label" x="212.5" y="256.5" text-anchor="middle">discard f2</text>
+<line class="edge" x1="510.0" y1="227" x2="425" y2="298" />
+<text class="edge-label" x="467.5" y="256.5" text-anchor="middle">discard f0</text>
+<line class="edge" x1="510.0" y1="227" x2="595" y2="298" />
+<text class="edge-label" x="552.5" y="256.5" text-anchor="middle">discard f1</text>
+<line class="edge" x1="340.0" y1="112" x2="170.0" y2="183" />
+<text class="edge-label" x="255.0" y="141.5" text-anchor="middle">discard f0</text>
+<line class="edge" x1="340.0" y1="112" x2="510.0" y2="183" />
+<text class="edge-label" x="425.0" y="141.5" text-anchor="middle">discard f2</text>
+<rect class="node" x="285.0" y="68" width="110" height="44" rx="6" />
+<text x="340.0" y="95" text-anchor="middle">test f0 vs f2</text>
+<rect class="node" x="115.0" y="183" width="110" height="44" rx="6" />
+<text x="170.0" y="210" text-anchor="middle">test f1 vs f2</text>
+<rect class="leaf" x="30" y="298" width="110" height="44" rx="6" />
+<text x="85" y="325" text-anchor="middle">declare f2</text>
+<rect class="leaf" x="200" y="298" width="110" height="44" rx="6" />
+<text x="255" y="325" text-anchor="middle">declare f1</text>
+<rect class="node" x="455.0" y="183" width="110" height="44" rx="6" />
+<text x="510.0" y="210" text-anchor="middle">test f0 vs f1</text>
+<rect class="leaf" x="370" y="298" width="110" height="44" rx="6" />
+<text x="425" y="325" text-anchor="middle">declare f1</text>
+<rect class="leaf" x="540" y="298" width="110" height="44" rx="6" />
+<text x="595" y="325" text-anchor="middle">declare f0</text>
+</svg>
