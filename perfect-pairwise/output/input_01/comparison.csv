@@ -1,0 +1,2 @@
+case,F,M,Nmin_optimal,Nmin_greedy,greedy_approximation_bound,greedy_minus_optimal
+input_01,3,3,8,10,16.78889830934488,2
