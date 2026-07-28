@@ -736,8 +736,8 @@
   },
   "greedy_approximation_bound": 137.5055681536833,
   "timing_seconds": {
-    "optimal": 0.004481240829918533,
-    "greedy": 0.0004898933414369821
+    "optimal": 0.00413464292185381,
+    "greedy": 0.0004670962481759489
   },
   "timing_repetitions": 100,
   "metrics": {

@@ -1,2 +1,2 @@
 case,family,F,M,mode,Nmin_optimal,Nmin_greedy,greedy_approximation_bound,timing_repetitions,greedy_minus_optimal,greedy_to_optimal_ratio,bound_utilization,optimal_seconds,greedy_seconds
-case_016_k07_m03,fourier,7,3,both,69,76,279.07204820291616,100,7,1.1014492753623188,0.2723311076455053,0.00016266082879155873,0.00011345750186592341
+case_016_k07_m03,fourier,7,3,both,69,76,279.07204820291616,100,7,1.1014492753623188,0.2723311076455053,0.0001524620782583952,0.0001044241595081985

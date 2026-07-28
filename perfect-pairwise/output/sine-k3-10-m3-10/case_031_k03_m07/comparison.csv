@@ -1,2 +1,2 @@
 case,family,F,M,mode,Nmin_optimal,Nmin_greedy,greedy_approximation_bound,timing_repetitions,greedy_minus_optimal,greedy_to_optimal_ratio,bound_utilization,optimal_seconds,greedy_seconds
-case_031_k03_m07,sine,3,7,both,5,5,10.493061443340551,100,0,1.0,0.4765053580405043,2.0687500946223736e-05,1.8324998673051597e-05
+case_031_k03_m07,sine,3,7,both,5,5,10.493061443340551,100,0,1.0,0.4765053580405043,2.0430418662726878e-05,1.8038749694824218e-05
