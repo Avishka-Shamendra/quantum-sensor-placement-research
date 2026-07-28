@@ -1,0 +1,396 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="730" viewBox="0 0 1120 730">
+<rect width="100%" height="100%" fill="white"/>
+<style>text{font-family:Arial,sans-serif;fill:#202124}.axis{stroke:#5f6368;stroke-width:1.2}.grid{stroke:#dadce0;stroke-width:1}.diagonal{stroke:#5f6368;stroke-width:2;stroke-dasharray:6 5}.bound{stroke:#9334e6;stroke-width:2.5;fill:none;stroke-dasharray:8 6}.bound-axis{stroke:#9334e6;stroke-width:1.2}.bound-tick{font-size:11px;fill:#9334e6}.bound-label{font-size:12px;fill:#9334e6}.tick{font-size:11px}.label{font-size:13px}.legend{font-size:12px}.panel{font-size:14px;font-weight:bold}.title{font-size:18px;font-weight:bold}.note{font-size:11px;fill:#5f6368}</style>
+<text class="title" x="560.0" y="25" text-anchor="middle">Greedy Approximation Quality Across Field Families</text>
+<text class="note" x="560" y="54" text-anchor="middle">Markers: Ngreedy / Noptimal (left axis); purple dotted curve: B(K) = 1 + ln(K(K−1)/2) (right axis).</text>
+<text class="panel" x="285.0" y="89.0" text-anchor="middle">Gaussian  (median = 1.19)</text>
+<line class="grid" x1="90.0" y1="300.24" x2="480.0" y2="300.24"/>
+<text class="tick" x="82.0" y="304.24" text-anchor="end">1.0</text>
+<line class="grid" x1="90.0" y1="261.19" x2="480.0" y2="261.19"/>
+<text class="tick" x="82.0" y="265.19" text-anchor="end">1.2</text>
+<line class="grid" x1="90.0" y1="222.14" x2="480.0" y2="222.14"/>
+<text class="tick" x="82.0" y="226.14" text-anchor="end">1.4</text>
+<line class="grid" x1="90.0" y1="183.10" x2="480.0" y2="183.10"/>
+<text class="tick" x="82.0" y="187.10" text-anchor="end">1.6</text>
+<line class="grid" x1="90.0" y1="144.05" x2="480.0" y2="144.05"/>
+<text class="tick" x="82.0" y="148.05" text-anchor="end">1.8</text>
+<line class="grid" x1="90.0" y1="105.00" x2="480.0" y2="105.00"/>
+<text class="tick" x="82.0" y="109.00" text-anchor="end">2.0</text>
+<line class="axis" x1="114.38" y1="310.0" x2="114.38" y2="315.0"/>
+<text class="tick" x="114.38" y="330.0" text-anchor="middle">3</text>
+<line class="axis" x1="163.12" y1="310.0" x2="163.12" y2="315.0"/>
+<text class="tick" x="163.12" y="330.0" text-anchor="middle">4</text>
+<line class="axis" x1="211.88" y1="310.0" x2="211.88" y2="315.0"/>
+<text class="tick" x="211.88" y="330.0" text-anchor="middle">5</text>
+<line class="axis" x1="260.62" y1="310.0" x2="260.62" y2="315.0"/>
+<text class="tick" x="260.62" y="330.0" text-anchor="middle">6</text>
+<line class="axis" x1="309.38" y1="310.0" x2="309.38" y2="315.0"/>
+<text class="tick" x="309.38" y="330.0" text-anchor="middle">7</text>
+<line class="axis" x1="358.12" y1="310.0" x2="358.12" y2="315.0"/>
+<text class="tick" x="358.12" y="330.0" text-anchor="middle">8</text>
+<line class="axis" x1="406.88" y1="310.0" x2="406.88" y2="315.0"/>
+<text class="tick" x="406.88" y="330.0" text-anchor="middle">9</text>
+<line class="axis" x1="455.62" y1="310.0" x2="455.62" y2="315.0"/>
+<text class="tick" x="455.62" y="330.0" text-anchor="middle">10</text>
+<line class="axis" x1="90.0" y1="105.0" x2="90.0" y2="310.0"/>
+<line class="axis" x1="90.0" y1="310.0" x2="480.0" y2="310.0"/>
+<text class="label" x="285.0" y="356.0" text-anchor="middle">Number of fields, K</text>
+<text class="label" x="42.0" y="207.5" transform="rotate(-90 42.0 207.5)" text-anchor="middle">Ngreedy / Noptimal</text>
+<line class="bound-axis" x1="480.0" y1="105.0" x2="480.0" y2="310.0"/>
+<line class="bound-axis" x1="480.0" y1="310.00" x2="485.0" y2="310.00"/>
+<text class="bound-tick" x="489.0" y="314.00">1</text>
+<line class="bound-axis" x1="480.0" y1="258.75" x2="485.0" y2="258.75"/>
+<text class="bound-tick" x="489.0" y="262.75">2</text>
+<line class="bound-axis" x1="480.0" y1="207.50" x2="485.0" y2="207.50"/>
+<text class="bound-tick" x="489.0" y="211.50">3</text>
+<line class="bound-axis" x1="480.0" y1="156.25" x2="485.0" y2="156.25"/>
+<text class="bound-tick" x="489.0" y="160.25">4</text>
+<line class="bound-axis" x1="480.0" y1="105.00" x2="485.0" y2="105.00"/>
+<text class="bound-tick" x="489.0" y="109.00">5</text>
+<text class="bound-label" x="527.0" y="207.5" transform="rotate(90 527.0 207.5)" text-anchor="middle">B(K) theorem bound</text>
+<polyline class="bound" points="114.38,253.70 163.12,218.17 211.88,191.99 260.62,171.21 309.38,153.97 358.12,139.22 406.88,126.34 455.62,114.91"/>
+<line class="diagonal" x1="90.0" y1="300.24" x2="480.0" y2="300.24"/>
+<rect x="206.47" y="295.74" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="309.40" y="244.81" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="157.72" y="239.96" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="155.91" y="263.20" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="152.29" y="250.68" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="396.04" y="244.81" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="255.22" y="284.89" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="112.59" y="267.85" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="452.03" y="295.74" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="302.16" y="283.91" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="403.28" y="215.64" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="251.60" y="251.37" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="163.15" y="279.47" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="354.53" y="248.41" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="253.41" y="266.45" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="298.54" y="220.65" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="211.90" y="295.74" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="356.34" y="287.60" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="213.71" y="295.74" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="208.28" y="253.90" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="311.21" y="267.85" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="161.34" y="276.21" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="262.46" y="230.66" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="300.35" y="206.99" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="397.85" y="285.98" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="448.41" y="271.33" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="352.72" y="245.35" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="105.35" y="295.74" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="108.97" y="267.85" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="399.66" y="235.31" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="110.78" y="239.96" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="401.47" y="266.66" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="446.60" y="236.47" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="201.04" y="295.74" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="450.22" y="214.01" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="303.97" y="255.34" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="103.54" y="246.93" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="349.10" y="146.06" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="159.53" y="295.74" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="358.15" y="283.14" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="457.46" y="252.35" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="164.96" y="206.99" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="202.85" y="272.77" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="408.71" y="295.74" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="107.16" y="222.52" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="249.79" y="271.33" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="116.21" y="198.12" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="210.09" y="222.52" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="444.79" y="283.72" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<rect x="455.65" y="179.52" width="9.0" height="9.0" fill="#1a73e8" opacity="0.88"/>
+<text class="panel" x="830.0" y="89.0" text-anchor="middle">Sine  (median = 1.04)</text>
+<line class="grid" x1="635.0" y1="300.24" x2="1025.0" y2="300.24"/>
+<text class="tick" x="627.0" y="304.24" text-anchor="end">1.0</text>
+<line class="grid" x1="635.0" y1="261.19" x2="1025.0" y2="261.19"/>
+<text class="tick" x="627.0" y="265.19" text-anchor="end">1.2</text>
+<line class="grid" x1="635.0" y1="222.14" x2="1025.0" y2="222.14"/>
+<text class="tick" x="627.0" y="226.14" text-anchor="end">1.4</text>
+<line class="grid" x1="635.0" y1="183.10" x2="1025.0" y2="183.10"/>
+<text class="tick" x="627.0" y="187.10" text-anchor="end">1.6</text>
+<line class="grid" x1="635.0" y1="144.05" x2="1025.0" y2="144.05"/>
+<text class="tick" x="627.0" y="148.05" text-anchor="end">1.8</text>
+<line class="grid" x1="635.0" y1="105.00" x2="1025.0" y2="105.00"/>
+<text class="tick" x="627.0" y="109.00" text-anchor="end">2.0</text>
+<line class="axis" x1="659.38" y1="310.0" x2="659.38" y2="315.0"/>
+<text class="tick" x="659.38" y="330.0" text-anchor="middle">3</text>
+<line class="axis" x1="708.12" y1="310.0" x2="708.12" y2="315.0"/>
+<text class="tick" x="708.12" y="330.0" text-anchor="middle">4</text>
+<line class="axis" x1="756.88" y1="310.0" x2="756.88" y2="315.0"/>
+<text class="tick" x="756.88" y="330.0" text-anchor="middle">5</text>
+<line class="axis" x1="805.62" y1="310.0" x2="805.62" y2="315.0"/>
+<text class="tick" x="805.62" y="330.0" text-anchor="middle">6</text>
+<line class="axis" x1="854.38" y1="310.0" x2="854.38" y2="315.0"/>
+<text class="tick" x="854.38" y="330.0" text-anchor="middle">7</text>
+<line class="axis" x1="903.12" y1="310.0" x2="903.12" y2="315.0"/>
+<text class="tick" x="903.12" y="330.0" text-anchor="middle">8</text>
+<line class="axis" x1="951.88" y1="310.0" x2="951.88" y2="315.0"/>
+<text class="tick" x="951.88" y="330.0" text-anchor="middle">9</text>
+<line class="axis" x1="1000.62" y1="310.0" x2="1000.62" y2="315.0"/>
+<text class="tick" x="1000.62" y="330.0" text-anchor="middle">10</text>
+<line class="axis" x1="635.0" y1="105.0" x2="635.0" y2="310.0"/>
+<line class="axis" x1="635.0" y1="310.0" x2="1025.0" y2="310.0"/>
+<text class="label" x="830.0" y="356.0" text-anchor="middle">Number of fields, K</text>
+<text class="label" x="587.0" y="207.5" transform="rotate(-90 587.0 207.5)" text-anchor="middle">Ngreedy / Noptimal</text>
+<line class="bound-axis" x1="1025.0" y1="105.0" x2="1025.0" y2="310.0"/>
+<line class="bound-axis" x1="1025.0" y1="310.00" x2="1030.0" y2="310.00"/>
+<text class="bound-tick" x="1034.0" y="314.00">1</text>
+<line class="bound-axis" x1="1025.0" y1="258.75" x2="1030.0" y2="258.75"/>
+<text class="bound-tick" x="1034.0" y="262.75">2</text>
+<line class="bound-axis" x1="1025.0" y1="207.50" x2="1030.0" y2="207.50"/>
+<text class="bound-tick" x="1034.0" y="211.50">3</text>
+<line class="bound-axis" x1="1025.0" y1="156.25" x2="1030.0" y2="156.25"/>
+<text class="bound-tick" x="1034.0" y="160.25">4</text>
+<line class="bound-axis" x1="1025.0" y1="105.00" x2="1030.0" y2="105.00"/>
+<text class="bound-tick" x="1034.0" y="109.00">5</text>
+<text class="bound-label" x="1072.0" y="207.5" transform="rotate(90 1072.0 207.5)" text-anchor="middle">B(K) theorem bound</text>
+<polyline class="bound" points="659.38,253.70 708.12,218.17 756.88,191.99 805.62,171.21 854.38,153.97 903.12,139.22 951.88,126.34 1000.62,114.91"/>
+<line class="diagonal" x1="635.0" y1="300.24" x2="1025.0" y2="300.24"/>
+<polygon points="755.97,210.32 760.47,219.32 751.47,219.32" fill="#d93025" opacity="0.88"/>
+<polygon points="858.90,295.74 863.40,304.74 854.40,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="707.22,295.74 711.72,304.74 702.72,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="705.41,295.74 709.91,304.74 700.91,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="701.79,198.12 706.29,207.12 697.29,207.12" fill="#d93025" opacity="0.88"/>
+<polygon points="945.54,295.74 950.04,304.74 941.04,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="804.72,248.88 809.22,257.88 800.22,257.88" fill="#d93025" opacity="0.88"/>
+<polygon points="662.09,295.74 666.59,304.74 657.59,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="1001.53,284.47 1006.03,293.47 997.03,293.47" fill="#d93025" opacity="0.88"/>
+<polygon points="851.66,295.74 856.16,304.74 847.16,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="952.78,264.68 957.28,273.68 948.28,273.68" fill="#d93025" opacity="0.88"/>
+<polygon points="801.10,254.64 805.60,263.64 796.60,263.64" fill="#d93025" opacity="0.88"/>
+<polygon points="712.65,295.74 717.15,304.74 708.15,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="904.03,295.74 908.53,304.74 899.53,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="802.91,246.93 807.41,255.93 798.41,255.93" fill="#d93025" opacity="0.88"/>
+<polygon points="848.04,295.74 852.54,304.74 843.54,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="761.40,274.04 765.90,283.04 756.90,283.04" fill="#d93025" opacity="0.88"/>
+<polygon points="905.84,243.67 910.34,252.67 901.34,252.67" fill="#d93025" opacity="0.88"/>
+<polygon points="763.21,283.54 767.71,292.54 758.71,292.54" fill="#d93025" opacity="0.88"/>
+<polygon points="757.78,295.74 762.28,304.74 753.28,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="860.71,246.93 865.21,255.93 856.21,255.93" fill="#d93025" opacity="0.88"/>
+<polygon points="710.84,295.74 715.34,304.74 706.34,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="811.96,198.12 816.46,207.12 807.46,207.12" fill="#d93025" opacity="0.88"/>
+<polygon points="849.85,295.74 854.35,304.74 845.35,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="947.35,289.78 951.85,298.78 942.85,298.78" fill="#d93025" opacity="0.88"/>
+<polygon points="997.91,295.74 1002.41,304.74 993.41,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="902.22,238.32 906.72,247.32 897.72,247.32" fill="#d93025" opacity="0.88"/>
+<polygon points="654.85,295.74 659.35,304.74 650.35,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="658.47,295.74 662.97,304.74 653.97,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="949.16,252.35 953.66,261.35 944.66,261.35" fill="#d93025" opacity="0.88"/>
+<polygon points="660.28,295.74 664.78,304.74 655.78,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="950.97,240.83 955.47,249.83 946.47,249.83" fill="#d93025" opacity="0.88"/>
+<polygon points="996.10,196.57 1000.60,205.57 991.60,205.57" fill="#d93025" opacity="0.88"/>
+<polygon points="750.54,286.86 755.04,295.86 746.04,295.86" fill="#d93025" opacity="0.88"/>
+<polygon points="999.72,118.66 1004.22,127.66 995.22,127.66" fill="#d93025" opacity="0.88"/>
+<polygon points="853.47,295.74 857.97,304.74 848.97,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="653.04,217.64 657.54,226.64 648.54,226.64" fill="#d93025" opacity="0.88"/>
+<polygon points="898.60,280.12 903.10,289.12 894.10,289.12" fill="#d93025" opacity="0.88"/>
+<polygon points="709.03,295.74 713.53,304.74 704.53,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="907.65,274.82 912.15,283.82 903.15,283.82" fill="#d93025" opacity="0.88"/>
+<polygon points="1006.96,152.18 1011.46,161.18 1002.46,161.18" fill="#d93025" opacity="0.88"/>
+<polygon points="714.46,178.60 718.96,187.60 709.96,187.60" fill="#d93025" opacity="0.88"/>
+<polygon points="752.35,295.74 756.85,304.74 747.85,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="958.21,295.74 962.71,304.74 953.71,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="656.66,295.74 661.16,304.74 652.16,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="799.29,295.74 803.79,304.74 794.79,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="665.71,295.74 670.21,304.74 661.21,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="759.59,295.74 764.09,304.74 755.09,304.74" fill="#d93025" opacity="0.88"/>
+<polygon points="994.29,285.98 998.79,294.98 989.79,294.98" fill="#d93025" opacity="0.88"/>
+<polygon points="1005.15,252.35 1009.65,261.35 1000.65,261.35" fill="#d93025" opacity="0.88"/>
+<text class="panel" x="285.0" y="409.0" text-anchor="middle">Fourier  (median = 1.16)</text>
+<line class="grid" x1="90.0" y1="620.24" x2="480.0" y2="620.24"/>
+<text class="tick" x="82.0" y="624.24" text-anchor="end">1.0</text>
+<line class="grid" x1="90.0" y1="581.19" x2="480.0" y2="581.19"/>
+<text class="tick" x="82.0" y="585.19" text-anchor="end">1.2</text>
+<line class="grid" x1="90.0" y1="542.14" x2="480.0" y2="542.14"/>
+<text class="tick" x="82.0" y="546.14" text-anchor="end">1.4</text>
+<line class="grid" x1="90.0" y1="503.10" x2="480.0" y2="503.10"/>
+<text class="tick" x="82.0" y="507.10" text-anchor="end">1.6</text>
+<line class="grid" x1="90.0" y1="464.05" x2="480.0" y2="464.05"/>
+<text class="tick" x="82.0" y="468.05" text-anchor="end">1.8</text>
+<line class="grid" x1="90.0" y1="425.00" x2="480.0" y2="425.00"/>
+<text class="tick" x="82.0" y="429.00" text-anchor="end">2.0</text>
+<line class="axis" x1="114.38" y1="630.0" x2="114.38" y2="635.0"/>
+<text class="tick" x="114.38" y="650.0" text-anchor="middle">3</text>
+<line class="axis" x1="163.12" y1="630.0" x2="163.12" y2="635.0"/>
+<text class="tick" x="163.12" y="650.0" text-anchor="middle">4</text>
+<line class="axis" x1="211.88" y1="630.0" x2="211.88" y2="635.0"/>
+<text class="tick" x="211.88" y="650.0" text-anchor="middle">5</text>
+<line class="axis" x1="260.62" y1="630.0" x2="260.62" y2="635.0"/>
+<text class="tick" x="260.62" y="650.0" text-anchor="middle">6</text>
+<line class="axis" x1="309.38" y1="630.0" x2="309.38" y2="635.0"/>
+<text class="tick" x="309.38" y="650.0" text-anchor="middle">7</text>
+<line class="axis" x1="358.12" y1="630.0" x2="358.12" y2="635.0"/>
+<text class="tick" x="358.12" y="650.0" text-anchor="middle">8</text>
+<line class="axis" x1="406.88" y1="630.0" x2="406.88" y2="635.0"/>
+<text class="tick" x="406.88" y="650.0" text-anchor="middle">9</text>
+<line class="axis" x1="455.62" y1="630.0" x2="455.62" y2="635.0"/>
+<text class="tick" x="455.62" y="650.0" text-anchor="middle">10</text>
+<line class="axis" x1="90.0" y1="425.0" x2="90.0" y2="630.0"/>
+<line class="axis" x1="90.0" y1="630.0" x2="480.0" y2="630.0"/>
+<text class="label" x="285.0" y="676.0" text-anchor="middle">Number of fields, K</text>
+<text class="label" x="42.0" y="527.5" transform="rotate(-90 42.0 527.5)" text-anchor="middle">Ngreedy / Noptimal</text>
+<line class="bound-axis" x1="480.0" y1="425.0" x2="480.0" y2="630.0"/>
+<line class="bound-axis" x1="480.0" y1="630.00" x2="485.0" y2="630.00"/>
+<text class="bound-tick" x="489.0" y="634.00">1</text>
+<line class="bound-axis" x1="480.0" y1="578.75" x2="485.0" y2="578.75"/>
+<text class="bound-tick" x="489.0" y="582.75">2</text>
+<line class="bound-axis" x1="480.0" y1="527.50" x2="485.0" y2="527.50"/>
+<text class="bound-tick" x="489.0" y="531.50">3</text>
+<line class="bound-axis" x1="480.0" y1="476.25" x2="485.0" y2="476.25"/>
+<text class="bound-tick" x="489.0" y="480.25">4</text>
+<line class="bound-axis" x1="480.0" y1="425.00" x2="485.0" y2="425.00"/>
+<text class="bound-tick" x="489.0" y="429.00">5</text>
+<text class="bound-label" x="527.0" y="527.5" transform="rotate(90 527.0 527.5)" text-anchor="middle">B(K) theorem bound</text>
+<polyline class="bound" points="114.38,573.70 163.12,538.17 211.88,511.99 260.62,491.21 309.38,473.97 358.12,459.22 406.88,446.34 455.62,434.91"/>
+<line class="diagonal" x1="90.0" y1="620.24" x2="480.0" y2="620.24"/>
+<circle cx="210.97" cy="585.78" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="313.90" cy="540.37" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="162.22" cy="585.37" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="160.41" cy="605.22" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="156.79" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="400.54" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="259.72" cy="599.69" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="117.09" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="456.53" cy="569.62" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="306.66" cy="608.04" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="407.78" cy="538.89" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="256.10" cy="595.83" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="167.65" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="359.03" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="257.91" cy="577.38" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="303.04" cy="600.43" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="216.40" cy="536.56" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="360.84" cy="593.12" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="218.21" cy="581.19" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="212.78" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="315.71" cy="581.19" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="165.84" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="266.96" cy="593.61" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="304.85" cy="574.00" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="402.35" cy="542.14" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="452.91" cy="566.99" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="357.22" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="109.85" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="113.47" cy="584.74" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="404.16" cy="581.19" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="115.28" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="405.97" cy="569.85" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="451.10" cy="581.19" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="205.54" cy="589.00" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="454.72" cy="606.29" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="308.47" cy="536.56" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="108.04" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="353.60" cy="561.30" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="164.03" cy="574.30" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="362.65" cy="590.66" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="461.96" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="169.46" cy="579.14" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="207.35" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="413.21" cy="581.19" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="111.66" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="254.29" cy="537.13" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="120.71" cy="620.24" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="214.59" cy="549.95" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="449.29" cy="604.30" r="4.5" fill="#188038" opacity="0.88"/>
+<circle cx="460.15" cy="572.91" r="4.5" fill="#188038" opacity="0.88"/>
+<text class="panel" x="830.0" y="409.0" text-anchor="middle">Polynomial  (median = 1.00)</text>
+<line class="grid" x1="635.0" y1="620.24" x2="1025.0" y2="620.24"/>
+<text class="tick" x="627.0" y="624.24" text-anchor="end">1.0</text>
+<line class="grid" x1="635.0" y1="581.19" x2="1025.0" y2="581.19"/>
+<text class="tick" x="627.0" y="585.19" text-anchor="end">1.2</text>
+<line class="grid" x1="635.0" y1="542.14" x2="1025.0" y2="542.14"/>
+<text class="tick" x="627.0" y="546.14" text-anchor="end">1.4</text>
+<line class="grid" x1="635.0" y1="503.10" x2="1025.0" y2="503.10"/>
+<text class="tick" x="627.0" y="507.10" text-anchor="end">1.6</text>
+<line class="grid" x1="635.0" y1="464.05" x2="1025.0" y2="464.05"/>
+<text class="tick" x="627.0" y="468.05" text-anchor="end">1.8</text>
+<line class="grid" x1="635.0" y1="425.00" x2="1025.0" y2="425.00"/>
+<text class="tick" x="627.0" y="429.00" text-anchor="end">2.0</text>
+<line class="axis" x1="659.38" y1="630.0" x2="659.38" y2="635.0"/>
+<text class="tick" x="659.38" y="650.0" text-anchor="middle">3</text>
+<line class="axis" x1="708.12" y1="630.0" x2="708.12" y2="635.0"/>
+<text class="tick" x="708.12" y="650.0" text-anchor="middle">4</text>
+<line class="axis" x1="756.88" y1="630.0" x2="756.88" y2="635.0"/>
+<text class="tick" x="756.88" y="650.0" text-anchor="middle">5</text>
+<line class="axis" x1="805.62" y1="630.0" x2="805.62" y2="635.0"/>
+<text class="tick" x="805.62" y="650.0" text-anchor="middle">6</text>
+<line class="axis" x1="854.38" y1="630.0" x2="854.38" y2="635.0"/>
+<text class="tick" x="854.38" y="650.0" text-anchor="middle">7</text>
+<line class="axis" x1="903.12" y1="630.0" x2="903.12" y2="635.0"/>
+<text class="tick" x="903.12" y="650.0" text-anchor="middle">8</text>
+<line class="axis" x1="951.88" y1="630.0" x2="951.88" y2="635.0"/>
+<text class="tick" x="951.88" y="650.0" text-anchor="middle">9</text>
+<line class="axis" x1="1000.62" y1="630.0" x2="1000.62" y2="635.0"/>
+<text class="tick" x="1000.62" y="650.0" text-anchor="middle">10</text>
+<line class="axis" x1="635.0" y1="425.0" x2="635.0" y2="630.0"/>
+<line class="axis" x1="635.0" y1="630.0" x2="1025.0" y2="630.0"/>
+<text class="label" x="830.0" y="676.0" text-anchor="middle">Number of fields, K</text>
+<text class="label" x="587.0" y="527.5" transform="rotate(-90 587.0 527.5)" text-anchor="middle">Ngreedy / Noptimal</text>
+<line class="bound-axis" x1="1025.0" y1="425.0" x2="1025.0" y2="630.0"/>
+<line class="bound-axis" x1="1025.0" y1="630.00" x2="1030.0" y2="630.00"/>
+<text class="bound-tick" x="1034.0" y="634.00">1</text>
+<line class="bound-axis" x1="1025.0" y1="578.75" x2="1030.0" y2="578.75"/>
+<text class="bound-tick" x="1034.0" y="582.75">2</text>
+<line class="bound-axis" x1="1025.0" y1="527.50" x2="1030.0" y2="527.50"/>
+<text class="bound-tick" x="1034.0" y="531.50">3</text>
+<line class="bound-axis" x1="1025.0" y1="476.25" x2="1030.0" y2="476.25"/>
+<text class="bound-tick" x="1034.0" y="480.25">4</text>
+<line class="bound-axis" x1="1025.0" y1="425.00" x2="1030.0" y2="425.00"/>
+<text class="bound-tick" x="1034.0" y="429.00">5</text>
+<text class="bound-label" x="1072.0" y="527.5" transform="rotate(90 1072.0 527.5)" text-anchor="middle">B(K) theorem bound</text>
+<polyline class="bound" points="659.38,573.70 708.12,538.17 756.88,511.99 805.62,491.21 854.38,473.97 903.12,459.22 951.88,446.34 1000.62,434.91"/>
+<line class="diagonal" x1="635.0" y1="620.24" x2="1025.0" y2="620.24"/>
+<polygon points="755.97,552.42 760.47,556.92 755.97,561.42 751.47,556.92" fill="#9334e6" opacity="0.88"/>
+<polygon points="858.90,608.77 863.40,613.27 858.90,617.77 854.40,613.27" fill="#9334e6" opacity="0.88"/>
+<polygon points="707.22,615.74 711.72,620.24 707.22,624.74 702.72,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="705.41,615.74 709.91,620.24 705.41,624.74 700.91,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="701.79,615.74 706.29,620.24 701.79,624.74 697.29,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="945.54,615.74 950.04,620.24 945.54,624.74 941.04,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="804.72,586.81 809.22,591.31 804.72,595.81 800.22,591.31" fill="#9334e6" opacity="0.88"/>
+<polygon points="662.09,615.74 666.59,620.24 662.09,624.74 657.59,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="1001.53,572.35 1006.03,576.85 1001.53,581.35 997.03,576.85" fill="#9334e6" opacity="0.88"/>
+<polygon points="851.66,615.74 856.16,620.24 851.66,624.74 847.16,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="952.78,569.41 957.28,573.91 952.78,578.41 948.28,573.91" fill="#9334e6" opacity="0.88"/>
+<polygon points="801.10,615.74 805.60,620.24 801.10,624.74 796.60,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="712.65,615.74 717.15,620.24 712.65,624.74 708.15,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="904.03,615.74 908.53,620.24 904.03,624.74 899.53,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="802.91,608.23 807.41,612.73 802.91,617.23 798.41,612.73" fill="#9334e6" opacity="0.88"/>
+<polygon points="848.04,585.11 852.54,589.61 848.04,594.11 843.54,589.61" fill="#9334e6" opacity="0.88"/>
+<polygon points="761.40,563.17 765.90,567.67 761.40,572.17 756.90,567.67" fill="#9334e6" opacity="0.88"/>
+<polygon points="905.84,568.12 910.34,572.62 905.84,577.12 901.34,572.62" fill="#9334e6" opacity="0.88"/>
+<polygon points="763.21,571.91 767.71,576.41 763.21,580.91 758.71,576.41" fill="#9334e6" opacity="0.88"/>
+<polygon points="757.78,615.74 762.28,620.24 757.78,624.74 753.28,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="860.71,610.16 865.21,614.66 860.71,619.16 856.21,614.66" fill="#9334e6" opacity="0.88"/>
+<polygon points="710.84,615.74 715.34,620.24 710.84,624.74 706.34,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="811.96,583.20 816.46,587.70 811.96,592.20 807.46,587.70" fill="#9334e6" opacity="0.88"/>
+<polygon points="849.85,615.74 854.35,620.24 849.85,624.74 845.35,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="947.35,615.74 951.85,620.24 947.35,624.74 942.85,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="997.91,615.74 1002.41,620.24 997.91,624.74 993.41,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="902.22,599.80 906.72,604.30 902.22,608.80 897.72,604.30" fill="#9334e6" opacity="0.88"/>
+<polygon points="654.85,595.19 659.35,599.69 654.85,604.19 650.35,599.69" fill="#9334e6" opacity="0.88"/>
+<polygon points="658.47,615.74 662.97,620.24 658.47,624.74 653.97,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="949.16,615.74 953.66,620.24 949.16,624.74 944.66,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="660.28,518.12 664.78,522.62 660.28,527.12 655.78,522.62" fill="#9334e6" opacity="0.88"/>
+<polygon points="950.97,479.44 955.47,483.94 950.97,488.44 946.47,483.94" fill="#9334e6" opacity="0.88"/>
+<polygon points="996.10,615.74 1000.60,620.24 996.10,624.74 991.60,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="750.54,611.09 755.04,615.59 750.54,620.09 746.04,615.59" fill="#9334e6" opacity="0.88"/>
+<polygon points="999.72,615.74 1004.22,620.24 999.72,624.74 995.22,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="853.47,580.45 857.97,584.95 853.47,589.45 848.97,584.95" fill="#9334e6" opacity="0.88"/>
+<polygon points="653.04,615.74 657.54,620.24 653.04,624.74 648.54,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="898.60,606.44 903.10,610.94 898.60,615.44 894.10,610.94" fill="#9334e6" opacity="0.88"/>
+<polygon points="709.03,565.68 713.53,570.18 709.03,574.68 704.53,570.18" fill="#9334e6" opacity="0.88"/>
+<polygon points="907.65,615.74 912.15,620.24 907.65,624.74 903.15,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="1006.96,554.08 1011.46,558.58 1006.96,563.08 1002.46,558.58" fill="#9334e6" opacity="0.88"/>
+<polygon points="714.46,615.74 718.96,620.24 714.46,624.74 709.96,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="752.35,615.74 756.85,620.24 752.35,624.74 747.85,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="958.21,615.74 962.71,620.24 958.21,624.74 953.71,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="656.66,615.74 661.16,620.24 656.66,624.74 652.16,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="799.29,615.74 803.79,620.24 799.29,624.74 794.79,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="665.71,615.74 670.21,620.24 665.71,624.74 661.21,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="759.59,615.74 764.09,620.24 759.59,624.74 755.09,620.24" fill="#9334e6" opacity="0.88"/>
+<polygon points="994.29,580.02 998.79,584.52 994.29,589.02 989.79,584.52" fill="#9334e6" opacity="0.88"/>
+<polygon points="1005.15,593.64 1009.65,598.14 1005.15,602.64 1000.65,598.14" fill="#9334e6" opacity="0.88"/>
+<text class="note" x="560" y="700" text-anchor="middle">Grey dashed: Ngreedy = Noptimal. Each marker is one instance; small horizontal offsets separate different M values.</text>
+</svg>

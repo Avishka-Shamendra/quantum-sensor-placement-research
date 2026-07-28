@@ -1,0 +1,103 @@
+{
+  "case": "case_037_k03_m03",
+  "F": 3,
+  "M": 3,
+  "pair_count": 3,
+  "mode": "both",
+  "rijm": {
+    "0,1": [
+      -1.6616,
+      1.6616,
+      -1.6616
+    ],
+    "0,2": [
+      -0.7198,
+      1.2478,
+      -0.7198
+    ],
+    "1,2": [
+      0.9418,
+      -0.4138,
+      0.9418
+    ]
+  },
+  "Nijm": {
+    "0,1": [
+      2,
+      2,
+      2
+    ],
+    "0,2": [
+      5,
+      3,
+      5
+    ],
+    "1,2": [
+      4,
+      8,
+      4
+    ]
+  },
+  "optimal": {
+    "Nmin": 5,
+    "allocation": [
+      0,
+      0,
+      5
+    ],
+    "pair_locations": [
+      [
+        null,
+        2,
+        2
+      ],
+      [
+        2,
+        null,
+        2
+      ],
+      [
+        2,
+        2,
+        null
+      ]
+    ]
+  },
+  "greedy": {
+    "Nmin": 7,
+    "allocation": [
+      4,
+      3,
+      0
+    ],
+    "pair_locations": [
+      [
+        null,
+        1,
+        1
+      ],
+      [
+        1,
+        null,
+        0
+      ],
+      [
+        1,
+        0,
+        null
+      ]
+    ]
+  },
+  "greedy_approximation_bound": 10.493061443340551,
+  "timing_seconds": {
+    "optimal": 9.477080311626196e-06,
+    "greedy": 9.24458960071206e-06
+  },
+  "timing_repetitions": 100,
+  "metrics": {
+    "greedy_minus_optimal": 2,
+    "greedy_to_optimal_ratio": 1.4,
+    "bound_utilization": 0.667107501256706
+  },
+  "field_family": "sine"
+}

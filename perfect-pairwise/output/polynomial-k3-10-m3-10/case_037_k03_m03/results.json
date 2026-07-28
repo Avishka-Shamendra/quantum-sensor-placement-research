@@ -1,0 +1,103 @@
+{
+  "case": "case_037_k03_m03",
+  "F": 3,
+  "M": 3,
+  "pair_count": 3,
+  "mode": "both",
+  "rijm": {
+    "0,1": [
+      0.2588,
+      -0.0671,
+      -0.5219
+    ],
+    "0,2": [
+      0.5695,
+      -0.1552,
+      -1.16
+    ],
+    "1,2": [
+      0.3108,
+      -0.0881,
+      -0.6381
+    ]
+  },
+  "Nijm": {
+    "0,1": [
+      13,
+      47,
+      7
+    ],
+    "0,2": [
+      6,
+      21,
+      3
+    ],
+    "1,2": [
+      11,
+      36,
+      5
+    ]
+  },
+  "optimal": {
+    "Nmin": 7,
+    "allocation": [
+      0,
+      0,
+      7
+    ],
+    "pair_locations": [
+      [
+        null,
+        2,
+        2
+      ],
+      [
+        2,
+        null,
+        2
+      ],
+      [
+        2,
+        2,
+        null
+      ]
+    ]
+  },
+  "greedy": {
+    "Nmin": 7,
+    "allocation": [
+      0,
+      0,
+      7
+    ],
+    "pair_locations": [
+      [
+        null,
+        2,
+        2
+      ],
+      [
+        2,
+        null,
+        2
+      ],
+      [
+        2,
+        2,
+        null
+      ]
+    ]
+  },
+  "greedy_approximation_bound": 14.69028602067677,
+  "timing_seconds": {
+    "optimal": 9.14959004148841e-06,
+    "greedy": 9.28542111068964e-06
+  },
+  "timing_repetitions": 100,
+  "metrics": {
+    "greedy_minus_optimal": 0,
+    "greedy_to_optimal_ratio": 1.0,
+    "bound_utilization": 0.47650535804050437
+  },
+  "field_family": "polynomial"
+}

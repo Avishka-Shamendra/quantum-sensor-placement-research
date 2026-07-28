@@ -1,0 +1,2 @@
+family,case_count,exact_case_count,mean_Nmin_optimal,mean_Nmin_greedy,mean_greedy_gap,mean_greedy_to_optimal_ratio,median_greedy_to_optimal_ratio,max_greedy_to_optimal_ratio,mean_optimal_seconds,mean_greedy_seconds
+polynomial,50,50,42.72,47.32,4.6,1.0920275417400789,1.0,1.6981132075471699,0.0037655304174870254,0.0003025063334498555

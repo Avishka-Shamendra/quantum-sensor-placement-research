@@ -1,0 +1,119 @@
+{
+  "case": "case_045_k03_m05",
+  "F": 3,
+  "M": 5,
+  "pair_count": 3,
+  "mode": "both",
+  "rijm": {
+    "0,1": [
+      0.7028,
+      0.2113,
+      -0.182,
+      -0.4362,
+      -0.5104
+    ],
+    "0,2": [
+      0.3245,
+      0.0151,
+      -0.2187,
+      -0.3064,
+      -0.1776
+    ],
+    "1,2": [
+      -0.3783,
+      -0.1962,
+      -0.0367,
+      0.1297,
+      0.3328
+    ]
+  },
+  "Nijm": {
+    "0,1": [
+      5,
+      15,
+      18,
+      8,
+      7
+    ],
+    "0,2": [
+      10,
+      209,
+      15,
+      11,
+      18
+    ],
+    "1,2": [
+      9,
+      17,
+      86,
+      25,
+      10
+    ]
+  },
+  "optimal": {
+    "Nmin": 10,
+    "allocation": [
+      10,
+      0,
+      0,
+      0,
+      0
+    ],
+    "pair_locations": [
+      [
+        null,
+        0,
+        0
+      ],
+      [
+        0,
+        null,
+        0
+      ],
+      [
+        0,
+        0,
+        null
+      ]
+    ]
+  },
+  "greedy": {
+    "Nmin": 10,
+    "allocation": [
+      10,
+      0,
+      0,
+      0,
+      0
+    ],
+    "pair_locations": [
+      [
+        null,
+        0,
+        0
+      ],
+      [
+        0,
+        null,
+        0
+      ],
+      [
+        0,
+        0,
+        null
+      ]
+    ]
+  },
+  "greedy_approximation_bound": 20.986122886681102,
+  "timing_seconds": {
+    "optimal": 1.570542110130191e-05,
+    "greedy": 1.193000003695488e-05
+  },
+  "timing_repetitions": 100,
+  "metrics": {
+    "greedy_minus_optimal": 0,
+    "greedy_to_optimal_ratio": 1.0,
+    "bound_utilization": 0.4765053580405043
+  },
+  "field_family": "polynomial"
+}

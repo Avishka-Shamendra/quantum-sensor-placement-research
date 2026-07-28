@@ -1,0 +1,2908 @@
+{
+  "dataset": "sine-k3-10-m3-10",
+  "field_family": "sine",
+  "field_formula": "f_i(x) = A_i sin(2 pi q_i x + phi_i)",
+  "phase_scale_c": 1.0,
+  "phase_definition": "r_ijm = principal_value(-c(f_i(x_m) - f_j(x_m)))",
+  "selection": "balanced deterministic coverage of the requested K/M grid",
+  "seed": 20260728,
+  "requested_ranges": {
+    "K": [
+      3,
+      10
+    ],
+    "M": [
+      3,
+      10
+    ]
+  },
+  "case_count": 50,
+  "cases": [
+    {
+      "file": "case_001_k05_m06.csv",
+      "field_family": "sine",
+      "K": 5,
+      "M": 6,
+      "phase_scale_c": 1.0,
+      "generation_seed": 21260731,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.7354078620946892,
+          "frequency": 3,
+          "phase": -2.586792422420189
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.11440447351249,
+          "frequency": 1,
+          "phase": 2.690943647777214
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.86771704894658,
+          "frequency": 1,
+          "phase": -1.339258921921789
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.006531859769556,
+          "frequency": 1,
+          "phase": -1.0340775800470503
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.5589007432346701,
+          "frequency": 1,
+          "phase": -0.9768208596092531
+        }
+      ]
+    },
+    {
+      "file": "case_002_k07_m09.csv",
+      "field_family": "sine",
+      "K": 7,
+      "M": 9,
+      "phase_scale_c": 1.0,
+      "generation_seed": 22260734,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.125,
+        0.25,
+        0.375,
+        0.5,
+        0.625,
+        0.75,
+        0.875,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.7530113233695107,
+          "frequency": 3,
+          "phase": 2.8386503874665374
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.8152006964000393,
+          "frequency": 1,
+          "phase": 2.174593627857468
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.149601930758919,
+          "frequency": 2,
+          "phase": 1.091822189841551
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.0644143305528913,
+          "frequency": 1,
+          "phase": -3.031352513460068
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.8406323740489776,
+          "frequency": 1,
+          "phase": 0.894036730242628
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.5983949727188007,
+          "frequency": 3,
+          "phase": -1.6233169619005996
+        },
+        {
+          "field_index": 6,
+          "amplitude": 1.0646563187122857,
+          "frequency": 1,
+          "phase": -0.6536710132878318
+        }
+      ]
+    },
+    {
+      "file": "case_003_k04_m06.csv",
+      "field_family": "sine",
+      "K": 4,
+      "M": 6,
+      "phase_scale_c": 1.0,
+      "generation_seed": 23260737,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.1630453162870698,
+          "frequency": 2,
+          "phase": 2.3258384016600147
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.6794203441888326,
+          "frequency": 1,
+          "phase": 1.3107602120543929
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.720014434337571,
+          "frequency": 3,
+          "phase": -2.0519670480496677
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.5574136553524057,
+          "frequency": 2,
+          "phase": -2.5444307787634317
+        }
+      ]
+    },
+    {
+      "file": "case_004_k04_m05.csv",
+      "field_family": "sine",
+      "K": 4,
+      "M": 5,
+      "phase_scale_c": 1.0,
+      "generation_seed": 24260740,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.6407011529358587,
+          "frequency": 3,
+          "phase": 2.557779433694125
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.7499537149969621,
+          "frequency": 3,
+          "phase": -0.8068634363765836
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.6459974360195504,
+          "frequency": 3,
+          "phase": 0.8225525169840733
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.8432204845954289,
+          "frequency": 3,
+          "phase": -2.123289835550607
+        }
+      ]
+    },
+    {
+      "file": "case_005_k04_m03.csv",
+      "field_family": "sine",
+      "K": 4,
+      "M": 3,
+      "phase_scale_c": 1.0,
+      "generation_seed": 25260743,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.6970765560237702,
+          "frequency": 3,
+          "phase": -1.1465540597032478
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.7409329138933405,
+          "frequency": 3,
+          "phase": -2.768049581065564
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.8463025982328827,
+          "frequency": 3,
+          "phase": 2.2491323961527456
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.616906946504938,
+          "frequency": 2,
+          "phase": -0.0877075770080249
+        }
+      ]
+    },
+    {
+      "file": "case_006_k09_m03.csv",
+      "field_family": "sine",
+      "K": 9,
+      "M": 3,
+      "phase_scale_c": 1.0,
+      "generation_seed": 26260746,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.906883865739204,
+          "frequency": 3,
+          "phase": -0.6281011395255063
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.5543875571817636,
+          "frequency": 3,
+          "phase": 3.071039633667752
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.7189700358444346,
+          "frequency": 1,
+          "phase": 2.051542682994646
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.7220847098564915,
+          "frequency": 1,
+          "phase": -1.0362819950964686
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.6065523552163907,
+          "frequency": 2,
+          "phase": -0.1272724320979619
+        },
+        {
+          "field_index": 5,
+          "amplitude": 1.1853361653116476,
+          "frequency": 3,
+          "phase": -0.9523086001740264
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.6610836900949196,
+          "frequency": 2,
+          "phase": 2.708643784143839
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.9256681794143684,
+          "frequency": 1,
+          "phase": -0.5707148201983161
+        },
+        {
+          "field_index": 8,
+          "amplitude": 1.12967625278239,
+          "frequency": 3,
+          "phase": 2.204574484390945
+        }
+      ]
+    },
+    {
+      "file": "case_007_k06_m06.csv",
+      "field_family": "sine",
+      "K": 6,
+      "M": 6,
+      "phase_scale_c": 1.0,
+      "generation_seed": 27260749,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.9559493412752229,
+          "frequency": 2,
+          "phase": -0.2405815876628612
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.0988667489891482,
+          "frequency": 2,
+          "phase": -0.495419332314865
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.7903901290183587,
+          "frequency": 2,
+          "phase": -0.25564806475685975
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.7107295295656209,
+          "frequency": 3,
+          "phase": 2.7948942309010905
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.8514375469949906,
+          "frequency": 2,
+          "phase": 2.3377428980587
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.8738432247777947,
+          "frequency": 1,
+          "phase": 0.35355655612415227
+        }
+      ]
+    },
+    {
+      "file": "case_008_k03_m08.csv",
+      "field_family": "sine",
+      "K": 3,
+      "M": 8,
+      "phase_scale_c": 1.0,
+      "generation_seed": 28260752,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.14285714285714285,
+        0.2857142857142857,
+        0.42857142857142855,
+        0.5714285714285714,
+        0.7142857142857143,
+        0.8571428571428571,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.9202067049993463,
+          "frequency": 1,
+          "phase": 2.95496129862509
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.9389261230392735,
+          "frequency": 2,
+          "phase": -1.1432555455963263
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.1397477691620146,
+          "frequency": 2,
+          "phase": 0.9784545743341679
+        }
+      ]
+    },
+    {
+      "file": "case_009_k10_m07.csv",
+      "field_family": "sine",
+      "K": 10,
+      "M": 7,
+      "phase_scale_c": 1.0,
+      "generation_seed": 29260755,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.16666666666666666,
+        0.3333333333333333,
+        0.5,
+        0.6666666666666666,
+        0.8333333333333334,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.0472754918148275,
+          "frequency": 3,
+          "phase": 1.091831431406657
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.1645093067617365,
+          "frequency": 3,
+          "phase": -2.7518370023090095
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.7638667975378989,
+          "frequency": 3,
+          "phase": 3.0868106935643427
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.7005886283790272,
+          "frequency": 1,
+          "phase": -1.0685364348825157
+        },
+        {
+          "field_index": 4,
+          "amplitude": 1.0902522320626753,
+          "frequency": 1,
+          "phase": 0.7528683059735131
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.651034486149544,
+          "frequency": 3,
+          "phase": 1.3412647712595023
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.9004506529180062,
+          "frequency": 3,
+          "phase": 1.5123355129977778
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.9852431749426727,
+          "frequency": 1,
+          "phase": 2.7446554688712688
+        },
+        {
+          "field_index": 8,
+          "amplitude": 0.9270551378437999,
+          "frequency": 3,
+          "phase": -1.621800342342571
+        },
+        {
+          "field_index": 9,
+          "amplitude": 1.114190040968765,
+          "frequency": 1,
+          "phase": -3.0424581573645613
+        }
+      ]
+    },
+    {
+      "file": "case_010_k07_m05.csv",
+      "field_family": "sine",
+      "K": 7,
+      "M": 5,
+      "phase_scale_c": 1.0,
+      "generation_seed": 30260758,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.6974574808794063,
+          "frequency": 2,
+          "phase": 3.123263403536919
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.6004554947400845,
+          "frequency": 2,
+          "phase": -0.7682004323242375
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.176208681605412,
+          "frequency": 2,
+          "phase": 2.440250795990419
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.1002131925775278,
+          "frequency": 2,
+          "phase": 1.285824653982182
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.5804180199175268,
+          "frequency": 3,
+          "phase": -0.5497542256944201
+        },
+        {
+          "field_index": 5,
+          "amplitude": 1.0793974368548436,
+          "frequency": 2,
+          "phase": -1.0813670951748078
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.6076898158347078,
+          "frequency": 1,
+          "phase": 1.3707797717716579
+        }
+      ]
+    },
+    {
+      "file": "case_011_k09_m07.csv",
+      "field_family": "sine",
+      "K": 9,
+      "M": 7,
+      "phase_scale_c": 1.0,
+      "generation_seed": 31260761,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.16666666666666666,
+        0.3333333333333333,
+        0.5,
+        0.6666666666666666,
+        0.8333333333333334,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.5758089762936603,
+          "frequency": 3,
+          "phase": -2.9261709338898942
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.677876591069579,
+          "frequency": 1,
+          "phase": -2.6795215363631084
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.17499765640197,
+          "frequency": 2,
+          "phase": 1.7107267579788106
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.0408240389189212,
+          "frequency": 1,
+          "phase": 1.269286793362471
+        },
+        {
+          "field_index": 4,
+          "amplitude": 1.0578870344707028,
+          "frequency": 1,
+          "phase": 1.4573866883975954
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.6418186505381849,
+          "frequency": 1,
+          "phase": -2.8549744721287644
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.9524338800642806,
+          "frequency": 1,
+          "phase": 0.7379257614416805
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.8883490001760628,
+          "frequency": 2,
+          "phase": 0.9880790430852233
+        },
+        {
+          "field_index": 8,
+          "amplitude": 0.9396120341351557,
+          "frequency": 2,
+          "phase": 0.3408358439306882
+        }
+      ]
+    },
+    {
+      "file": "case_012_k06_m04.csv",
+      "field_family": "sine",
+      "K": 6,
+      "M": 4,
+      "phase_scale_c": 1.0,
+      "generation_seed": 32260764,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.3333333333333333,
+        0.6666666666666666,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.0454829338185672,
+          "frequency": 3,
+          "phase": 0.844149078827837
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.0378856264708636,
+          "frequency": 2,
+          "phase": -0.40462774762570364
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.6078367628037359,
+          "frequency": 1,
+          "phase": -2.386692413888447
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.7096451220354983,
+          "frequency": 3,
+          "phase": -3.085449342149553
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.8885267391058309,
+          "frequency": 3,
+          "phase": -0.9918235334981418
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.76816749781044,
+          "frequency": 1,
+          "phase": -2.935405791710517
+        }
+      ]
+    },
+    {
+      "file": "case_013_k04_m09.csv",
+      "field_family": "sine",
+      "K": 4,
+      "M": 9,
+      "phase_scale_c": 1.0,
+      "generation_seed": 33260767,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.125,
+        0.25,
+        0.375,
+        0.5,
+        0.625,
+        0.75,
+        0.875,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.5695689641067049,
+          "frequency": 2,
+          "phase": -1.8216358671166937
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.0890589074966865,
+          "frequency": 2,
+          "phase": -0.4435240691879794
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.1209044483549095,
+          "frequency": 3,
+          "phase": 2.1164995310901897
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.8110454192618815,
+          "frequency": 3,
+          "phase": 1.1836305921608332
+        }
+      ]
+    },
+    {
+      "file": "case_014_k08_m07.csv",
+      "field_family": "sine",
+      "K": 8,
+      "M": 7,
+      "phase_scale_c": 1.0,
+      "generation_seed": 34260770,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.16666666666666666,
+        0.3333333333333333,
+        0.5,
+        0.6666666666666666,
+        0.8333333333333334,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.0081113518367966,
+          "frequency": 1,
+          "phase": 0.2631636488144049
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.8061055650916262,
+          "frequency": 3,
+          "phase": 1.2608768782223292
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.1262585520931832,
+          "frequency": 1,
+          "phase": 1.9688515469333039
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.747520680925785,
+          "frequency": 2,
+          "phase": -1.313474057948288
+        },
+        {
+          "field_index": 4,
+          "amplitude": 1.1718624997810922,
+          "frequency": 1,
+          "phase": -1.7132097743114587
+        },
+        {
+          "field_index": 5,
+          "amplitude": 1.155130609534714,
+          "frequency": 3,
+          "phase": 0.4518680489370448
+        },
+        {
+          "field_index": 6,
+          "amplitude": 1.178701923805121,
+          "frequency": 1,
+          "phase": -0.7319711885540285
+        },
+        {
+          "field_index": 7,
+          "amplitude": 1.1121037667693483,
+          "frequency": 2,
+          "phase": -0.7713168768487231
+        }
+      ]
+    },
+    {
+      "file": "case_015_k06_m05.csv",
+      "field_family": "sine",
+      "K": 6,
+      "M": 5,
+      "phase_scale_c": 1.0,
+      "generation_seed": 35260773,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.1494238712448255,
+          "frequency": 3,
+          "phase": 2.9457895126494495
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.7989044911675632,
+          "frequency": 1,
+          "phase": -2.746254316989334
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.7703670508494381,
+          "frequency": 2,
+          "phase": 2.986643490967791
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.7005604517212887,
+          "frequency": 1,
+          "phase": 2.104915153702687
+        },
+        {
+          "field_index": 4,
+          "amplitude": 1.071127464900187,
+          "frequency": 1,
+          "phase": 1.948737506139043
+        },
+        {
+          "field_index": 5,
+          "amplitude": 1.136345331266214,
+          "frequency": 1,
+          "phase": -1.2488462839257544
+        }
+      ]
+    },
+    {
+      "file": "case_016_k07_m03.csv",
+      "field_family": "sine",
+      "K": 7,
+      "M": 3,
+      "phase_scale_c": 1.0,
+      "generation_seed": 36260776,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.7136052398195449,
+          "frequency": 1,
+          "phase": 2.2332923734487222
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.940613820996001,
+          "frequency": 3,
+          "phase": 0.09468948702611124
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.9732507720663679,
+          "frequency": 1,
+          "phase": -2.10558810960223
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.1976051839924424,
+          "frequency": 1,
+          "phase": -2.865672800779277
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.8398455410319314,
+          "frequency": 1,
+          "phase": 2.762328933710993
+        },
+        {
+          "field_index": 5,
+          "amplitude": 1.096351444017933,
+          "frequency": 2,
+          "phase": 1.0287169031179362
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.6483037979625733,
+          "frequency": 2,
+          "phase": -2.395614834410483
+        }
+      ]
+    },
+    {
+      "file": "case_017_k05_m09.csv",
+      "field_family": "sine",
+      "K": 5,
+      "M": 9,
+      "phase_scale_c": 1.0,
+      "generation_seed": 37260779,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.125,
+        0.25,
+        0.375,
+        0.5,
+        0.625,
+        0.75,
+        0.875,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.041690004489041,
+          "frequency": 3,
+          "phase": 2.9657613766710034
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.8285876965821328,
+          "frequency": 2,
+          "phase": -0.368531182084197
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.0703686652431725,
+          "frequency": 2,
+          "phase": 1.9815513720839686
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.8622118639935514,
+          "frequency": 2,
+          "phase": -2.5540362925034907
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.6181288137915947,
+          "frequency": 1,
+          "phase": 2.638729901992339
+        }
+      ]
+    },
+    {
+      "file": "case_018_k08_m08.csv",
+      "field_family": "sine",
+      "K": 8,
+      "M": 8,
+      "phase_scale_c": 1.0,
+      "generation_seed": 38260782,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.14285714285714285,
+        0.2857142857142857,
+        0.42857142857142855,
+        0.5714285714285714,
+        0.7142857142857143,
+        0.8571428571428571,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.5739961617400152,
+          "frequency": 2,
+          "phase": 0.3317726842521216
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.9423929196028669,
+          "frequency": 3,
+          "phase": 2.204958522445656
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.772332142442701,
+          "frequency": 3,
+          "phase": -0.488426045550864
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.7090743277944684,
+          "frequency": 3,
+          "phase": 1.2307575408248637
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.7391275471705444,
+          "frequency": 2,
+          "phase": -2.43588968964993
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.6277025272944807,
+          "frequency": 1,
+          "phase": 2.526214335951866
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.6165644093393923,
+          "frequency": 2,
+          "phase": 1.7939280917901286
+        },
+        {
+          "field_index": 7,
+          "amplitude": 1.0137118835375447,
+          "frequency": 1,
+          "phase": 2.462054232003392
+        }
+      ]
+    },
+    {
+      "file": "case_019_k05_m10.csv",
+      "field_family": "sine",
+      "K": 5,
+      "M": 10,
+      "phase_scale_c": 1.0,
+      "generation_seed": 39260785,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.1111111111111111,
+        0.2222222222222222,
+        0.3333333333333333,
+        0.4444444444444444,
+        0.5555555555555556,
+        0.6666666666666666,
+        0.7777777777777778,
+        0.8888888888888888,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.7646365921694415,
+          "frequency": 1,
+          "phase": 1.538666461167459
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.6909162021947409,
+          "frequency": 3,
+          "phase": 2.5079856122629636
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.016488276697597,
+          "frequency": 2,
+          "phase": 2.463442329140368
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.9116824090822692,
+          "frequency": 3,
+          "phase": -0.4339077368771975
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.9568828757455574,
+          "frequency": 1,
+          "phase": 1.4146864943789819
+        }
+      ]
+    },
+    {
+      "file": "case_020_k05_m07.csv",
+      "field_family": "sine",
+      "K": 5,
+      "M": 7,
+      "phase_scale_c": 1.0,
+      "generation_seed": 40260788,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.16666666666666666,
+        0.3333333333333333,
+        0.5,
+        0.6666666666666666,
+        0.8333333333333334,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.9092322123633385,
+          "frequency": 1,
+          "phase": 0.4744175214640802
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.1396006711452538,
+          "frequency": 3,
+          "phase": -1.9579987470190119
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.9503277148319854,
+          "frequency": 3,
+          "phase": 2.7946348811422093
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.1319661873901528,
+          "frequency": 3,
+          "phase": 1.3339653879596574
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.6841365402213234,
+          "frequency": 2,
+          "phase": -1.3060187492476618
+        }
+      ]
+    },
+    {
+      "file": "case_021_k07_m10.csv",
+      "field_family": "sine",
+      "K": 7,
+      "M": 10,
+      "phase_scale_c": 1.0,
+      "generation_seed": 41260791,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.1111111111111111,
+        0.2222222222222222,
+        0.3333333333333333,
+        0.4444444444444444,
+        0.5555555555555556,
+        0.6666666666666666,
+        0.7777777777777778,
+        0.8888888888888888,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.8178381032267082,
+          "frequency": 2,
+          "phase": -2.1466478944881624
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.6504085335449051,
+          "frequency": 1,
+          "phase": 3.0879120024943063
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.158495590416274,
+          "frequency": 3,
+          "phase": 1.0556875128558074
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.64822423870433,
+          "frequency": 1,
+          "phase": 2.828373331798617
+        },
+        {
+          "field_index": 4,
+          "amplitude": 1.0160502990535725,
+          "frequency": 3,
+          "phase": -2.6917022286807573
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.8425368019109951,
+          "frequency": 2,
+          "phase": 2.809505280578871
+        },
+        {
+          "field_index": 6,
+          "amplitude": 1.181079050679171,
+          "frequency": 3,
+          "phase": 3.0452289704056303
+        }
+      ]
+    },
+    {
+      "file": "case_022_k04_m08.csv",
+      "field_family": "sine",
+      "K": 4,
+      "M": 8,
+      "phase_scale_c": 1.0,
+      "generation_seed": 42260794,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.14285714285714285,
+        0.2857142857142857,
+        0.42857142857142855,
+        0.5714285714285714,
+        0.7142857142857143,
+        0.8571428571428571,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.8624173172981303,
+          "frequency": 3,
+          "phase": -0.004667923094169524
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.9042232125383292,
+          "frequency": 1,
+          "phase": 1.4821627708202918
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.5805257099026333,
+          "frequency": 1,
+          "phase": -0.8308366284686857
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.0469393651820704,
+          "frequency": 2,
+          "phase": 1.2279047054559706
+        }
+      ]
+    },
+    {
+      "file": "case_023_k06_m10.csv",
+      "field_family": "sine",
+      "K": 6,
+      "M": 10,
+      "phase_scale_c": 1.0,
+      "generation_seed": 43260797,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.1111111111111111,
+        0.2222222222222222,
+        0.3333333333333333,
+        0.4444444444444444,
+        0.5555555555555556,
+        0.6666666666666666,
+        0.7777777777777778,
+        0.8888888888888888,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.9820606989478218,
+          "frequency": 1,
+          "phase": -0.9435925464288331
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.7994111659922626,
+          "frequency": 2,
+          "phase": 1.0748134446702649
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.5776159322914911,
+          "frequency": 1,
+          "phase": 2.875442026267092
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.9938219791864096,
+          "frequency": 2,
+          "phase": -1.7010006810640954
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.9053849532042579,
+          "frequency": 1,
+          "phase": -0.2817692214930583
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.6437360936451918,
+          "frequency": 1,
+          "phase": 1.4691396120485916
+        }
+      ]
+    },
+    {
+      "file": "case_024_k07_m04.csv",
+      "field_family": "sine",
+      "K": 7,
+      "M": 4,
+      "phase_scale_c": 1.0,
+      "generation_seed": 44260800,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.3333333333333333,
+        0.6666666666666666,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.5847000702511457,
+          "frequency": 3,
+          "phase": 2.023830602910299
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.7939118825190518,
+          "frequency": 3,
+          "phase": -1.847887612953338
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.1943819662194173,
+          "frequency": 2,
+          "phase": -1.2443101516146855
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.7148102282731045,
+          "frequency": 3,
+          "phase": -0.20817595597015792
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.8521061697060521,
+          "frequency": 1,
+          "phase": -0.3631702820960525
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.8949321249567672,
+          "frequency": 1,
+          "phase": 1.5917755355951009
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.661795638465079,
+          "frequency": 2,
+          "phase": -0.8462487899081377
+        }
+      ]
+    },
+    {
+      "file": "case_025_k09_m04.csv",
+      "field_family": "sine",
+      "K": 9,
+      "M": 4,
+      "phase_scale_c": 1.0,
+      "generation_seed": 45260803,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.3333333333333333,
+        0.6666666666666666,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.1128558047625803,
+          "frequency": 3,
+          "phase": 1.8784911333081746
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.0770624294667854,
+          "frequency": 1,
+          "phase": 2.386076398895548
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.7272366164973023,
+          "frequency": 2,
+          "phase": -2.532833434357232
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.6892624542059076,
+          "frequency": 2,
+          "phase": -0.3793393169752206
+        },
+        {
+          "field_index": 4,
+          "amplitude": 1.1244595203687724,
+          "frequency": 3,
+          "phase": 1.1725459538552832
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.9424984130915299,
+          "frequency": 3,
+          "phase": 2.4061737249585393
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.9460230957369283,
+          "frequency": 2,
+          "phase": -0.15371400765941923
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.5503606924610276,
+          "frequency": 2,
+          "phase": -1.4005091010570647
+        },
+        {
+          "field_index": 8,
+          "amplitude": 0.6000907628011721,
+          "frequency": 2,
+          "phase": -2.713296228321663
+        }
+      ]
+    },
+    {
+      "file": "case_026_k10_m05.csv",
+      "field_family": "sine",
+      "K": 10,
+      "M": 5,
+      "phase_scale_c": 1.0,
+      "generation_seed": 46260806,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.190541098160826,
+          "frequency": 3,
+          "phase": -1.431016432807691
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.7153691256255902,
+          "frequency": 1,
+          "phase": 2.3713222674923706
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.0350466249721237,
+          "frequency": 3,
+          "phase": -1.0791491555345645
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.0786362730870103,
+          "frequency": 3,
+          "phase": 2.3814715565438105
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.8612297126455168,
+          "frequency": 3,
+          "phase": -0.11447884882320558
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.8822960156053665,
+          "frequency": 1,
+          "phase": 0.5588695641790884
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.6596316289634897,
+          "frequency": 3,
+          "phase": 0.6719368619147552
+        },
+        {
+          "field_index": 7,
+          "amplitude": 1.181762061138837,
+          "frequency": 1,
+          "phase": -2.2923581076276682
+        },
+        {
+          "field_index": 8,
+          "amplitude": 0.8806580697829955,
+          "frequency": 1,
+          "phase": 1.3907980026813727
+        },
+        {
+          "field_index": 9,
+          "amplitude": 0.7599436116178804,
+          "frequency": 2,
+          "phase": -0.1658756747674892
+        }
+      ]
+    },
+    {
+      "file": "case_027_k08_m06.csv",
+      "field_family": "sine",
+      "K": 8,
+      "M": 6,
+      "phase_scale_c": 1.0,
+      "generation_seed": 47260809,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.1620019565383766,
+          "frequency": 1,
+          "phase": 0.9214385763736672
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.8247789492188387,
+          "frequency": 1,
+          "phase": 2.2640780628721435
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.130512558789305,
+          "frequency": 1,
+          "phase": -2.5065898453219484
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.777131467914418,
+          "frequency": 3,
+          "phase": 1.6604090836992835
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.8076297820123027,
+          "frequency": 3,
+          "phase": 0.9424673368842127
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.9593994557106906,
+          "frequency": 3,
+          "phase": -1.946367128668762
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.6411195608273448,
+          "frequency": 3,
+          "phase": 0.56878504822404
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.6783775186276492,
+          "frequency": 3,
+          "phase": -1.0274929377991828
+        }
+      ]
+    },
+    {
+      "file": "case_028_k03_m04.csv",
+      "field_family": "sine",
+      "K": 3,
+      "M": 4,
+      "phase_scale_c": 1.0,
+      "generation_seed": 48260812,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.3333333333333333,
+        0.6666666666666666,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.7875689376512356,
+          "frequency": 3,
+          "phase": -0.10412406132639918
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.6844687213151353,
+          "frequency": 1,
+          "phase": 2.393799192683403
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.9508045614848956,
+          "frequency": 2,
+          "phase": 1.3641343395525665
+        }
+      ]
+    },
+    {
+      "file": "case_029_k03_m06.csv",
+      "field_family": "sine",
+      "K": 3,
+      "M": 6,
+      "phase_scale_c": 1.0,
+      "generation_seed": 49260815,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.7807160954626116,
+          "frequency": 2,
+          "phase": -1.1645841148210787
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.0448403142512683,
+          "frequency": 1,
+          "phase": -1.827584680490617
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.1878628410377816,
+          "frequency": 2,
+          "phase": -2.891900606221773
+        }
+      ]
+    },
+    {
+      "file": "case_030_k09_m05.csv",
+      "field_family": "sine",
+      "K": 9,
+      "M": 5,
+      "phase_scale_c": 1.0,
+      "generation_seed": 50260818,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.9900936575284948,
+          "frequency": 3,
+          "phase": -1.483245380479516
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.6283901304485389,
+          "frequency": 2,
+          "phase": -2.008402826226736
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.1906617792247676,
+          "frequency": 2,
+          "phase": 1.7896540372395444
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.9543215796025917,
+          "frequency": 3,
+          "phase": 0.142977396140886
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.9931983894315035,
+          "frequency": 1,
+          "phase": 1.982426498506082
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.7843399206495562,
+          "frequency": 3,
+          "phase": 2.045882317115608
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.8686516559703052,
+          "frequency": 2,
+          "phase": 2.9811124191066485
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.7784783412208813,
+          "frequency": 2,
+          "phase": -0.12483525350401914
+        },
+        {
+          "field_index": 8,
+          "amplitude": 1.0260791933630569,
+          "frequency": 1,
+          "phase": -0.8260789379170466
+        }
+      ]
+    },
+    {
+      "file": "case_031_k03_m07.csv",
+      "field_family": "sine",
+      "K": 3,
+      "M": 7,
+      "phase_scale_c": 1.0,
+      "generation_seed": 51260821,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.16666666666666666,
+        0.3333333333333333,
+        0.5,
+        0.6666666666666666,
+        0.8333333333333334,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.626229530939533,
+          "frequency": 2,
+          "phase": 3.1414280885472667
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.0716351552632974,
+          "frequency": 1,
+          "phase": 0.45849384619248745
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.7489983232216108,
+          "frequency": 3,
+          "phase": 2.0448592673155606
+        }
+      ]
+    },
+    {
+      "file": "case_032_k09_m06.csv",
+      "field_family": "sine",
+      "K": 9,
+      "M": 6,
+      "phase_scale_c": 1.0,
+      "generation_seed": 52260824,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.6244848640532434,
+          "frequency": 2,
+          "phase": 1.9381981156290218
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.675399771598194,
+          "frequency": 1,
+          "phase": -1.1603575538907547
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.7395363206346937,
+          "frequency": 3,
+          "phase": -2.5069172678920797
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.977953163289469,
+          "frequency": 1,
+          "phase": 2.26267600476782
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.8392764393231151,
+          "frequency": 2,
+          "phase": -2.6589654071019795
+        },
+        {
+          "field_index": 5,
+          "amplitude": 1.0073353684287163,
+          "frequency": 3,
+          "phase": -1.6436384796144545
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.8595191171366502,
+          "frequency": 2,
+          "phase": -0.6040380655303919
+        },
+        {
+          "field_index": 7,
+          "amplitude": 1.0419515085694344,
+          "frequency": 1,
+          "phase": 1.6828544455923389
+        },
+        {
+          "field_index": 8,
+          "amplitude": 0.9487784927288201,
+          "frequency": 3,
+          "phase": -2.9075527996578243
+        }
+      ]
+    },
+    {
+      "file": "case_033_k10_m04.csv",
+      "field_family": "sine",
+      "K": 10,
+      "M": 4,
+      "phase_scale_c": 1.0,
+      "generation_seed": 53260827,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.3333333333333333,
+        0.6666666666666666,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.1598268263663667,
+          "frequency": 1,
+          "phase": 3.057274161764532
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.6166063545529696,
+          "frequency": 3,
+          "phase": 1.1533921724477256
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.7196602453587613,
+          "frequency": 1,
+          "phase": 0.5910506356727305
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.0182099462179572,
+          "frequency": 1,
+          "phase": 3.1006253890201743
+        },
+        {
+          "field_index": 4,
+          "amplitude": 1.1313428835498618,
+          "frequency": 1,
+          "phase": 2.3722635096697626
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.8905020481495047,
+          "frequency": 1,
+          "phase": 0.4109859491403367
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.82963727073359,
+          "frequency": 2,
+          "phase": -1.274076957026351
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.7909373529146434,
+          "frequency": 3,
+          "phase": 0.6648058246186004
+        },
+        {
+          "field_index": 8,
+          "amplitude": 0.6695443226470013,
+          "frequency": 1,
+          "phase": -0.6018750761585054
+        },
+        {
+          "field_index": 9,
+          "amplitude": 0.6682413857099212,
+          "frequency": 1,
+          "phase": 0.6161382145578536
+        }
+      ]
+    },
+    {
+      "file": "case_034_k05_m03.csv",
+      "field_family": "sine",
+      "K": 5,
+      "M": 3,
+      "phase_scale_c": 1.0,
+      "generation_seed": 54260830,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.8227857405047495,
+          "frequency": 3,
+          "phase": 1.9615009834821597
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.0160812131136958,
+          "frequency": 1,
+          "phase": 0.6209024507054632
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.174360905708046,
+          "frequency": 3,
+          "phase": -2.8465637701459325
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.7008932254534526,
+          "frequency": 3,
+          "phase": -1.678829028802495
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.9346858152115867,
+          "frequency": 2,
+          "phase": 0.7442380106384507
+        }
+      ]
+    },
+    {
+      "file": "case_035_k10_m06.csv",
+      "field_family": "sine",
+      "K": 10,
+      "M": 6,
+      "phase_scale_c": 1.0,
+      "generation_seed": 55260833,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.7174994189818569,
+          "frequency": 1,
+          "phase": -0.05707313261949842
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.6157060376010237,
+          "frequency": 3,
+          "phase": 2.1717699796829795
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.7134736478947865,
+          "frequency": 3,
+          "phase": 2.451504232173292
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.7329343337579932,
+          "frequency": 2,
+          "phase": -2.4161542458238494
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.9126699797213245,
+          "frequency": 2,
+          "phase": 2.6615892061804045
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.9535349448301023,
+          "frequency": 1,
+          "phase": -0.08825559972232178
+        },
+        {
+          "field_index": 6,
+          "amplitude": 1.0734727085773894,
+          "frequency": 3,
+          "phase": 2.8063732109527413
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.9613138910110771,
+          "frequency": 1,
+          "phase": 0.015983958918856178
+        },
+        {
+          "field_index": 8,
+          "amplitude": 0.7151425218348482,
+          "frequency": 3,
+          "phase": 2.595088330906722
+        },
+        {
+          "field_index": 9,
+          "amplitude": 0.6812779224183597,
+          "frequency": 1,
+          "phase": -2.598060443376837
+        }
+      ]
+    },
+    {
+      "file": "case_036_k07_m06.csv",
+      "field_family": "sine",
+      "K": 7,
+      "M": 6,
+      "phase_scale_c": 1.0,
+      "generation_seed": 56260836,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.2,
+        0.4,
+        0.6,
+        0.8,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.106404776640534,
+          "frequency": 3,
+          "phase": -1.4492726217909082
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.1111627327324292,
+          "frequency": 1,
+          "phase": 2.716396890550633
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.9418674998102876,
+          "frequency": 2,
+          "phase": 1.2347974640793549
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.0728013848876463,
+          "frequency": 3,
+          "phase": -0.4877899298248476
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.8518403504477862,
+          "frequency": 1,
+          "phase": 1.5922630080990334
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.6145507086764306,
+          "frequency": 2,
+          "phase": -0.022321541519044086
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.5935248237086623,
+          "frequency": 3,
+          "phase": -0.0034778577845231418
+        }
+      ]
+    },
+    {
+      "file": "case_037_k03_m03.csv",
+      "field_family": "sine",
+      "K": 3,
+      "M": 3,
+      "phase_scale_c": 1.0,
+      "generation_seed": 57260839,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.0691588686077869,
+          "frequency": 1,
+          "phase": 1.1684374805263635
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.9627927322455316,
+          "frequency": 3,
+          "phase": -0.7809719337305414
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.601772594386409,
+          "frequency": 2,
+          "phase": 2.6874605083083996
+        }
+      ]
+    },
+    {
+      "file": "case_038_k08_m04.csv",
+      "field_family": "sine",
+      "K": 8,
+      "M": 4,
+      "phase_scale_c": 1.0,
+      "generation_seed": 58260842,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.3333333333333333,
+        0.6666666666666666,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.1285380039498576,
+          "frequency": 1,
+          "phase": -0.8459910626727205
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.9975818791101632,
+          "frequency": 3,
+          "phase": 0.27175052139455813
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.8363596388566958,
+          "frequency": 1,
+          "phase": 1.3167073308913473
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.9772835344809963,
+          "frequency": 1,
+          "phase": 2.1022660804098052
+        },
+        {
+          "field_index": 4,
+          "amplitude": 1.1881834405999274,
+          "frequency": 2,
+          "phase": 1.4540874632151564
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.800273852033977,
+          "frequency": 1,
+          "phase": 2.0055886688898896
+        },
+        {
+          "field_index": 6,
+          "amplitude": 1.069552834885017,
+          "frequency": 1,
+          "phase": -0.13975588179916443
+        },
+        {
+          "field_index": 7,
+          "amplitude": 1.0491262367769372,
+          "frequency": 3,
+          "phase": 2.0309426737096477
+        }
+      ]
+    },
+    {
+      "file": "case_039_k04_m07.csv",
+      "field_family": "sine",
+      "K": 4,
+      "M": 7,
+      "phase_scale_c": 1.0,
+      "generation_seed": 59260845,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.16666666666666666,
+        0.3333333333333333,
+        0.5,
+        0.6666666666666666,
+        0.8333333333333334,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.9134494853085751,
+          "frequency": 2,
+          "phase": -0.005617303238449001
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.0546663154824154,
+          "frequency": 1,
+          "phase": 1.983524927204134
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.6462062237445267,
+          "frequency": 3,
+          "phase": -0.46500423982761374
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.8882668401914594,
+          "frequency": 2,
+          "phase": 1.7801626724021933
+        }
+      ]
+    },
+    {
+      "file": "case_040_k08_m09.csv",
+      "field_family": "sine",
+      "K": 8,
+      "M": 9,
+      "phase_scale_c": 1.0,
+      "generation_seed": 60260848,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.125,
+        0.25,
+        0.375,
+        0.5,
+        0.625,
+        0.75,
+        0.875,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.0740564964942612,
+          "frequency": 3,
+          "phase": 2.8639446210744515
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.6130650044409588,
+          "frequency": 1,
+          "phase": 2.9534099461742906
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.8241559549444355,
+          "frequency": 3,
+          "phase": 1.1306718606611623
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.9984957213493215,
+          "frequency": 3,
+          "phase": 2.7428426071515215
+        },
+        {
+          "field_index": 4,
+          "amplitude": 1.062827259020692,
+          "frequency": 1,
+          "phase": 1.6042755962441522
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.6880157115158351,
+          "frequency": 2,
+          "phase": 0.9860954546032126
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.8672671553269372,
+          "frequency": 2,
+          "phase": 2.5284717799187275
+        },
+        {
+          "field_index": 7,
+          "amplitude": 1.046736979905148,
+          "frequency": 1,
+          "phase": -1.7107706629340151
+        }
+      ]
+    },
+    {
+      "file": "case_041_k10_m10.csv",
+      "field_family": "sine",
+      "K": 10,
+      "M": 10,
+      "phase_scale_c": 1.0,
+      "generation_seed": 61260851,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.1111111111111111,
+        0.2222222222222222,
+        0.3333333333333333,
+        0.4444444444444444,
+        0.5555555555555556,
+        0.6666666666666666,
+        0.7777777777777778,
+        0.8888888888888888,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.0934077908329733,
+          "frequency": 1,
+          "phase": 0.5307239116133093
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.9659451126312504,
+          "frequency": 1,
+          "phase": -1.2216054554267772
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.1757140831945259,
+          "frequency": 1,
+          "phase": 3.1310514917992815
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.8677530955393444,
+          "frequency": 1,
+          "phase": 3.0569990988674
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.8556814765096034,
+          "frequency": 2,
+          "phase": 0.6871973172351975
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.6881309666491123,
+          "frequency": 2,
+          "phase": 1.1988512208911635
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.6404689691585617,
+          "frequency": 2,
+          "phase": 0.7024756959316778
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.9117049135304172,
+          "frequency": 1,
+          "phase": 2.7370915784520893
+        },
+        {
+          "field_index": 8,
+          "amplitude": 0.7654125482984466,
+          "frequency": 1,
+          "phase": 2.9897976806313684
+        },
+        {
+          "field_index": 9,
+          "amplitude": 1.1729477724322577,
+          "frequency": 3,
+          "phase": -1.9105652709334522
+        }
+      ]
+    },
+    {
+      "file": "case_042_k04_m10.csv",
+      "field_family": "sine",
+      "K": 4,
+      "M": 10,
+      "phase_scale_c": 1.0,
+      "generation_seed": 62260854,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.1111111111111111,
+        0.2222222222222222,
+        0.3333333333333333,
+        0.4444444444444444,
+        0.5555555555555556,
+        0.6666666666666666,
+        0.7777777777777778,
+        0.8888888888888888,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.128603328590915,
+          "frequency": 3,
+          "phase": -1.8128819958184488
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.7565435878292224,
+          "frequency": 1,
+          "phase": -1.2264692942823028
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.745945139801927,
+          "frequency": 3,
+          "phase": 1.683607001646374
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.8349997118888423,
+          "frequency": 3,
+          "phase": -1.5957287008537053
+        }
+      ]
+    },
+    {
+      "file": "case_043_k05_m04.csv",
+      "field_family": "sine",
+      "K": 5,
+      "M": 4,
+      "phase_scale_c": 1.0,
+      "generation_seed": 63260857,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.3333333333333333,
+        0.6666666666666666,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.0675221397442276,
+          "frequency": 2,
+          "phase": -1.3794024482925706
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.5977230844224329,
+          "frequency": 3,
+          "phase": 0.44277869374271805
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.5704318795354805,
+          "frequency": 3,
+          "phase": -3.0464229913620486
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.7275686284064891,
+          "frequency": 2,
+          "phase": 0.8495166291968705
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.6812662330464482,
+          "frequency": 1,
+          "phase": -1.4232235393181083
+        }
+      ]
+    },
+    {
+      "file": "case_044_k09_m10.csv",
+      "field_family": "sine",
+      "K": 9,
+      "M": 10,
+      "phase_scale_c": 1.0,
+      "generation_seed": 64260860,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.1111111111111111,
+        0.2222222222222222,
+        0.3333333333333333,
+        0.4444444444444444,
+        0.5555555555555556,
+        0.6666666666666666,
+        0.7777777777777778,
+        0.8888888888888888,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.9434190781465757,
+          "frequency": 3,
+          "phase": -1.7975304780222563
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.7580953772914765,
+          "frequency": 1,
+          "phase": -1.4584445407500621
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.6748619651427754,
+          "frequency": 3,
+          "phase": -1.8212757971149713
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.9382751398484941,
+          "frequency": 2,
+          "phase": 2.778508558388518
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.6750066424239839,
+          "frequency": 3,
+          "phase": 2.852411912462502
+        },
+        {
+          "field_index": 5,
+          "amplitude": 1.182383243819572,
+          "frequency": 2,
+          "phase": 1.7459429836825784
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.5747693415533086,
+          "frequency": 2,
+          "phase": 2.335418772161362
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.9785513923004193,
+          "frequency": 2,
+          "phase": 2.0722030271172107
+        },
+        {
+          "field_index": 8,
+          "amplitude": 1.0651122177015842,
+          "frequency": 1,
+          "phase": -2.1272970025134827
+        }
+      ]
+    },
+    {
+      "file": "case_045_k03_m05.csv",
+      "field_family": "sine",
+      "K": 3,
+      "M": 5,
+      "phase_scale_c": 1.0,
+      "generation_seed": 65260863,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.25,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 1.0543630219341171,
+          "frequency": 3,
+          "phase": -1.7425997004011036
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.5850353711970063,
+          "frequency": 2,
+          "phase": 3.135956984719785
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.8089374519647923,
+          "frequency": 3,
+          "phase": 2.332676629879324
+        }
+      ]
+    },
+    {
+      "file": "case_046_k06_m03.csv",
+      "field_family": "sine",
+      "K": 6,
+      "M": 3,
+      "phase_scale_c": 1.0,
+      "generation_seed": 66260866,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.9252445978694199,
+          "frequency": 2,
+          "phase": 0.8817768247063507
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.9734642721832403,
+          "frequency": 2,
+          "phase": -2.7298549345773635
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.9895924984010462,
+          "frequency": 2,
+          "phase": 0.24555176722273853
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.0288114298989357,
+          "frequency": 1,
+          "phase": -1.8841456350469084
+        },
+        {
+          "field_index": 4,
+          "amplitude": 1.1542525924518792,
+          "frequency": 1,
+          "phase": 0.6844270253552094
+        },
+        {
+          "field_index": 5,
+          "amplitude": 0.7227797232378201,
+          "frequency": 1,
+          "phase": -1.1702263231825711
+        }
+      ]
+    },
+    {
+      "file": "case_047_k03_m10.csv",
+      "field_family": "sine",
+      "K": 3,
+      "M": 10,
+      "phase_scale_c": 1.0,
+      "generation_seed": 67260869,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.1111111111111111,
+        0.2222222222222222,
+        0.3333333333333333,
+        0.4444444444444444,
+        0.5555555555555556,
+        0.6666666666666666,
+        0.7777777777777778,
+        0.8888888888888888,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.8673947238655093,
+          "frequency": 1,
+          "phase": -0.8765363332662575
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.0471960064088526,
+          "frequency": 1,
+          "phase": 2.4534289905500994
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.6266824775150424,
+          "frequency": 2,
+          "phase": 2.6692808279302938
+        }
+      ]
+    },
+    {
+      "file": "case_048_k05_m08.csv",
+      "field_family": "sine",
+      "K": 5,
+      "M": 8,
+      "phase_scale_c": 1.0,
+      "generation_seed": 68260872,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.14285714285714285,
+        0.2857142857142857,
+        0.42857142857142855,
+        0.5714285714285714,
+        0.7142857142857143,
+        0.8571428571428571,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.6475445365182909,
+          "frequency": 3,
+          "phase": 2.977772542771116
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.8709390428239165,
+          "frequency": 2,
+          "phase": -1.2780751082174975
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.078703908394369,
+          "frequency": 2,
+          "phase": 2.3699638123276925
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.7557053113937046,
+          "frequency": 1,
+          "phase": -0.895963042875926
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.7197507796519553,
+          "frequency": 3,
+          "phase": -0.2202292740590699
+        }
+      ]
+    },
+    {
+      "file": "case_049_k10_m03.csv",
+      "field_family": "sine",
+      "K": 10,
+      "M": 3,
+      "phase_scale_c": 1.0,
+      "generation_seed": 69260875,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.5,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.9297948819887993,
+          "frequency": 2,
+          "phase": 1.1898434244101637
+        },
+        {
+          "field_index": 1,
+          "amplitude": 1.125706489145371,
+          "frequency": 1,
+          "phase": 0.38976291837882915
+        },
+        {
+          "field_index": 2,
+          "amplitude": 1.1407750063766717,
+          "frequency": 2,
+          "phase": 0.41710821768958795
+        },
+        {
+          "field_index": 3,
+          "amplitude": 1.0193990274255793,
+          "frequency": 3,
+          "phase": 1.3503158391059928
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.5985169421524941,
+          "frequency": 1,
+          "phase": 2.748082175134777
+        },
+        {
+          "field_index": 5,
+          "amplitude": 1.169641443430124,
+          "frequency": 2,
+          "phase": 1.1355935546442968
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.5611663757111258,
+          "frequency": 1,
+          "phase": -0.5114580078177755
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.911801689078428,
+          "frequency": 2,
+          "phase": 0.8168201592038358
+        },
+        {
+          "field_index": 8,
+          "amplitude": 0.8054723580320953,
+          "frequency": 3,
+          "phase": -2.349674813561218
+        },
+        {
+          "field_index": 9,
+          "amplitude": 1.067083199886207,
+          "frequency": 2,
+          "phase": -2.2268287142784042
+        }
+      ]
+    },
+    {
+      "file": "case_050_k10_m09.csv",
+      "field_family": "sine",
+      "K": 10,
+      "M": 9,
+      "phase_scale_c": 1.0,
+      "generation_seed": 70260878,
+      "generation_attempt": 1,
+      "sensor_locations": [
+        0.0,
+        0.125,
+        0.25,
+        0.375,
+        0.5,
+        0.625,
+        0.75,
+        0.875,
+        1.0
+      ],
+      "field_parameters": [
+        {
+          "field_index": 0,
+          "amplitude": 0.621008393128765,
+          "frequency": 2,
+          "phase": -1.5473052590390797
+        },
+        {
+          "field_index": 1,
+          "amplitude": 0.9789650380748733,
+          "frequency": 1,
+          "phase": 0.4879671311905813
+        },
+        {
+          "field_index": 2,
+          "amplitude": 0.8286735319371596,
+          "frequency": 3,
+          "phase": -0.2420652681601032
+        },
+        {
+          "field_index": 3,
+          "amplitude": 0.8678859808535542,
+          "frequency": 3,
+          "phase": 1.6286545200796363
+        },
+        {
+          "field_index": 4,
+          "amplitude": 0.6636813058042411,
+          "frequency": 2,
+          "phase": -2.462980629287842
+        },
+        {
+          "field_index": 5,
+          "amplitude": 1.098003817934236,
+          "frequency": 2,
+          "phase": 2.901764781831754
+        },
+        {
+          "field_index": 6,
+          "amplitude": 0.7014260694949376,
+          "frequency": 3,
+          "phase": 2.937165156636903
+        },
+        {
+          "field_index": 7,
+          "amplitude": 0.6700502270740798,
+          "frequency": 2,
+          "phase": -0.6169205922760947
+        },
+        {
+          "field_index": 8,
+          "amplitude": 0.8835268603787718,
+          "frequency": 3,
+          "phase": -0.4892603247840466
+        },
+        {
+          "field_index": 9,
+          "amplitude": 0.6294909230775141,
+          "frequency": 2,
+          "phase": -1.0209259760990932
+        }
+      ]
+    }
+  ]
+}
