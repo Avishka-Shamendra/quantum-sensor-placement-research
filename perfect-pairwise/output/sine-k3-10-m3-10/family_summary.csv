@@ -1,2 +1,2 @@
 family,case_count,exact_case_count,mean_Nmin_optimal,mean_Nmin_greedy,mean_greedy_gap,mean_greedy_to_optimal_ratio,median_greedy_to_optimal_ratio,max_greedy_to_optimal_ratio,mean_optimal_seconds,mean_greedy_seconds
-sine,50,50,22.88,26.76,3.88,1.1505647705073159,1.0379944482997918,1.9069767441860466,0.003343856399413198,0.00021517050005495547
+sine,50,50,22.88,26.76,3.88,1.1505647705073159,1.0379944482997918,1.9069767441860466,0.0033352774671278895,0.00021171169932931663

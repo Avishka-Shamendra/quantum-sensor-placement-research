@@ -1,2 +1,2 @@
 case,family,F,M,mode,Nmin_optimal,Nmin_greedy,greedy_approximation_bound,timing_repetitions,greedy_minus_optimal,greedy_to_optimal_ratio,bound_utilization,optimal_seconds,greedy_seconds
-case_025_k09_m04,gaussian,9,4,both,40,42,183.3407575382444,100,2,1.05,0.22908163227829423,0.0009225191595032811,0.0003378916694782674
+case_025_k09_m04,gaussian,9,4,both,40,42,183.3407575382444,100,2,1.05,0.22908163227829423,0.0007860079105012119,0.00032419582828879356
