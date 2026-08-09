@@ -1,2 +1,0 @@
-family,case_count,exact_case_count,mean_Nmin_optimal,mean_Nmin_greedy,mean_greedy_gap,mean_greedy_to_optimal_ratio,median_greedy_to_optimal_ratio,max_greedy_to_optimal_ratio,mean_optimal_seconds,mean_greedy_seconds
-fourier,50,50,28.86,34.28,5.42,1.157058750709058,1.1557575757575758,1.4285714285714286,0.011775235083187,0.00024347868342883887

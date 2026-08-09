@@ -1,2 +1,7 @@
 __pycache__/
 .DS_Store
+.venv/
+
+# Large deterministic paper-study intermediates are regenerated from fixed seeds.
+min-sensor-zero-error/inputs/study-*/
+min-sensor-zero-error/output/study-*/

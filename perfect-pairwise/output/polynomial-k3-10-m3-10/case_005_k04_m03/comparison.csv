@@ -1,2 +1,0 @@
-case,family,F,M,mode,Nmin_optimal,Nmin_greedy,greedy_approximation_bound,timing_repetitions,greedy_minus_optimal,greedy_to_optimal_ratio,bound_utilization,optimal_seconds,greedy_seconds
-case_005_k04_m03,polynomial,4,3,both,20,20,55.8351893845611,100,0,1.0,0.35819704778381517,2.3369588889181613e-05,2.1124579943716527e-05

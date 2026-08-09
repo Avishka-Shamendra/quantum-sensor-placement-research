@@ -1,2 +1,0 @@
-case,family,F,M,mode,Nmin_optimal,Nmin_greedy,greedy_approximation_bound,timing_repetitions,greedy_minus_optimal,greedy_to_optimal_ratio,bound_utilization,optimal_seconds,greedy_seconds
-case_049_k10_m03,sine,10,3,both,20,21,96.13324979540639,100,1,1.05,0.21844679176760193,0.0002663741703145206,0.00022036375012248754

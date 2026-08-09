@@ -1,0 +1,2527 @@
+{
+  "schema_version": 1,
+  "dataset": "benchmark",
+  "timing_repetitions": 1,
+  "phase_data": {
+    "interval": "(-pi, pi]",
+    "definition": "r_ijm = Arg(exp(i*c*(f_i(x_m)-f_j(x_m))))",
+    "reverse_pair": "r_jim = principal_phase(-r_ijm)",
+    "stored_pairs": "i < j only",
+    "sensor_threshold": "N_ijm = ceil(pi / abs(r_ijm)); undefined when r_ijm = 0",
+    "phase_scale_c": 1.0
+  },
+  "cases": [
+    {
+      "case": "case_001",
+      "field_model": "fourier",
+      "K": 8,
+      "M": 3,
+      "pair_count": 28,
+      "optimal": {
+        "minimum_sensors": 645,
+        "allocation": [
+          0,
+          645,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            null,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            null,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            null,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            null,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            null,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            null,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0004942920058965683
+      },
+      "greedy": {
+        "minimum_sensors": 653,
+        "allocation": [
+          8,
+          645,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            null,
+            1,
+            0,
+            1,
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            1,
+            null,
+            1,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            0,
+            1,
+            null,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            null,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            null,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            1,
+            1,
+            1,
+            1,
+            null,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            0,
+            1,
+            null
+          ]
+        ],
+        "mean_seconds": 0.00042108260095119476
+      },
+      "comparison": {
+        "additional_sensors": 8,
+        "greedy_to_optimal_ratio": 1.012403100775194,
+        "theorem_factor": 4.332204510175204,
+        "bound_utilization": 0.23369236110560487
+      }
+    },
+    {
+      "case": "case_002",
+      "field_model": "polynomial",
+      "K": 7,
+      "M": 5,
+      "pair_count": 21,
+      "optimal": {
+        "minimum_sensors": 28,
+        "allocation": [
+          7,
+          0,
+          0,
+          0,
+          21
+        ],
+        "pair_locations": [
+          [
+            null,
+            4,
+            0,
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            null,
+            0,
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            0,
+            0,
+            null,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            4,
+            4,
+            0,
+            null,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            0,
+            4,
+            null,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            0,
+            4,
+            4,
+            null,
+            4
+          ],
+          [
+            4,
+            4,
+            0,
+            4,
+            4,
+            4,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0014629592187702656
+      },
+      "greedy": {
+        "minimum_sensors": 29,
+        "allocation": [
+          7,
+          0,
+          0,
+          0,
+          22
+        ],
+        "pair_locations": [
+          [
+            null,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            null,
+            4,
+            4,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            null,
+            0,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            0,
+            null,
+            4,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4,
+            null,
+            4,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4,
+            4,
+            null,
+            4
+          ],
+          [
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0005740001797676086
+      },
+      "comparison": {
+        "additional_sensors": 1,
+        "greedy_to_optimal_ratio": 1.0357142857142858,
+        "theorem_factor": 4.044522437723423,
+        "bound_utilization": 0.2560782642850828
+      }
+    },
+    {
+      "case": "case_003",
+      "field_model": "sine",
+      "K": 6,
+      "M": 6,
+      "pair_count": 15,
+      "optimal": {
+        "minimum_sensors": 15,
+        "allocation": [
+          3,
+          0,
+          12,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            2,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            null,
+            0,
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            null,
+            2,
+            2,
+            2
+          ],
+          [
+            0,
+            2,
+            2,
+            null,
+            2,
+            2
+          ],
+          [
+            0,
+            0,
+            2,
+            2,
+            null,
+            2
+          ],
+          [
+            0,
+            0,
+            2,
+            2,
+            2,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0008727079257369041
+      },
+      "greedy": {
+        "minimum_sensors": 19,
+        "allocation": [
+          6,
+          0,
+          4,
+          0,
+          9,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            2,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            null,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            null,
+            2,
+            4,
+            2
+          ],
+          [
+            0,
+            0,
+            2,
+            null,
+            0,
+            4
+          ],
+          [
+            0,
+            0,
+            4,
+            0,
+            null,
+            2
+          ],
+          [
+            0,
+            0,
+            2,
+            4,
+            2,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0003292500041425228
+      },
+      "comparison": {
+        "additional_sensors": 4,
+        "greedy_to_optimal_ratio": 1.2666666666666666,
+        "theorem_factor": 3.70805020110221,
+        "bound_utilization": 0.3415991148906648
+      }
+    },
+    {
+      "case": "case_004",
+      "field_model": "gaussian",
+      "K": 3,
+      "M": 7,
+      "pair_count": 3,
+      "optimal": {
+        "minimum_sensors": 6,
+        "allocation": [
+          0,
+          6,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            1,
+            1
+          ],
+          [
+            1,
+            null,
+            1
+          ],
+          [
+            1,
+            1,
+            null
+          ]
+        ],
+        "mean_seconds": 5.77499158680439e-05
+      },
+      "greedy": {
+        "minimum_sensors": 6,
+        "allocation": [
+          0,
+          6,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            1,
+            1
+          ],
+          [
+            1,
+            null,
+            1
+          ],
+          [
+            1,
+            1,
+            null
+          ]
+        ],
+        "mean_seconds": 4.3042004108428955e-05
+      },
+      "comparison": {
+        "additional_sensors": 0,
+        "greedy_to_optimal_ratio": 1.0,
+        "theorem_factor": 2.09861228866811,
+        "bound_utilization": 0.4765053580405043
+      }
+    },
+    {
+      "case": "case_005",
+      "field_model": "gaussian",
+      "K": 5,
+      "M": 8,
+      "pair_count": 10,
+      "optimal": {
+        "minimum_sensors": 18,
+        "allocation": [
+          0,
+          0,
+          5,
+          0,
+          13,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            4,
+            4,
+            4,
+            2
+          ],
+          [
+            4,
+            null,
+            4,
+            2,
+            2
+          ],
+          [
+            4,
+            4,
+            null,
+            2,
+            2
+          ],
+          [
+            4,
+            2,
+            2,
+            null,
+            4
+          ],
+          [
+            2,
+            2,
+            2,
+            4,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0006775828078389168
+      },
+      "greedy": {
+        "minimum_sensors": 20,
+        "allocation": [
+          10,
+          0,
+          0,
+          10,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            null,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            null,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            null,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            3,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0003013745881617069
+      },
+      "comparison": {
+        "additional_sensors": 2,
+        "greedy_to_optimal_ratio": 1.1111111111111112,
+        "theorem_factor": 3.302585092994046,
+        "bound_utilization": 0.33643678507123764
+      }
+    },
+    {
+      "case": "case_006",
+      "field_model": "sine",
+      "K": 4,
+      "M": 4,
+      "pair_count": 6,
+      "optimal": {
+        "minimum_sensors": 9,
+        "allocation": [
+          3,
+          6,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            1,
+            0,
+            1
+          ],
+          [
+            1,
+            null,
+            1,
+            1
+          ],
+          [
+            0,
+            1,
+            null,
+            0
+          ],
+          [
+            1,
+            1,
+            0,
+            null
+          ]
+        ],
+        "mean_seconds": 7.308321073651314e-05
+      },
+      "greedy": {
+        "minimum_sensors": 9,
+        "allocation": [
+          6,
+          3,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            0,
+            0,
+            1
+          ],
+          [
+            0,
+            null,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            null,
+            0
+          ],
+          [
+            1,
+            0,
+            0,
+            null
+          ]
+        ],
+        "mean_seconds": 5.641719326376915e-05
+      },
+      "comparison": {
+        "additional_sensors": 0,
+        "greedy_to_optimal_ratio": 1.0,
+        "theorem_factor": 2.791759469228055,
+        "bound_utilization": 0.3581970477838151
+      }
+    },
+    {
+      "case": "case_007",
+      "field_model": "polynomial",
+      "K": 6,
+      "M": 6,
+      "pair_count": 15,
+      "optimal": {
+        "minimum_sensors": 54,
+        "allocation": [
+          0,
+          0,
+          0,
+          43,
+          0,
+          11
+        ],
+        "pair_locations": [
+          [
+            null,
+            3,
+            3,
+            3,
+            3,
+            5
+          ],
+          [
+            3,
+            null,
+            3,
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            3,
+            null,
+            3,
+            5,
+            3
+          ],
+          [
+            3,
+            3,
+            3,
+            null,
+            3,
+            5
+          ],
+          [
+            3,
+            3,
+            5,
+            3,
+            null,
+            3
+          ],
+          [
+            5,
+            3,
+            3,
+            5,
+            3,
+            null
+          ]
+        ],
+        "mean_seconds": 0.001236415933817625
+      },
+      "greedy": {
+        "minimum_sensors": 62,
+        "allocation": [
+          29,
+          0,
+          0,
+          0,
+          0,
+          33
+        ],
+        "pair_locations": [
+          [
+            null,
+            5,
+            0,
+            0,
+            5,
+            5
+          ],
+          [
+            5,
+            null,
+            5,
+            5,
+            5,
+            5
+          ],
+          [
+            0,
+            5,
+            null,
+            0,
+            5,
+            5
+          ],
+          [
+            0,
+            5,
+            0,
+            null,
+            5,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            null,
+            5
+          ],
+          [
+            5,
+            5,
+            5,
+            5,
+            5,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0003582919016480446
+      },
+      "comparison": {
+        "additional_sensors": 8,
+        "greedy_to_optimal_ratio": 1.1481481481481481,
+        "theorem_factor": 3.70805020110221,
+        "bound_utilization": 0.30963662460849734
+      }
+    },
+    {
+      "case": "case_008",
+      "field_model": "fourier",
+      "K": 5,
+      "M": 8,
+      "pair_count": 10,
+      "optimal": {
+        "minimum_sensors": 26,
+        "allocation": [
+          16,
+          0,
+          10,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            2,
+            null,
+            2,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            null,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            null,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0008609588257968426
+      },
+      "greedy": {
+        "minimum_sensors": 28,
+        "allocation": [
+          0,
+          20,
+          8,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            null,
+            1,
+            1,
+            2
+          ],
+          [
+            1,
+            1,
+            null,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            null,
+            1
+          ],
+          [
+            1,
+            2,
+            1,
+            1,
+            null
+          ]
+        ],
+        "mean_seconds": 0.00023979227989912033
+      },
+      "comparison": {
+        "additional_sensors": 2,
+        "greedy_to_optimal_ratio": 1.0769230769230769,
+        "theorem_factor": 3.302585092994046,
+        "bound_utilization": 0.3260848839921226
+      }
+    },
+    {
+      "case": "case_009",
+      "field_model": "fourier",
+      "K": 4,
+      "M": 3,
+      "pair_count": 6,
+      "optimal": {
+        "minimum_sensors": 95,
+        "allocation": [
+          0,
+          0,
+          95
+        ],
+        "pair_locations": [
+          [
+            null,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            null,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            null,
+            2
+          ],
+          [
+            2,
+            2,
+            2,
+            null
+          ]
+        ],
+        "mean_seconds": 5.374988541007042e-05
+      },
+      "greedy": {
+        "minimum_sensors": 119,
+        "allocation": [
+          95,
+          24,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            null,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            null,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            null
+          ]
+        ],
+        "mean_seconds": 5.229143425822258e-05
+      },
+      "comparison": {
+        "additional_sensors": 24,
+        "greedy_to_optimal_ratio": 1.2526315789473683,
+        "theorem_factor": 2.791759469228055,
+        "bound_utilization": 0.4486889335397263
+      }
+    },
+    {
+      "case": "case_010",
+      "field_model": "gaussian",
+      "K": 8,
+      "M": 5,
+      "pair_count": 28,
+      "optimal": {
+        "minimum_sensors": 32,
+        "allocation": [
+          10,
+          0,
+          0,
+          0,
+          22
+        ],
+        "pair_locations": [
+          [
+            null,
+            0,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            null,
+            4,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            4,
+            4,
+            null,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            null,
+            4,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            4,
+            null,
+            4,
+            4,
+            4
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            4,
+            null,
+            4,
+            4
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            4,
+            4,
+            null,
+            4
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            4,
+            4,
+            4,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0018941247835755348
+      },
+      "greedy": {
+        "minimum_sensors": 46,
+        "allocation": [
+          18,
+          0,
+          28,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            null,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            2,
+            null,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            null,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            null,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            null,
+            2,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            null,
+            2
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            2,
+            2,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0008266246877610683
+      },
+      "comparison": {
+        "additional_sensors": 14,
+        "greedy_to_optimal_ratio": 1.4375,
+        "theorem_factor": 4.332204510175204,
+        "bound_utilization": 0.3318172068340015
+      }
+    },
+    {
+      "case": "case_011",
+      "field_model": "polynomial",
+      "K": 7,
+      "M": 4,
+      "pair_count": 21,
+      "optimal": {
+        "minimum_sensors": 42,
+        "allocation": [
+          12,
+          12,
+          0,
+          18
+        ],
+        "pair_locations": [
+          [
+            null,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            null,
+            1,
+            0,
+            3,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            null,
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            null,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            1,
+            0,
+            null,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            null,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            3,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0007233330979943275
+      },
+      "greedy": {
+        "minimum_sensors": 42,
+        "allocation": [
+          12,
+          12,
+          0,
+          18
+        ],
+        "pair_locations": [
+          [
+            null,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            null,
+            1,
+            0,
+            3,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            null,
+            0,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            null,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            3,
+            1,
+            0,
+            null,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            null,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            3,
+            null
+          ]
+        ],
+        "mean_seconds": 0.00034129200503230095
+      },
+      "comparison": {
+        "additional_sensors": 0,
+        "greedy_to_optimal_ratio": 1.0,
+        "theorem_factor": 4.044522437723423,
+        "bound_utilization": 0.24724797930973505
+      }
+    },
+    {
+      "case": "case_012",
+      "field_model": "sine",
+      "K": 3,
+      "M": 7,
+      "pair_count": 3,
+      "optimal": {
+        "minimum_sensors": 5,
+        "allocation": [
+          3,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            0,
+            0
+          ],
+          [
+            0,
+            null,
+            1
+          ],
+          [
+            0,
+            1,
+            null
+          ]
+        ],
+        "mean_seconds": 5.695829167962074e-05
+      },
+      "greedy": {
+        "minimum_sensors": 5,
+        "allocation": [
+          3,
+          2,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            1,
+            0
+          ],
+          [
+            1,
+            null,
+            1
+          ],
+          [
+            0,
+            1,
+            null
+          ]
+        ],
+        "mean_seconds": 4.4125132262706757e-05
+      },
+      "comparison": {
+        "additional_sensors": 0,
+        "greedy_to_optimal_ratio": 1.0,
+        "theorem_factor": 2.09861228866811,
+        "bound_utilization": 0.4765053580405043
+      }
+    },
+    {
+      "case": "case_013",
+      "field_model": "sine",
+      "K": 7,
+      "M": 6,
+      "pair_count": 21,
+      "optimal": {
+        "minimum_sensors": 14,
+        "allocation": [
+          9,
+          0,
+          5,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            2,
+            0,
+            0,
+            0,
+            0,
+            2
+          ],
+          [
+            2,
+            null,
+            0,
+            0,
+            0,
+            0,
+            2
+          ],
+          [
+            0,
+            0,
+            null,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            null,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            null,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            null,
+            0
+          ],
+          [
+            2,
+            2,
+            0,
+            0,
+            0,
+            0,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0019494998268783092
+      },
+      "greedy": {
+        "minimum_sensors": 16,
+        "allocation": [
+          9,
+          0,
+          2,
+          0,
+          5,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            4,
+            4,
+            4,
+            0,
+            0,
+            4
+          ],
+          [
+            4,
+            null,
+            4,
+            0,
+            4,
+            4,
+            2
+          ],
+          [
+            4,
+            4,
+            null,
+            4,
+            4,
+            4,
+            0
+          ],
+          [
+            4,
+            0,
+            4,
+            null,
+            4,
+            4,
+            0
+          ],
+          [
+            0,
+            4,
+            4,
+            4,
+            null,
+            0,
+            4
+          ],
+          [
+            0,
+            4,
+            4,
+            4,
+            0,
+            null,
+            4
+          ],
+          [
+            4,
+            2,
+            0,
+            0,
+            4,
+            4,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0004371250979602337
+      },
+      "comparison": {
+        "additional_sensors": 2,
+        "greedy_to_optimal_ratio": 1.1428571428571428,
+        "theorem_factor": 4.044522437723423,
+        "bound_utilization": 0.28256911921112576
+      }
+    },
+    {
+      "case": "case_014",
+      "field_model": "gaussian",
+      "K": 8,
+      "M": 7,
+      "pair_count": 28,
+      "optimal": {
+        "minimum_sensors": 33,
+        "allocation": [
+          0,
+          0,
+          22,
+          0,
+          11,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            2,
+            2,
+            2,
+            4,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            null,
+            4,
+            4,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            4,
+            null,
+            4,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            4,
+            4,
+            null,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            4,
+            2,
+            2,
+            2,
+            null,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            2,
+            2,
+            2,
+            null,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            null,
+            2
+          ],
+          [
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            2,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0044952500611543655
+      },
+      "greedy": {
+        "minimum_sensors": 41,
+        "allocation": [
+          16,
+          0,
+          0,
+          18,
+          0,
+          0,
+          7
+        ],
+        "pair_locations": [
+          [
+            null,
+            3,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            3,
+            null,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            null,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            null,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            null,
+            6,
+            3,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            6,
+            null,
+            3,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            3,
+            3,
+            null,
+            3
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            3,
+            3,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0010362924076616764
+      },
+      "comparison": {
+        "additional_sensors": 8,
+        "greedy_to_optimal_ratio": 1.2424242424242424,
+        "theorem_factor": 4.332204510175204,
+        "bound_utilization": 0.2867879943123913
+      }
+    },
+    {
+      "case": "case_015",
+      "field_model": "fourier",
+      "K": 6,
+      "M": 3,
+      "pair_count": 15,
+      "optimal": {
+        "minimum_sensors": 43,
+        "allocation": [
+          0,
+          0,
+          43
+        ],
+        "pair_locations": [
+          [
+            null,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            null,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            null,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            2,
+            null,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            2,
+            2,
+            null,
+            2
+          ],
+          [
+            2,
+            2,
+            2,
+            2,
+            2,
+            null
+          ]
+        ],
+        "mean_seconds": 0.00021074991673231125
+      },
+      "greedy": {
+        "minimum_sensors": 43,
+        "allocation": [
+          36,
+          7,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            null,
+            0,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            0,
+            null,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            null,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            0,
+            null,
+            0
+          ],
+          [
+            0,
+            0,
+            0,
+            0,
+            0,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0001726248301565647
+      },
+      "comparison": {
+        "additional_sensors": 0,
+        "greedy_to_optimal_ratio": 1.0,
+        "theorem_factor": 3.70805020110221,
+        "bound_utilization": 0.26968351175578803
+      }
+    },
+    {
+      "case": "case_016",
+      "field_model": "polynomial",
+      "K": 3,
+      "M": 5,
+      "pair_count": 3,
+      "optimal": {
+        "minimum_sensors": 16,
+        "allocation": [
+          16,
+          0,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            0,
+            0
+          ],
+          [
+            0,
+            null,
+            0
+          ],
+          [
+            0,
+            0,
+            null
+          ]
+        ],
+        "mean_seconds": 4.1584018617868423e-05
+      },
+      "greedy": {
+        "minimum_sensors": 20,
+        "allocation": [
+          0,
+          0,
+          11,
+          0,
+          9
+        ],
+        "pair_locations": [
+          [
+            null,
+            4,
+            2
+          ],
+          [
+            4,
+            null,
+            4
+          ],
+          [
+            2,
+            4,
+            null
+          ]
+        ],
+        "mean_seconds": 3.5375356674194336e-05
+      },
+      "comparison": {
+        "additional_sensors": 4,
+        "greedy_to_optimal_ratio": 1.25,
+        "theorem_factor": 2.09861228866811,
+        "bound_utilization": 0.5956316975506304
+      }
+    },
+    {
+      "case": "case_017",
+      "field_model": "polynomial",
+      "K": 4,
+      "M": 4,
+      "pair_count": 6,
+      "optimal": {
+        "minimum_sensors": 14,
+        "allocation": [
+          0,
+          0,
+          0,
+          14
+        ],
+        "pair_locations": [
+          [
+            null,
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            null,
+            3,
+            3
+          ],
+          [
+            3,
+            3,
+            null,
+            3
+          ],
+          [
+            3,
+            3,
+            3,
+            null
+          ]
+        ],
+        "mean_seconds": 8.450029417872429e-05
+      },
+      "greedy": {
+        "minimum_sensors": 14,
+        "allocation": [
+          0,
+          0,
+          0,
+          14
+        ],
+        "pair_locations": [
+          [
+            null,
+            3,
+            3,
+            3
+          ],
+          [
+            3,
+            null,
+            3,
+            3
+          ],
+          [
+            3,
+            3,
+            null,
+            3
+          ],
+          [
+            3,
+            3,
+            3,
+            null
+          ]
+        ],
+        "mean_seconds": 7.025012746453285e-05
+      },
+      "comparison": {
+        "additional_sensors": 0,
+        "greedy_to_optimal_ratio": 1.0,
+        "theorem_factor": 2.791759469228055,
+        "bound_utilization": 0.3581970477838151
+      }
+    },
+    {
+      "case": "case_018",
+      "field_model": "gaussian",
+      "K": 5,
+      "M": 8,
+      "pair_count": 10,
+      "optimal": {
+        "minimum_sensors": 15,
+        "allocation": [
+          0,
+          0,
+          0,
+          10,
+          0,
+          5,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            3,
+            3,
+            5,
+            5
+          ],
+          [
+            3,
+            null,
+            5,
+            3,
+            3
+          ],
+          [
+            3,
+            5,
+            null,
+            3,
+            3
+          ],
+          [
+            5,
+            3,
+            3,
+            null,
+            3
+          ],
+          [
+            5,
+            3,
+            3,
+            3,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0005585001781582832
+      },
+      "greedy": {
+        "minimum_sensors": 17,
+        "allocation": [
+          0,
+          0,
+          0,
+          7,
+          0,
+          0,
+          0,
+          10
+        ],
+        "pair_locations": [
+          [
+            null,
+            3,
+            7,
+            7,
+            7
+          ],
+          [
+            3,
+            null,
+            7,
+            7,
+            7
+          ],
+          [
+            7,
+            7,
+            null,
+            7,
+            7
+          ],
+          [
+            7,
+            7,
+            7,
+            null,
+            7
+          ],
+          [
+            7,
+            7,
+            7,
+            7,
+            null
+          ]
+        ],
+        "mean_seconds": 0.00020862510427832603
+      },
+      "comparison": {
+        "additional_sensors": 2,
+        "greedy_to_optimal_ratio": 1.1333333333333333,
+        "theorem_factor": 3.302585092994046,
+        "bound_utilization": 0.3431655207726624
+      }
+    },
+    {
+      "case": "case_019",
+      "field_model": "sine",
+      "K": 3,
+      "M": 5,
+      "pair_count": 3,
+      "optimal": {
+        "minimum_sensors": 6,
+        "allocation": [
+          0,
+          6,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            1,
+            1
+          ],
+          [
+            1,
+            null,
+            1
+          ],
+          [
+            1,
+            1,
+            null
+          ]
+        ],
+        "mean_seconds": 4.2292289435863495e-05
+      },
+      "greedy": {
+        "minimum_sensors": 6,
+        "allocation": [
+          0,
+          6,
+          0,
+          0,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            1,
+            1
+          ],
+          [
+            1,
+            null,
+            1
+          ],
+          [
+            1,
+            1,
+            null
+          ]
+        ],
+        "mean_seconds": 3.054225817322731e-05
+      },
+      "comparison": {
+        "additional_sensors": 0,
+        "greedy_to_optimal_ratio": 1.0,
+        "theorem_factor": 2.09861228866811,
+        "bound_utilization": 0.4765053580405043
+      }
+    },
+    {
+      "case": "case_020",
+      "field_model": "fourier",
+      "K": 6,
+      "M": 4,
+      "pair_count": 15,
+      "optimal": {
+        "minimum_sensors": 33,
+        "allocation": [
+          0,
+          0,
+          25,
+          8
+        ],
+        "pair_locations": [
+          [
+            null,
+            2,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            null,
+            2,
+            2,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            null,
+            2,
+            2,
+            3
+          ],
+          [
+            2,
+            2,
+            2,
+            null,
+            2,
+            2
+          ],
+          [
+            2,
+            2,
+            2,
+            2,
+            null,
+            2
+          ],
+          [
+            2,
+            2,
+            3,
+            2,
+            2,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0004390827380120754
+      },
+      "greedy": {
+        "minimum_sensors": 51,
+        "allocation": [
+          0,
+          30,
+          21,
+          0
+        ],
+        "pair_locations": [
+          [
+            null,
+            1,
+            1,
+            2,
+            1,
+            1
+          ],
+          [
+            1,
+            null,
+            1,
+            1,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            null,
+            1,
+            1,
+            1
+          ],
+          [
+            2,
+            1,
+            1,
+            null,
+            1,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            null,
+            1
+          ],
+          [
+            1,
+            1,
+            1,
+            1,
+            1,
+            null
+          ]
+        ],
+        "mean_seconds": 0.0002558748237788677
+      },
+      "comparison": {
+        "additional_sensors": 18,
+        "greedy_to_optimal_ratio": 1.5454545454545454,
+        "theorem_factor": 3.70805020110221,
+        "bound_utilization": 0.4167836090771269
+      }
+    }
+  ]
+}
