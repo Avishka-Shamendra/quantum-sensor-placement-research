@@ -1,7 +1,10 @@
 __pycache__/
 .DS_Store
 .venv/
+.ipynb_checkpoints/
 
-# Large deterministic paper-study intermediates are regenerated from fixed seeds.
-min-sensor-zero-error/inputs/study-*/
-min-sensor-zero-error/output/study-*/
+# Large deterministic benchmark intermediates are regenerated from fixed seeds.
+min-sensor-zero-error/inputs/benchmark_1d/
+min-sensor-zero-error/inputs/benchmark_2d/
+min-sensor-zero-error/output/benchmark_1d/
+min-sensor-zero-error/output/benchmark_2d/

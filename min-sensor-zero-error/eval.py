@@ -2,7 +2,7 @@
 
 Run from the repository root:
 
-    python3 min-sensor-zero-error/eval.py benchmark
+    python3 min-sensor-zero-error/eval.py benchmark_1d
 
 There are no algorithm modes: every case is evaluated with both the exact
 dynamic program and the greedy gain-based approximation.
@@ -61,9 +61,9 @@ def _parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "dataset",
         nargs="?",
-        default="benchmark",
+        default="benchmark_1d",
         type=_dataset_name,
-        help="Dataset directory below inputs/ (default: benchmark).",
+        help="Dataset directory below inputs/ (default: benchmark_1d).",
     )
     parser.add_argument(
         "--repeats",
@@ -210,6 +210,7 @@ def _evaluate_case(
     return {
         "case": case_path.stem,
         "field_model": metadata.get("field_model", "unknown"),
+        "spatial_dimension": metadata.get("spatial_dimension"),
         "replicate": metadata.get("replicate"),
         "generation_seed": metadata.get("generation_seed"),
         "phase_scale_c": metadata.get("phase_scale_c"),
@@ -238,6 +239,7 @@ def _summary_row(record: dict[str, object]) -> dict[str, object]:
         "dataset": record.get("dataset"),
         "case": record["case"],
         "field_model": record["field_model"],
+        "spatial_dimension": record.get("spatial_dimension"),
         "replicate": record.get("replicate"),
         "generation_seed": record.get("generation_seed"),
         "phase_scale_c": record.get("phase_scale_c"),
@@ -311,7 +313,7 @@ def _print_summary(dataset_name: str, records: list[dict[str, object]]) -> None:
 
 
 def evaluate_dataset(
-    dataset_name: str = "benchmark", repeats: int = 1
+    dataset_name: str = "benchmark_1d", repeats: int = 1
 ) -> tuple[list[dict[str, object]], Path]:
     """Run both algorithms for every case and write JSON/CSV results."""
     if not isinstance(dataset_name, str) or not DATASET_NAME.fullmatch(dataset_name):

@@ -1,15 +1,12 @@
 # Minimum-Sensor Zero-Error Discrimination
 
-This directory contains the complete reproducible pipeline for comparing the
-paper's **Exact Dynamic Programming** method with its **Greedy Gain-Based
-Approximation**.
-
-The research rationale, reporting plan, and limitations are documented in
-[`PAPER_EVALUATION.md`](PAPER_EVALUATION.md).
+This directory contains the reproducible pipeline for comparing the paper's
+**Exact Dynamic Programming** method with its **Greedy Gain-Based
+Approximation** on one- and two-dimensional spatial fields.
 
 ## Recommended entry point
 
-Create the environment from the repository root:
+From the repository root:
 
 ```bash
 python3 -m venv .venv
@@ -18,65 +15,88 @@ python -m pip install -r min-sensor-zero-error/requirements.txt
 jupyter lab min-sensor-zero-error/evaluate_algorithms.ipynb
 ```
 
-Run all notebook cells. The first run generates missing study datasets, runs
-both methods on every case, computes uncertainty intervals, displays the
-figures, and exports manuscript-ready PDF and PNG versions.
+Run all notebook cells. Missing benchmark inputs are generated from fixed
+seeds, both algorithms are run on every case, and the combined tables and
+figures are written below `min-sensor-zero-error/output/benchmark-analysis/`.
 
 The same workflow can be run without Jupyter:
 
 ```bash
-python min-sensor-zero-error/evaluate_paper_studies.py
+python min-sensor-zero-error/evaluate_benchmarks.py
 ```
 
-For final runtime measurements, use at least five timing repetitions on an
-otherwise idle machine:
+## Benchmark design
 
-```bash
-python min-sensor-zero-error/evaluate_paper_studies.py --repeats 5
-```
+The evaluation uses two separate datasets:
 
-The quality results do not require repeats because both solvers are
-deterministic; repeats only average timing noise.
-
-## Paper-study design
-
-The old 20-case `benchmark` is retained only as a quick smoke test. It is not
-the dataset used to support paper claims.
-
-| Dataset | Purpose | Factorial design | Cases |
+| Dataset | Spatial region | Design | Cases |
 |---|---|---:|---:|
-| `study-primary` | Main quality and runtime evidence | 4 models × 8 `K` × 3 `M` × 30 realizations | 2,880 |
-| `study-replication` | Independent-seed confirmation | Same factors × 10 new realizations | 960 |
-| `study-sensitivity` | Paired phase-scale robustness | 4 models × 3 `K` × 2 `M` × 3 `c` × 15 realizations | 1,080 |
+| `benchmark_1d` | `[0, 1]` | 3 families × 8 `K` × 8 `M` × 30 realizations | 5,760 |
+| `benchmark_2d` | `[0, 1]^2` | 3 families × 8 `K` × 8 `M` × 30 realizations | 5,760 |
 
-The primary and replication studies use `K = 3, …, 10`,
-`M ∈ {3, 5, 8}`, and `c = 1`. The sensitivity study uses
-`K ∈ {4, 7, 10}`, `M ∈ {3, 8}`, and `c ∈ {0.5, 1, 2}`. The same field
-realization is reused across the three values of `c`, enabling paired
-comparisons.
+Both datasets use:
 
-The four field families are Gaussian, sinusoidal, two-harmonic Fourier, and
-cubic polynomial. Their formulas, sampled parameter ranges, seeds, and
-realized parameters are recorded in source code and each dataset manifest.
-Thirty independent realizations per primary factorial cell produce 360 cases
-at each `K` and 720 per family. `sample_convergence.csv` checks the stability
-of the pooled estimates from 5 through 30 realizations per cell.
+- Gaussian, sinusoidal, and quadratic field families;
+- `K = 3, 4, ..., 10` candidate fields;
+- `M = 3, 4, ..., 10` candidate sensing locations;
+- 30 independent realizations in every family × `K` × `M` cell; and
+- phase scale `c = 1`.
 
-Generate the three datasets without evaluating them:
+Candidate locations are sampled independently and uniformly from the relevant
+region. A common set of `M` locations is used for all `K` fields in a case.
+Every new realization receives new field parameters and new locations.
+
+Generate the inputs without running the algorithms:
 
 ```bash
-python min-sensor-zero-error/generate_paper_studies.py all
+python min-sensor-zero-error/generate_benchmarks.py all
 ```
 
-Use `--overwrite` only when intentionally replacing an existing study. The
-study definitions and fixed seeds are in `generate_paper_studies.py`.
+Use `--overwrite` only when intentionally regenerating an existing benchmark.
+The raw CSV files are deterministic intermediates and are ignored by Git; the
+fixed designs, parameter distributions, and seeds are committed in
+`generate_benchmarks.py` and `field_models.py`.
 
-The thousands of raw study CSVs and per-study solver JSON files are
-deterministic intermediates and are intentionally ignored by Git. The notebook
-recreates them from the committed designs and fixed seeds when they are absent.
-Compact paper tables and figures in `output/paper-analysis/` are retained.
+## Field families
 
-## Statistical reporting
+For 1D, `x_m = alpha_m`. For 2D,
+`x_m = (alpha_m, beta_m)`. Coordinate and centre values lie in `[0, 1]`.
+
+| Family | Shared parameter ranges |
+|---|---|
+| Gaussian | amplitude `[0.5, 1.5]`, width `[0.1, 0.3]`, centre in the sensing region |
+| Sinusoidal | amplitude `[0.5, 1.5]`, frequency uniformly chosen from `{1, 2, 3}`, phase offset `[-pi, pi]`; 2D orientation `[0, pi)` |
+| Quadratic | background `[-0.5, 0.5]`, curvature `[-1, 1]`, centre in the sensing region |
+
+The 2D Gaussian is isotropic, the 2D sinusoid is a plane wave, and the 2D
+quadratic divides squared distance by two so its scale remains comparable to
+the 1D version. Exact formulas and realized parameters are stored in each
+dataset manifest.
+
+## Phase-gap convention
+
+For fields `f_i` and `f_j` at location `x_m`, the input is
+
+```text
+r_ijm = Arg(exp(i c (f_i(x_m) - f_j(x_m)))) in (-pi, pi].
+```
+
+Only pairs with `i < j` are stored. Reverse phases are reconstructed as
+
+```text
+r_jim = principal_phase(-r_ijm).
+```
+
+The required sensor threshold is
+
+```text
+N_ijm = ceil(pi / abs(r_ijm)).
+```
+
+A zero phase gap is unusable at that location. Generation verifies that every
+field pair is distinguishable at least somewhere in each case.
+
+## Evaluation outputs
 
 The primary solution-quality measure is
 
@@ -85,108 +105,63 @@ rho = N_greedy / N_optimal.
 ```
 
 The analysis also reports exact-optimum recovery, percentage additional
-sensors, the median, 95th percentile and maximum ratio, and runtimes. Mean
-ratios receive reproducible 95% bootstrap intervals resampled within factorial
-cells, preserving the balanced design; exact-match proportions receive 95%
-Wilson intervals. The phase-scale analysis uses paired differences from
-`c = 1` and stratified resampling.
+sensors, the median and 95th percentile ratio, the fraction of the theorem's
+permitted excess used, and runtime. Results are kept separate by spatial
+dimension as well as summarized across both benchmarks.
 
-The theorem gives
+Three publication figures are generated, each with side-by-side 1D and 2D
+panels:
 
-```text
-rho <= 1 + ln(K(K - 1) / 2).
+- mean sensor excess over `K` and `M`;
+- mean sensor excess by `K` and field family, with 95% bootstrap intervals;
+  and
+- family-specific maximum observed use of the theoretical worst-case excess
+  allowance.
+
+The files are named `benchmark_quality_heatmaps.*`,
+`benchmark_family_excess.*`, and `benchmark_guarantee_comparison.*`. Each is
+saved as a vector PDF and a 300-dpi PNG. Runtime and sample-convergence values
+remain available in the CSV summaries but are not exported as additional
+figures.
+
+For final runtime measurements, use repeated solves on an otherwise idle
+machine:
+
+```bash
+python min-sensor-zero-error/evaluate_benchmarks.py --repeats 5
 ```
-
-The figures compare the empirical excess with the theorem's permitted excess
-using
-
-```text
-(rho - 1) / ln(K(K - 1) / 2).
-```
-
-This supports the limited statement that greedy is empirically closer to
-optimal than the worst-case allowance on the stated synthetic distribution.
-It does not establish a stronger theorem or a universal average-case
-guarantee. A hypothesis test against the deterministic worst-case bound is not
-appropriate.
-
-## Outputs
-
-`output/paper-analysis/` contains:
-
-- `case_metrics.csv`: one transparent row per evaluated case.
-- `group_summary.csv`: overall and pre-specified subgroup estimates with
-  uncertainty intervals.
-- `sample_convergence.csv`: estimate stability versus realizations per cell.
-- `sensitivity_paired.csv`: paired phase-scale changes and bootstrap intervals.
-- `paper_findings.md`: conservative manuscript-ready numerical wording.
-- `primary_quality.*`: quality distributions, exact recovery, and gap to the
-  worst-case allowance.
-- `primary_quality_ecdf.*`: complete ratio distributions by field family.
-- `primary_runtime_scaling.*`: median timings and interquartile bands.
-- `phase_scale_sensitivity.*`: paired robustness analysis.
-- `primary_sample_convergence.*`: sample-stability diagnostic.
-
-Each figure is exported as vector PDF and 300-dpi PNG.
-
-## Phase-gap convention
-
-For fields `f_i` and `f_j` at location `x_m`, inputs follow the paper:
-
-```text
-r_ijm = Arg(exp(i c (f_i(x_m) - f_j(x_m)))) in (-pi, pi].
-```
-
-Only pairs with `i < j` are stored. The reverse orientation is derived as
-
-```text
-r_jim = principal_phase(-r_ijm).
-```
-
-Thus `r_jim = -r_ijm` modulo `2*pi`. At the branch cut, `pi` is the canonical
-representation because the interval excludes `-pi`. The sensor threshold is
-
-```text
-N_ijm = ceil(pi / abs(r_ijm)).
-```
-
-A zero phase gap has no finite threshold at that location and is represented
-internally by `None`. Every generated case ensures that each field pair has a
-nonzero gap at least somewhere.
 
 ## Code layout
 
 ```text
 min-sensor-zero-error/
-├── optimal.py                  # Exact Dynamic Programming
-├── greedy.py                   # Greedy Gain-Based Approximation
-├── phase_data.py               # CSV validation and phase-to-threshold conversion
-├── field_models.py             # transparent synthetic spatial-field families
-├── generate_inputs.py          # general and factorial data generation
-├── generate_paper_studies.py   # fixed paper-study definitions
-├── eval.py                     # evaluates both methods on one dataset
-├── paper_analysis.py           # statistics and publication figures
-├── evaluate_paper_studies.py   # complete command-line workflow
-├── evaluate_algorithms.ipynb   # documented interactive workflow
-├── inputs/<dataset>/           # manifest and canonical phase-gap CSV files
-└── output/                     # numerical results and paper artifacts
+├── optimal.py                 # Exact Dynamic Programming
+├── greedy.py                  # Greedy Gain-Based Approximation
+├── phase_data.py              # phase validation and threshold conversion
+├── field_models.py            # agreed 1D and 2D field distributions
+├── generate_inputs.py         # reusable dataset writer
+├── generate_benchmarks.py     # fixed benchmark definitions
+├── eval.py                    # evaluates both algorithms on one dataset
+├── paper_analysis.py          # statistics and publication figures
+├── evaluate_benchmarks.py     # complete command-line workflow
+├── evaluate_algorithms.ipynb  # documented interactive workflow
+├── inputs/                    # generated benchmark inputs
+└── output/                    # numerical results and analysis artifacts
 ```
 
-Reusable implementation belongs in `.py` files; the notebook should remain an
-experiment runner. Importing `.ipynb` files into Python is intentionally not
-part of the pipeline.
+Reusable implementation remains in Python modules. The notebook imports those
+modules and acts as the documented experiment runner.
 
 ## Small custom datasets
 
-For a quick custom experiment rather than the paper study:
+For a quick custom test rather than the full benchmarks:
 
 ```bash
-python min-sensor-zero-error/generate_inputs.py experiment-02 \
-  --cases 40 --k-min 3 --k-max 8 --m-min 3 --m-max 8 \
-  --c 1.0 --seed 20260728
-python min-sensor-zero-error/eval.py experiment-02
+python min-sensor-zero-error/generate_inputs.py custom_2d \
+  --dimension 2 --cases 20 --k-min 3 --k-max 6 \
+  --m-min 3 --m-max 6 --c 1 --seed 20260728
+python min-sensor-zero-error/eval.py custom_2d
 ```
 
-Dataset names remain neutral; field model, `K`, `M`, `c`, parameters, and seed
-belong in `manifest.json`. Exact evaluation is intentionally limited to
-`K <= 10` because the dynamic program is exponential.
+Exact evaluation is limited to `K <= 10` because the reference dynamic
+program is exponential in the number of field pairs.

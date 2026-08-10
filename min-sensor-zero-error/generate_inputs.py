@@ -2,8 +2,8 @@
 
 Examples, run from the repository root:
 
-    python3 min-sensor-zero-error/generate_inputs.py benchmark
-    python3 min-sensor-zero-error/generate_inputs.py experiment-02 --cases 40
+    python3 min-sensor-zero-error/generate_inputs.py custom_1d
+    python3 min-sensor-zero-error/generate_inputs.py custom_2d --dimension 2 --cases 40
 
 Dataset names describe experiments, not field models. By default, cases cycle
 through every available model and the requested K/M grid. The model used for a
@@ -21,7 +21,13 @@ from math import isfinite
 from pathlib import Path
 from random import Random
 
-from field_models import FIELD_FORMULAS, FIELD_MODELS, CsvRow, generate_case
+from field_models import (
+    FIELD_FORMULAS,
+    FIELD_MODELS,
+    FIELD_PARAMETER_RANGES,
+    CsvRow,
+    generate_case,
+)
 
 
 HERE = Path(__file__).resolve().parent
@@ -57,9 +63,10 @@ def _parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "dataset",
         nargs="?",
-        default="benchmark",
-        help="Neutral experiment name below inputs/ (default: benchmark).",
+        default="custom_1d",
+        help="Neutral experiment name below inputs/ (default: custom_1d).",
     )
+    parser.add_argument("--dimension", type=int, choices=(1, 2), default=1)
     parser.add_argument("--cases", type=_positive_int, default=20)
     parser.add_argument("--k-min", type=_positive_int, default=3)
     parser.add_argument("--k-max", type=_positive_int, default=8)
@@ -144,6 +151,7 @@ def _prepare_directory(directory: Path, overwrite: bool) -> None:
 def generate_factorial_dataset(
     dataset: str,
     *,
+    dimension: int,
     models: list[str],
     k_values: list[int],
     m_values: list[int],
@@ -156,6 +164,8 @@ def generate_factorial_dataset(
     """Generate a complete model x K x M x c factorial experiment."""
     if not DATASET_NAME.fullmatch(dataset):
         raise ValueError("Invalid dataset name")
+    if dimension not in (1, 2):
+        raise ValueError("dimension must be 1 or 2")
     selected_models = list(dict.fromkeys(models))
     if not selected_models or any(model not in FIELD_MODELS for model in selected_models):
         raise ValueError("models must contain known field-model names")
@@ -198,7 +208,12 @@ def generate_factorial_dataset(
                     for c in selected_c:
                         case_number += 1
                         rows, metadata = generate_case(
-                            model, K, M, seed=case_seed, c=c
+                            model,
+                            dimension,
+                            K,
+                            M,
+                            seed=case_seed,
+                            c=c,
                         )
                         filename = f"case_{case_number:05d}.csv"
                         _write_case(target / filename, rows)
@@ -221,6 +236,9 @@ def generate_factorial_dataset(
         },
         "design": {
             "type": "complete factorial",
+            "spatial_dimension": dimension,
+            "sensing_region": "[0, 1]" if dimension == 1 else "[0, 1]^2",
+            "location_sampling": "independent uniform",
             "models": selected_models,
             "K": selected_k,
             "M": selected_m,
@@ -235,7 +253,11 @@ def generate_factorial_dataset(
         },
         "seed": seed,
         "models": {
-            model: {"formula": FIELD_FORMULAS[model]} for model in selected_models
+            model: {
+                "formula": FIELD_FORMULAS[model][dimension],
+                "parameter_ranges": FIELD_PARAMETER_RANGES[model][dimension],
+            }
+            for model in selected_models
         },
         "cases": cases,
     }
@@ -267,7 +289,14 @@ def main() -> int:
     cases: list[dict[str, object]] = []
     for number, (model, K, M) in enumerate(configurations, start=1):
         case_seed = arguments.seed + number * 1_000_003
-        rows, metadata = generate_case(model, K, M, seed=case_seed, c=arguments.c)
+        rows, metadata = generate_case(
+            model,
+            arguments.dimension,
+            K,
+            M,
+            seed=case_seed,
+            c=arguments.c,
+        )
         filename = f"case_{number:03d}.csv"
         _write_case(target / filename, rows)
         cases.append({"file": filename, **metadata})
@@ -285,9 +314,16 @@ def main() -> int:
             "phase_scale_c": arguments.c,
         },
         "sampling": "deterministic; model, K, and M marginal counts differ by at most one",
+        "spatial_dimension": arguments.dimension,
+        "sensing_region": "[0, 1]" if arguments.dimension == 1 else "[0, 1]^2",
+        "location_sampling": "independent uniform",
         "seed": arguments.seed,
         "models": {
-            model: {"formula": FIELD_FORMULAS[model]} for model in selected_models
+            model: {
+                "formula": FIELD_FORMULAS[model][arguments.dimension],
+                "parameter_ranges": FIELD_PARAMETER_RANGES[model][arguments.dimension],
+            }
+            for model in selected_models
         },
         "requested_ranges": {
             "K": [arguments.k_min, arguments.k_max],

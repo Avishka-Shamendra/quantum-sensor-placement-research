@@ -1,67 +1,53 @@
-"""Generate the pre-specified datasets used for paper evaluation.
-
-The three studies separate the primary quality claim, an independent-seed
-replication, and sensitivity to the physical phase-scale constant ``c``.
-"""
+"""Generate the two pre-specified synthetic benchmark datasets."""
 
 from __future__ import annotations
 
 import argparse
 
-from field_models import FIELD_MODELS
 from generate_inputs import generate_factorial_dataset
 
 
-MODELS = list(FIELD_MODELS)
-STUDIES = {
-    "primary": {
-        "dataset": "study-primary",
+MODELS = ["gaussian", "sinusoidal", "quadratic"]
+BENCHMARKS: dict[str, dict[str, object]] = {
+    "1d": {
+        "dataset": "benchmark_1d",
+        "dimension": 1,
         "models": MODELS,
         "k_values": list(range(3, 11)),
-        "m_values": [3, 5, 8],
+        "m_values": list(range(3, 11)),
         "c_values": [1.0],
         "replicates": 30,
         "seed": 20260901,
         "description": (
-            "Primary balanced factorial study of greedy solution quality and "
-            "runtime relative to the exact optimum."
+            "One-dimensional synthetic benchmark on [0, 1] for comparing "
+            "optimal and greedy zero-error sensor allocation."
         ),
     },
-    "replication": {
-        "dataset": "study-replication",
+    "2d": {
+        "dataset": "benchmark_2d",
+        "dimension": 2,
         "models": MODELS,
         "k_values": list(range(3, 11)),
-        "m_values": [3, 5, 8],
+        "m_values": list(range(3, 11)),
         "c_values": [1.0],
-        "replicates": 10,
+        "replicates": 30,
         "seed": 20261017,
         "description": (
-            "Independent-seed confirmation of the primary factorial study."
-        ),
-    },
-    "sensitivity": {
-        "dataset": "study-sensitivity",
-        "models": MODELS,
-        "k_values": [4, 7, 10],
-        "m_values": [3, 8],
-        "c_values": [0.5, 1.0, 2.0],
-        "replicates": 15,
-        "seed": 20261103,
-        "description": (
-            "Paired sensitivity study for the phase-scale constant c at low, "
-            "middle, and high problem sizes."
+            "Two-dimensional synthetic benchmark on [0, 1]^2 for comparing "
+            "optimal and greedy zero-error sensor allocation."
         ),
     },
 }
 
 
-def generate_studies(names: list[str], overwrite: bool = False) -> list[str]:
-    """Generate selected pre-specified studies and return their dataset names."""
+def generate_benchmarks(names: list[str], overwrite: bool = False) -> list[str]:
+    """Generate selected benchmarks and return their dataset names."""
     generated: list[str] = []
     for name in names:
-        design = STUDIES[name]
+        design = BENCHMARKS[name]
         target = generate_factorial_dataset(
             str(design["dataset"]),
+            dimension=int(design["dimension"]),
             models=list(design["models"]),
             k_values=list(design["k_values"]),
             m_values=list(design["m_values"]),
@@ -84,26 +70,28 @@ def generate_studies(names: list[str], overwrite: bool = False) -> list[str]:
 
 
 def _parse_arguments() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Generate paper evaluation studies.")
+    parser = argparse.ArgumentParser(
+        description="Generate the one- and two-dimensional benchmark datasets."
+    )
     parser.add_argument(
-        "study",
+        "benchmark",
         nargs="?",
-        choices=("all", *STUDIES),
+        choices=("all", *BENCHMARKS),
         default="all",
-        help="Study to generate (default: all).",
+        help="Benchmark to generate (default: all).",
     )
     parser.add_argument(
         "--overwrite",
         action="store_true",
-        help="Replace an existing generated study.",
+        help="Replace an existing generated benchmark.",
     )
     return parser.parse_args()
 
 
 def main() -> int:
     arguments = _parse_arguments()
-    names = list(STUDIES) if arguments.study == "all" else [arguments.study]
-    generate_studies(names, overwrite=arguments.overwrite)
+    names = list(BENCHMARKS) if arguments.benchmark == "all" else [arguments.benchmark]
+    generate_benchmarks(names, overwrite=arguments.overwrite)
     return 0
 
 

@@ -1,15 +1,15 @@
-"""Run the complete, pre-specified paper evaluation workflow."""
+"""Generate, evaluate, and analyze both spatial benchmark datasets."""
 
 from __future__ import annotations
 
 import argparse
 
 from eval import INPUT_ROOT, OUTPUT_ROOT, evaluate_dataset
-from generate_paper_studies import STUDIES, generate_studies
-from paper_analysis import analyze_paper_studies
+from generate_benchmarks import BENCHMARKS, generate_benchmarks
+from paper_analysis import analyze_benchmarks
 
 
-DATASETS = [str(design["dataset"]) for design in STUDIES.values()]
+DATASETS = [str(design["dataset"]) for design in BENCHMARKS.values()]
 
 
 def _positive_integer(value: str) -> int:
@@ -22,23 +22,22 @@ def _positive_integer(value: str) -> int:
     return parsed
 
 
-def run_paper_evaluation(
+def run_benchmark_evaluation(
     *,
     repeats: int = 1,
     bootstrap_iterations: int = 2_000,
     generate_missing: bool = True,
 ) -> dict[str, object]:
-    """Generate missing studies, evaluate both solvers, and analyze results."""
+    """Generate missing benchmarks, run both solvers, and analyze results."""
     missing_names = [
         name
-        for name, design in STUDIES.items()
+        for name, design in BENCHMARKS.items()
         if not (INPUT_ROOT / str(design["dataset"]) / "manifest.json").is_file()
     ]
     if missing_names and not generate_missing:
-        missing = ", ".join(missing_names)
-        raise ValueError(f"Missing paper studies: {missing}")
+        raise ValueError("Missing benchmarks: " + ", ".join(missing_names))
     if missing_names:
-        generate_studies(missing_names)
+        generate_benchmarks(missing_names)
 
     records_by_dataset: dict[str, list[dict[str, object]]] = {}
     for dataset in DATASETS:
@@ -47,19 +46,19 @@ def run_paper_evaluation(
         records_by_dataset[dataset] = records
         print(f"  {len(records)} cases -> {output_directory}", flush=True)
 
-    analysis_directory = OUTPUT_ROOT / "paper-analysis"
-    analysis = analyze_paper_studies(
+    analysis_directory = OUTPUT_ROOT / "benchmark-analysis"
+    analysis = analyze_benchmarks(
         records_by_dataset,
         analysis_directory,
         bootstrap_iterations=bootstrap_iterations,
     )
-    print(f"Paper tables and figures -> {analysis_directory}")
+    print(f"Benchmark tables and figures -> {analysis_directory}")
     return analysis
 
 
 def _parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Generate, evaluate, and analyze all pre-specified paper studies."
+        description="Generate, evaluate, and analyze both benchmark datasets."
     )
     parser.add_argument(
         "--repeats",
@@ -76,7 +75,7 @@ def _parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--require-existing",
         action="store_true",
-        help="Fail instead of generating a paper dataset that is missing.",
+        help="Fail instead of generating a missing benchmark.",
     )
     return parser.parse_args()
 
@@ -84,7 +83,7 @@ def _parse_arguments() -> argparse.Namespace:
 def main() -> int:
     arguments = _parse_arguments()
     try:
-        run_paper_evaluation(
+        run_benchmark_evaluation(
             repeats=arguments.repeats,
             bootstrap_iterations=arguments.bootstrap,
             generate_missing=not arguments.require_existing,
