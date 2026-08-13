@@ -1,4 +1,4 @@
-"""Paired evaluation and plotting helpers for three allocation algorithms."""
+"""Paired evaluation and plotting helpers for four allocation algorithms."""
 
 from __future__ import annotations
 
@@ -14,26 +14,30 @@ import numpy as np
 
 from exhaustive_search import exhaustive_search
 from greedy import greedy
+from heuristic import heuristic as tree_aware_heuristic
 from input_data import load_sparse_input, validate_reverse_phases
 from uniform import uniform
 
 
 HERE = Path(__file__).resolve().parent
 INPUT_ROOT = HERE / "inputs"
-DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison"
+DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison_lite"
 
 # Use separate palettes for error, runtime, and field-family figures.
 ALGORITHM_COLORS = {
     "Optimal": "#1f77b4",
     "Greedy": "#ff7f0e",
+    "Heuristic": "#d62728",
     "Uniform": "#2ca02c",
 }
 RUNTIME_COLORS = {
     "Greedy": "#9467bd",
+    "Heuristic": "#e377c2",
     "Uniform": "#17becf",
 }
 FIELD_GAP_COLORS = {
     "Greedy": "#c44e52",
+    "Heuristic": "#8172b2",
     "Uniform": "#4c72b0",
 }
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
@@ -43,8 +47,17 @@ def run_paired_dataset(
     dataset: str,
     replicates_per_cell: int | None = 1,
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
+    *,
+    optimal_parameters: dict[str, object] | None = None,
+    greedy_parameters: dict[str, object] | None = None,
+    tree_aware_parameters: dict[str, object] | None = None,
+    uniform_parameters: dict[str, object] | None = None,
 ) -> list[dict[str, object]]:
-    """Run all three algorithms on the same cases and budgets."""
+    """Run all four algorithms on the same cases and budgets."""
+    optimal_parameters = dict(optimal_parameters or {})
+    greedy_parameters = dict(greedy_parameters or {})
+    tree_aware_parameters = dict(tree_aware_parameters or {})
+    uniform_parameters = dict(uniform_parameters or {})
     dataset_directory = INPUT_ROOT / dataset
     manifest = json.loads(
         (dataset_directory / "manifest.json").read_text(encoding="utf-8")
@@ -61,7 +74,7 @@ def run_paired_dataset(
 
     records: list[dict[str, object]] = []
 
-    # Give all three algorithms the same input case and sensor budget.
+    # Give all four algorithms the same input case and sensor budget.
     for case_number, case in enumerate(cases, start=1):
         K, M, phase_gaps, pair_errors = load_sparse_input(
             dataset_directory / str(case["file"])
@@ -74,15 +87,23 @@ def run_paired_dataset(
             budget = int(budget_value)
 
             started = perf_counter()
-            optimal = exhaustive_search(K, M, budget, pair_errors)
+            optimal = exhaustive_search(
+                K, M, budget, pair_errors, **optimal_parameters
+            )
             optimal_seconds = perf_counter() - started
 
             started = perf_counter()
-            heuristic = greedy(K, M, budget, pair_errors)
+            greedy_result = greedy(K, M, budget, pair_errors, **greedy_parameters)
             greedy_seconds = perf_counter() - started
 
             started = perf_counter()
-            baseline = uniform(K, M, budget, pair_errors)
+            tree_aware_result = tree_aware_heuristic(
+                K, M, budget, pair_errors, **tree_aware_parameters
+            )
+            tree_aware_seconds = perf_counter() - started
+
+            started = perf_counter()
+            baseline = uniform(K, M, budget, pair_errors, **uniform_parameters)
             uniform_seconds = perf_counter() - started
 
             _validate_strategy(
@@ -94,9 +115,17 @@ def run_paired_dataset(
                 budget,
             )
             _validate_strategy(
-                heuristic.allocation,
-                heuristic.pair_locations,
-                heuristic.error_probability,
+                greedy_result.allocation,
+                greedy_result.pair_locations,
+                greedy_result.error_probability,
+                K,
+                M,
+                budget,
+            )
+            _validate_strategy(
+                tree_aware_result.allocation,
+                tree_aware_result.pair_locations,
+                tree_aware_result.error_probability,
                 K,
                 M,
                 budget,
@@ -109,18 +138,31 @@ def run_paired_dataset(
                 M,
                 budget,
             )
-            if optimal.minimum_error > heuristic.error_probability + 1e-12:
+            if optimal.minimum_error > greedy_result.error_probability + 1e-12:
                 raise RuntimeError("greedy error is below the exact optimum")
+            if optimal.minimum_error > tree_aware_result.error_probability + 1e-12:
+                raise RuntimeError("heuristic error is below the exact optimum")
             if optimal.minimum_error > baseline.error_probability + 1e-12:
                 raise RuntimeError("uniform error is below the exact optimum")
 
             # Measure quality and allocation differences from the exact optimum.
-            greedy_error_gap = heuristic.error_probability - optimal.minimum_error
+            greedy_error_gap = (
+                greedy_result.error_probability - optimal.minimum_error
+            )
+            tree_aware_error_gap = (
+                tree_aware_result.error_probability - optimal.minimum_error
+            )
             uniform_error_gap = baseline.error_probability - optimal.minimum_error
             greedy_allocation_distance = sum(
                 abs(greedy_count - optimal_count)
                 for greedy_count, optimal_count in zip(
-                    heuristic.allocation, optimal.allocation
+                    greedy_result.allocation, optimal.allocation
+                )
+            )
+            tree_aware_allocation_distance = sum(
+                abs(tree_aware_count - optimal_count)
+                for tree_aware_count, optimal_count in zip(
+                    tree_aware_result.allocation, optimal.allocation
                 )
             )
             uniform_allocation_distance = sum(
@@ -144,28 +186,46 @@ def run_paired_dataset(
                     "number_of_budget_levels": len(budgets),
                     "budget_fraction_of_N_min": budget / minimum_sensors,
                     "optimal_error": optimal.minimum_error,
-                    "greedy_error": heuristic.error_probability,
+                    "greedy_error": greedy_result.error_probability,
+                    "tree_aware_error": tree_aware_result.error_probability,
                     "uniform_error": baseline.error_probability,
                     "greedy_error_gap": greedy_error_gap,
+                    "tree_aware_error_gap": tree_aware_error_gap,
                     "uniform_error_gap": uniform_error_gap,
                     "greedy_exact_error_match": isclose(
                         greedy_error_gap, 0.0, abs_tol=1e-12
+                    ),
+                    "tree_aware_exact_error_match": isclose(
+                        tree_aware_error_gap, 0.0, abs_tol=1e-12
                     ),
                     "uniform_exact_error_match": isclose(
                         uniform_error_gap, 0.0, abs_tol=1e-12
                     ),
                     "optimal_seconds": optimal_seconds,
                     "greedy_seconds": greedy_seconds,
+                    "tree_aware_seconds": tree_aware_seconds,
                     "uniform_seconds": uniform_seconds,
                     "greedy_runtime_speedup": optimal_seconds / greedy_seconds,
+                    "tree_aware_runtime_speedup": (
+                        optimal_seconds / tree_aware_seconds
+                    ),
                     "uniform_runtime_speedup": optimal_seconds / uniform_seconds,
                     "optimal_allocation": list(optimal.allocation),
-                    "greedy_allocation": list(heuristic.allocation),
+                    "greedy_allocation": list(greedy_result.allocation),
+                    "tree_aware_allocation": list(tree_aware_result.allocation),
                     "uniform_allocation": list(baseline.allocation),
                     "greedy_allocation_l1_distance": greedy_allocation_distance,
+                    "tree_aware_allocation_l1_distance": (
+                        tree_aware_allocation_distance
+                    ),
                     "uniform_allocation_l1_distance": uniform_allocation_distance,
                     "greedy_allocation_difference_fraction": (
                         greedy_allocation_distance / (2 * budget)
+                        if budget > 0
+                        else 0.0
+                    ),
+                    "tree_aware_allocation_difference_fraction": (
+                        tree_aware_allocation_distance / (2 * budget)
                         if budget > 0
                         else 0.0
                     ),
@@ -178,14 +238,20 @@ def run_paired_dataset(
                         optimal.pair_locations
                     ),
                     "greedy_pair_locations": _pair_locations_to_dict(
-                        heuristic.pair_locations
+                        greedy_result.pair_locations
+                    ),
+                    "tree_aware_pair_locations": _pair_locations_to_dict(
+                        tree_aware_result.pair_locations
                     ),
                     "uniform_pair_locations": _pair_locations_to_dict(
                         baseline.pair_locations
                     ),
                     "optimal_decision_tree": _tree_to_dict(optimal.decision_tree),
                     "greedy_decision_tree": _tree_to_dict(
-                        heuristic.decision_tree
+                        greedy_result.decision_tree
+                    ),
+                    "tree_aware_decision_tree": _tree_to_dict(
+                        tree_aware_result.decision_tree
                     ),
                     "uniform_decision_tree": _tree_to_dict(
                         baseline.decision_tree
@@ -199,7 +265,19 @@ def run_paired_dataset(
         )
 
     run_scope = "full" if replicates_per_cell is None else "test"
-    save_paired_results(dataset, records, results_root, run_scope=run_scope)
+    algorithm_parameters = {
+        "optimal": optimal_parameters,
+        "greedy": greedy_parameters,
+        "tree_aware": tree_aware_parameters,
+        "uniform": uniform_parameters,
+    }
+    save_paired_results(
+        dataset,
+        records,
+        results_root,
+        run_scope=run_scope,
+        algorithm_parameters=algorithm_parameters,
+    )
     return records
 
 
@@ -209,6 +287,7 @@ def save_paired_results(
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
     *,
     run_scope: str = "test",
+    algorithm_parameters: dict[str, dict[str, object]] | None = None,
 ) -> None:
     """Save detailed and compact paired comparison results."""
     tables_directory = _dataset_results_directory(
@@ -219,7 +298,12 @@ def save_paired_results(
     # JSON keeps complete strategies; CSV keeps the comparison measures.
     (tables_directory / "results.json").write_text(
         json.dumps(
-            {"dataset": dataset, "result_count": len(records), "results": records},
+            {
+                "dataset": dataset,
+                "result_count": len(records),
+                "algorithm_parameters": algorithm_parameters or {},
+                "results": records,
+            },
             indent=2,
         )
         + "\n",
@@ -240,19 +324,26 @@ def save_paired_results(
         "budget_fraction_of_N_min",
         "optimal_error",
         "greedy_error",
+        "tree_aware_error",
         "uniform_error",
         "greedy_error_gap",
+        "tree_aware_error_gap",
         "uniform_error_gap",
         "greedy_exact_error_match",
+        "tree_aware_exact_error_match",
         "uniform_exact_error_match",
         "optimal_seconds",
         "greedy_seconds",
+        "tree_aware_seconds",
         "uniform_seconds",
         "greedy_runtime_speedup",
+        "tree_aware_runtime_speedup",
         "uniform_runtime_speedup",
         "greedy_allocation_l1_distance",
+        "tree_aware_allocation_l1_distance",
         "uniform_allocation_l1_distance",
         "greedy_allocation_difference_fraction",
+        "tree_aware_allocation_difference_fraction",
         "uniform_allocation_difference_fraction",
     ]
     with (tables_directory / "summary.csv").open(
@@ -262,6 +353,24 @@ def save_paired_results(
         writer.writeheader()
         for record in records:
             writer.writerow({column: record[column] for column in columns})
+
+
+def load_paired_results(
+    dataset: str,
+    results_root: str | Path = DEFAULT_RESULTS_ROOT,
+    *,
+    run_scope: str = "test",
+) -> list[dict[str, object]]:
+    """Load previously saved paired records without rerunning algorithms."""
+    if run_scope not in {"test", "full"}:
+        raise ValueError("run_scope must be 'test' or 'full'")
+    results_path = (
+        _dataset_results_directory(results_root, dataset, run_scope)
+        / "tables"
+        / "results.json"
+    )
+    payload = json.loads(results_path.read_text(encoding="utf-8"))
+    return list(payload["results"])
 
 
 def make_comparison_plots(
@@ -338,12 +447,17 @@ def make_combined_comparison_plots(
     if [int(records[0]["spatial_dimension"]) for records in dimension_records] != [1, 2]:
         raise ValueError("combined plots require one 1D and one 2D dataset")
 
-    # Keep only the three figures selected for the final comparison notebook.
+    # Keep the detailed curves, an overall summary, and the two distribution plots.
     figures = [
         (
             "Mean error curves",
             _plot_combined_mean_error_curves(dimension_records),
             "mean_error_curves",
+        ),
+        (
+            "Overall mean error curves",
+            _plot_overall_mean_error_curves(dimension_records),
+            "overall_mean_error_curves",
         ),
         (
             "Runtime speedup",
@@ -379,22 +493,34 @@ def _dataset_results_directory(
 def paired_summary(records: list[dict[str, object]]) -> dict[str, float | int]:
     """Return the main quality and runtime comparison values."""
     greedy_gaps = [float(record["greedy_error_gap"]) for record in records]
+    tree_aware_gaps = [
+        float(record["tree_aware_error_gap"]) for record in records
+    ]
     uniform_gaps = [float(record["uniform_error_gap"]) for record in records]
     return {
         "cases": len({record["case"] for record in records}),
         "runs": len(records),
         "greedy_mean_gap": fmean(greedy_gaps),
+        "tree_aware_mean_gap": fmean(tree_aware_gaps),
         "uniform_mean_gap": fmean(uniform_gaps),
         "greedy_maximum_gap": max(greedy_gaps),
+        "tree_aware_maximum_gap": max(tree_aware_gaps),
         "uniform_maximum_gap": max(uniform_gaps),
         "greedy_exact_match_rate": fmean(
             float(bool(record["greedy_exact_error_match"])) for record in records
+        ),
+        "tree_aware_exact_match_rate": fmean(
+            float(bool(record["tree_aware_exact_error_match"]))
+            for record in records
         ),
         "uniform_exact_match_rate": fmean(
             float(bool(record["uniform_exact_error_match"])) for record in records
         ),
         "greedy_median_speedup": median(
             float(record["greedy_runtime_speedup"]) for record in records
+        ),
+        "tree_aware_median_speedup": median(
+            float(record["tree_aware_runtime_speedup"]) for record in records
         ),
         "uniform_median_speedup": median(
             float(record["uniform_runtime_speedup"]) for record in records
@@ -411,7 +537,12 @@ def _validate_strategy(
     budget: int,
 ) -> None:
     """Check one algorithm result before recording it."""
-    if len(allocation) != M or sum(allocation) != budget:
+    used_sensors = sum(allocation)
+    if (
+        len(allocation) != M
+        or any(count < 0 for count in allocation)
+        or used_sensors != budget
+    ):
         raise RuntimeError("algorithm returned an invalid allocation")
     pairs = {(i, j) for i in range(K) for j in range(i + 1, K)}
     if set(pair_locations) != pairs:
@@ -452,7 +583,7 @@ def _mean_and_sem(values: list[float]) -> tuple[float, float]:
 def _plot_mean_error_curves(
     records: list[dict[str, object]], dimension: int
 ) -> plt.Figure:
-    """Compare mean error curves for both algorithms at each K."""
+    """Compare mean error curves for all four algorithms at each K."""
     K_values = sorted({int(record["K"]) for record in records})
     figure, axes = plt.subplots(
         1, len(K_values), figsize=(5.2 * len(K_values), 4.4), sharey=True
@@ -464,11 +595,11 @@ def _plot_mean_error_curves(
         for algorithm, error_key, line_style in (
             ("Optimal", "optimal_error", "-"),
             ("Greedy", "greedy_error", "--"),
+            ("Heuristic", "tree_aware_error", "-."),
             ("Uniform", "uniform_error", ":"),
         ):
             x_values = []
             means = []
-            errors = []
             for level in levels:
                 selected = [
                     record
@@ -481,27 +612,25 @@ def _plot_mean_error_curves(
                         for record in selected
                     )
                 )
-                mean, sem = _mean_and_sem(
-                    [float(record[error_key]) for record in selected]
+                means.append(
+                    fmean(float(record[error_key]) for record in selected)
                 )
-                means.append(mean)
-                errors.append(sem)
-            axis.errorbar(
+            axis.plot(
                 x_values,
                 means,
-                yerr=errors,
                 marker="o",
                 linestyle=line_style,
-                capsize=3,
                 color=ALGORITHM_COLORS[algorithm],
                 label=algorithm,
             )
         axis.set_title(f"K={K}")
-        axis.set_xlabel(r"Sensor budget $N/N_{min}$")
         axis.grid(alpha=0.25)
     axes[0].set_ylabel("Mean final error")
     axes[-1].legend()
-    figure.suptitle(f"{dimension}D: optimal and greedy error versus budget")
+    figure.supxlabel(
+        r"$N/N_{\min}$ (Sensor Budget / Required Min Sensors for Perfect Discrimination)"
+    )
+    figure.suptitle(f"{dimension}D: algorithm error versus sensor budget")
     figure.tight_layout()
     return figure
 
@@ -671,7 +800,7 @@ def _plot_gap_by_family(
 def _plot_combined_mean_error_curves(
     dimension_records: list[list[dict[str, object]]],
 ) -> plt.Figure:
-    """Compare all three algorithms with dimensions in columns and K in rows."""
+    """Compare all four algorithms with dimensions in columns and K in rows."""
     K_values = sorted(
         {int(record["K"]) for records in dimension_records for record in records}
     )
@@ -693,11 +822,11 @@ def _plot_combined_mean_error_curves(
             for algorithm, error_key, line_style in (
                 ("Optimal", "optimal_error", "-"),
                 ("Greedy", "greedy_error", "--"),
+                ("Heuristic", "tree_aware_error", "-."),
                 ("Uniform", "uniform_error", ":"),
             ):
                 x_values = []
                 means = []
-                errors = []
                 for level in levels:
                     selected = [
                         record
@@ -710,29 +839,82 @@ def _plot_combined_mean_error_curves(
                             for record in selected
                         )
                     )
-                    mean, sem = _mean_and_sem(
-                        [float(record[error_key]) for record in selected]
+                    means.append(
+                        fmean(float(record[error_key]) for record in selected)
                     )
-                    means.append(mean)
-                    errors.append(sem)
-                axis.errorbar(
+                axis.plot(
                     x_values,
                     means,
-                    yerr=errors,
                     marker="o",
                     linestyle=line_style,
-                    capsize=3,
                     color=ALGORITHM_COLORS[algorithm],
                     label=algorithm,
                 )
             axis.set_title(f"{dimension}D, K={K}")
             axis.grid(alpha=0.25)
-            if row == len(K_values) - 1:
-                axis.set_xlabel(r"Sensor budget $N/N_{min}$")
             if column == 0:
                 axis.set_ylabel("Mean final error")
     axes[0, 1].legend()
-    figure.suptitle("Optimal, greedy, and uniform error versus sensor budget")
+    figure.supxlabel(
+        r"$N/N_{\min}$ (Sensor Budget / Required Min Sensors for Perfect Discrimination)"
+    )
+    figure.suptitle(
+        "Optimal, greedy, heuristic, and uniform error versus sensor budget"
+    )
+    return figure
+
+
+def _plot_overall_mean_error_curves(
+    dimension_records: list[list[dict[str, object]]],
+) -> plt.Figure:
+    """Plot overall mean error with one panel for each dimension."""
+    figure, axes = plt.subplots(
+        1, 2, figsize=(12.8, 4.8), sharey=True, constrained_layout=True
+    )
+    for axis, records in zip(axes, dimension_records):
+        dimension = int(records[0]["spatial_dimension"])
+        levels = sorted({int(record["budget_level"]) for record in records})
+        for algorithm, error_key, line_style in (
+            ("Optimal", "optimal_error", "-"),
+            ("Greedy", "greedy_error", "--"),
+            ("Heuristic", "tree_aware_error", "-."),
+            ("Uniform", "uniform_error", ":"),
+        ):
+            x_values: list[float] = []
+            means: list[float] = []
+            for level in levels:
+                selected = [
+                    record
+                    for record in records
+                    if int(record["budget_level"]) == level
+                ]
+                x_values.append(
+                    fmean(
+                        float(record["budget_fraction_of_N_min"])
+                        for record in selected
+                    )
+                )
+                means.append(
+                    fmean(float(record[error_key]) for record in selected)
+                )
+            axis.plot(
+                x_values,
+                means,
+                marker="o",
+                linestyle=line_style,
+                color=ALGORITHM_COLORS[algorithm],
+                label=algorithm,
+            )
+        axis.set_title(f"{dimension}D")
+        axis.grid(alpha=0.25)
+    axes[0].set_ylabel("Mean final error")
+    axes[1].legend()
+    figure.supxlabel(
+        r"$N/N_{\min}$ (Sensor Budget / Required Min Sensors for Perfect Discrimination)"
+    )
+    figure.suptitle(
+        "Overall algorithm error versus sensor budget across all K and M values"
+    )
     return figure
 
 
@@ -926,8 +1108,9 @@ def _plot_combined_runtime_speedup(
         K_values = sorted({int(record["K"]) for record in records})
         positions = np.arange(1, len(K_values) + 1)
         for algorithm, speedup_key, offset in (
-            ("Greedy", "greedy_runtime_speedup", -0.18),
-            ("Uniform", "uniform_runtime_speedup", 0.18),
+            ("Greedy", "greedy_runtime_speedup", -0.24),
+            ("Heuristic", "tree_aware_runtime_speedup", 0.0),
+            ("Uniform", "uniform_runtime_speedup", 0.24),
         ):
             values = [
                 [
@@ -940,7 +1123,7 @@ def _plot_combined_runtime_speedup(
             boxplot = axis.boxplot(
                 values,
                 positions=positions + offset,
-                widths=0.3,
+                widths=0.22,
                 patch_artist=True,
                 showmeans=True,
                 meanprops={"markerfacecolor": "black", "markeredgecolor": "black"},
@@ -961,7 +1144,7 @@ def _plot_combined_runtime_speedup(
         axis.grid(axis="y", alpha=0.25, which="both")
     axes[0].set_ylabel("Runtime speedup (optimal / method, log scale)")
     axes[1].legend()
-    figure.suptitle("Computational benefit of greedy and uniform allocation")
+    figure.suptitle("Runtime speedup relative to exhaustive search")
     return figure
 
 
@@ -981,8 +1164,9 @@ def _plot_combined_gap_by_family(
         families.extend(sorted(present_families - set(FIELD_FAMILY_ORDER)))
         positions = np.arange(1, len(families) + 1)
         for algorithm, gap_key, offset in (
-            ("Greedy", "greedy_error_gap", -0.18),
-            ("Uniform", "uniform_error_gap", 0.18),
+            ("Greedy", "greedy_error_gap", -0.24),
+            ("Heuristic", "tree_aware_error_gap", 0.0),
+            ("Uniform", "uniform_error_gap", 0.24),
         ):
             values = [
                 [
@@ -995,7 +1179,7 @@ def _plot_combined_gap_by_family(
             boxplot = axis.boxplot(
                 values,
                 positions=positions + offset,
-                widths=0.3,
+                widths=0.22,
                 patch_artist=True,
                 showmeans=True,
                 meanprops={"markerfacecolor": "black", "markeredgecolor": "black"},
@@ -1015,5 +1199,5 @@ def _plot_combined_gap_by_family(
         axis.grid(axis="y", alpha=0.25)
     axes[0].set_ylabel(r"Error gap $P_{method}-P_{optimal}$")
     axes[1].legend()
-    figure.suptitle("Heuristic quality loss by field family")
+    figure.suptitle("Quality loss by field family")
     return figure

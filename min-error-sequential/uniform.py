@@ -1,4 +1,4 @@
-"""Uniform-allocation baseline for sequential discrimination."""
+"""Near-uniform allocation baseline for sequential discrimination."""
 
 from __future__ import annotations
 
@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from itertools import combinations
 from math import isfinite
 from numbers import Real
+from random import Random
 
 
 Pair = tuple[int, int]
@@ -49,16 +50,23 @@ def uniform(
     M: int,
     N: int,
     pijmn: PairErrorTable,
+    *,
+    random_seed: int | None = 0,
 ) -> UniformResult:
-    """Distribute sensors evenly and build a sequential decision tree."""
+    """Distribute all sensors as evenly as possible and build a tree."""
     pairs = _validate_inputs(K, M, N, pijmn)
+    if random_seed is not None and (
+        isinstance(random_seed, bool) or not isinstance(random_seed, int)
+    ):
+        raise ValueError("random_seed must be an integer or None.")
 
-    # Spread the remainder across the first locations after equal division.
+    # Randomly choose which locations receive the remaining sensors.
     sensors_per_location, remainder = divmod(N, M)
-    allocation = tuple(
-        sensors_per_location + (1 if m < remainder else 0)
-        for m in range(M)
-    )
+    allocation_list = [sensors_per_location for _ in range(M)]
+    remainder_locations = Random(random_seed).sample(range(M), remainder)
+    for location in remainder_locations:
+        allocation_list[location] += 1
+    allocation = tuple(allocation_list)
 
     pair_locations, pair_errors = _compute_pair_errors(
         pairs, M, allocation, pijmn

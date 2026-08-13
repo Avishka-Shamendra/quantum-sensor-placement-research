@@ -13,4 +13,6 @@ min-sensor-zero-error/results/algorithm_comparison/benchmark_2d_results_full/
 # Sparse minimum-error benchmark inputs and exact-search outputs.
 min-error-sequential/inputs/lite_benchmark_1d/
 min-error-sequential/inputs/lite_benchmark_2d/
+min-error-sequential/inputs/benchmark_1d/
+min-error-sequential/inputs/benchmark_2d/
 min-error-sequential/results/
