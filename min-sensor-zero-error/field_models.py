@@ -37,6 +37,7 @@ def sensing_locations(dimension: int, M: int, rng: Random) -> list[Location]:
     return [tuple(rng.random() for _ in range(dimension)) for _ in range(M)]
 
 
+# Validate field count and location coordinates, then return the dimension.
 def _validate_field_request(K: int, locations: Sequence[Location]) -> int:
     if isinstance(K, bool) or not isinstance(K, int) or K < 2:
         raise ValueError("K must be an integer of at least 2.")
@@ -59,10 +60,12 @@ def _validate_field_request(K: int, locations: Sequence[Location]) -> int:
     return dimension
 
 
+# Sample one field centre uniformly from the sensing region.
 def _sample_centre(dimension: int, rng: Random) -> Location:
     return tuple(rng.uniform(0.0, 1.0) for _ in range(dimension))
 
 
+# Store a 1D centre as a scalar and a 2D centre as a list.
 def _centre_metadata(centre: Location) -> float | list[float]:
     return centre[0] if len(centre) == 1 else list(centre)
 
@@ -172,12 +175,14 @@ def generate_quadratic_fields(
     return fields, parameters
 
 
+# Map each family name to its field generator.
 FIELD_MODELS: dict[str, FieldFactory] = {
     "gaussian": generate_gaussian_fields,
     "sinusoidal": generate_sinusoidal_fields,
     "quadratic": generate_quadratic_fields,
 }
 
+# Record the formulas written to each dataset manifest.
 FIELD_FORMULAS: dict[str, dict[int, str]] = {
     "gaussian": {
         1: "f_k(alpha) = A_k exp(-(alpha-mu_k)^2 / (2 w_k^2))",
@@ -202,6 +207,7 @@ FIELD_FORMULAS: dict[str, dict[int, str]] = {
     },
 }
 
+# Record the sampling ranges written to each dataset manifest.
 FIELD_PARAMETER_RANGES: dict[str, dict[int, dict[str, object]]] = {
     "gaussian": {
         1: {"A_k": [0.5, 1.5], "mu_k": [0.0, 1.0], "w_k": [0.1, 0.3]},
@@ -265,6 +271,7 @@ def phase_gap_rows(fields: FieldValues, c: Real) -> list[CsvRow]:
     return rows
 
 
+# Convert sampled locations to a JSON-ready representation.
 def _location_metadata(locations: Sequence[Location]) -> list[object]:
     if len(locations[0]) == 1:
         return [location[0] for location in locations]
@@ -292,6 +299,8 @@ def generate_case(
         raise ValueError("max_attempts must be a positive integer.")
 
     required_pairs = set(combinations(range(K), 2))
+
+    # Retry with deterministic seeds until every field pair is distinguishable.
     for attempt in range(1, max_attempts + 1):
         rng = Random(seed + attempt - 1)
         locations = sensing_locations(dimension, M, rng)

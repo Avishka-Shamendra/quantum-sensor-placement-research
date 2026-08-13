@@ -21,6 +21,8 @@ from uniform import uniform
 HERE = Path(__file__).resolve().parent
 INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison"
+
+# Use separate palettes for error, runtime, and field-family figures.
 ALGORITHM_COLORS = {
     "Optimal": "#1f77b4",
     "Greedy": "#ff7f0e",
@@ -48,6 +50,8 @@ def run_paired_dataset(
         (dataset_directory / "manifest.json").read_text(encoding="utf-8")
     )
     cases = manifest["cases"]
+
+    # A value of None runs every case; a number limits replicates per K and M cell.
     if replicates_per_cell is not None:
         cases = [
             case
@@ -56,6 +60,8 @@ def run_paired_dataset(
         ]
 
     records: list[dict[str, object]] = []
+
+    # Give all three algorithms the same input case and sensor budget.
     for case_number, case in enumerate(cases, start=1):
         K, M, phase_gaps, pair_errors = load_sparse_input(
             dataset_directory / str(case["file"])
@@ -108,6 +114,7 @@ def run_paired_dataset(
             if optimal.minimum_error > baseline.error_probability + 1e-12:
                 raise RuntimeError("uniform error is below the exact optimum")
 
+            # Measure quality and allocation differences from the exact optimum.
             greedy_error_gap = heuristic.error_probability - optimal.minimum_error
             uniform_error_gap = baseline.error_probability - optimal.minimum_error
             greedy_allocation_distance = sum(
@@ -191,7 +198,8 @@ def run_paired_dataset(
             f"({case['field_model']}, K={K}, M={M})"
         )
 
-    save_paired_results(dataset, records, results_root)
+    run_scope = "full" if replicates_per_cell is None else "test"
+    save_paired_results(dataset, records, results_root, run_scope=run_scope)
     return records
 
 
@@ -199,11 +207,17 @@ def save_paired_results(
     dataset: str,
     records: list[dict[str, object]],
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
+    *,
+    run_scope: str = "test",
 ) -> None:
     """Save detailed and compact paired comparison results."""
-    tables_directory = Path(results_root) / dataset / "tables"
+    tables_directory = _dataset_results_directory(
+        results_root, dataset, run_scope
+    ) / "tables"
     tables_directory.mkdir(parents=True, exist_ok=True)
-    (tables_directory / "paired_results.json").write_text(
+
+    # JSON keeps complete strategies; CSV keeps the comparison measures.
+    (tables_directory / "results.json").write_text(
         json.dumps(
             {"dataset": dataset, "result_count": len(records), "results": records},
             indent=2,
@@ -241,7 +255,7 @@ def save_paired_results(
         "greedy_allocation_difference_fraction",
         "uniform_allocation_difference_fraction",
     ]
-    with (tables_directory / "paired_summary.csv").open(
+    with (tables_directory / "summary.csv").open(
         "w", encoding="utf-8", newline=""
     ) as output_file:
         writer = csv.DictWriter(output_file, fieldnames=columns, lineterminator="\n")
@@ -254,9 +268,13 @@ def make_comparison_plots(
     dataset: str,
     records: list[dict[str, object]],
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
+    *,
+    run_scope: str = "test",
 ) -> list[tuple[str, plt.Figure]]:
     """Create and save six candidate comparison plots."""
-    figures_directory = Path(results_root) / dataset / "figures"
+    figures_directory = _dataset_results_directory(
+        results_root, dataset, run_scope
+    ) / "figures"
     figures_directory.mkdir(parents=True, exist_ok=True)
     dimension = int(records[0]["spatial_dimension"])
     figures = [
@@ -303,9 +321,15 @@ def make_comparison_plots(
 def make_combined_comparison_plots(
     records_by_dataset: dict[str, list[dict[str, object]]],
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
+    *,
+    run_scope: str = "test",
 ) -> list[tuple[str, plt.Figure]]:
     """Create plots with 1D and 2D results shown side by side."""
-    figures_directory = Path(results_root) / "combined" / "figures"
+    if run_scope not in {"test", "full"}:
+        raise ValueError("run_scope must be 'test' or 'full'")
+    dataset_names = "_".join(records_by_dataset)
+    summary_name = f"results_summary_{dataset_names}_{run_scope}"
+    figures_directory = Path(results_root) / summary_name / "figures"
     figures_directory.mkdir(parents=True, exist_ok=True)
     dimension_records = sorted(
         records_by_dataset.values(),
@@ -314,6 +338,7 @@ def make_combined_comparison_plots(
     if [int(records[0]["spatial_dimension"]) for records in dimension_records] != [1, 2]:
         raise ValueError("combined plots require one 1D and one 2D dataset")
 
+    # Keep only the three figures selected for the final comparison notebook.
     figures = [
         (
             "Mean error curves",
@@ -338,6 +363,17 @@ def make_combined_comparison_plots(
         figure.savefig(figures_directory / f"{filename}.pdf")
         result.append((title, figure))
     return result
+
+
+def _dataset_results_directory(
+    results_root: str | Path,
+    dataset: str,
+    run_scope: str,
+) -> Path:
+    """Build the dataset-specific directory for a test or full run."""
+    if run_scope not in {"test", "full"}:
+        raise ValueError("run_scope must be 'test' or 'full'")
+    return Path(results_root) / f"{dataset}_results_{run_scope}"
 
 
 def paired_summary(records: list[dict[str, object]]) -> dict[str, float | int]:

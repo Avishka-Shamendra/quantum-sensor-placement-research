@@ -112,7 +112,7 @@ def optimal_perfect_pairwise_sensor_placement(
             options.append((count, covered_mask))
         location_options.append(options)
 
-    # maps a covered-pair mask to the least allocation cost after each location
+    # Map each covered-pair mask to its lowest cost after each location.
     costs = {0: 0}
     parent_layers: list[dict[int, tuple[int, int]]] = []
 

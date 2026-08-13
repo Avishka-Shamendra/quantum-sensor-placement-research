@@ -152,6 +152,7 @@ def load_phase_csv(csv_path: str | Path) -> tuple[int, int, PhaseGaps]:
     return K, M, phase_gaps
 
 
+# Check the number of fields and sensing locations.
 def _validate_dimensions(K: int, M: int) -> None:
     if isinstance(K, bool) or not isinstance(K, int) or K < 2:
         raise ValueError("K must be an integer of at least 2")

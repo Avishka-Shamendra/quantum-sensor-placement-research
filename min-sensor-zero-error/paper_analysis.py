@@ -12,6 +12,7 @@ from pathlib import Path
 from statistics import fmean, median
 
 
+# Calculate a percentile using linear interpolation between sample values.
 def _percentile(values: list[float], probability: float) -> float:
     ordered = sorted(values)
     if not ordered:
@@ -25,6 +26,7 @@ def _percentile(values: list[float], probability: float) -> float:
     return ordered[lower] * (1 - weight) + ordered[upper] * weight
 
 
+# Estimate a mean confidence interval while preserving the chosen strata.
 def _stratified_bootstrap_mean_interval(
     rows: list[dict[str, object]],
     *,
@@ -39,6 +41,8 @@ def _stratified_bootstrap_mean_interval(
         strata[key].append(float(row[value_key]))
     rng = random.Random(seed)
     estimates: list[float] = []
+
+    # Resample within each stratum so the factorial design stays balanced.
     for _ in range(iterations):
         sample: list[float] = []
         for values in strata.values():
@@ -47,6 +51,7 @@ def _stratified_bootstrap_mean_interval(
     return _percentile(estimates, 0.025), _percentile(estimates, 0.975)
 
 
+# Calculate a 95% Wilson interval for a success proportion.
 def _wilson_interval(successes: int, total: int) -> tuple[float, float]:
     z = 1.959963984540054
     proportion = successes / total
@@ -145,6 +150,7 @@ def summarize_group(
     }
 
 
+# Write a table only when it contains at least one row.
 def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
     if not rows:
         return
@@ -154,6 +160,7 @@ def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
         writer.writerows(rows)
 
 
+# Split result rows according to one field.
 def _group_rows(
     rows: list[dict[str, object]], key: str
 ) -> dict[object, list[dict[str, object]]]:
@@ -163,6 +170,7 @@ def _group_rows(
     return dict(groups)
 
 
+# Save one figure in vector and high-resolution raster formats.
 def _save_figure(figure: object, output_directory: Path, stem: str) -> None:
     figure.savefig(output_directory / f"{stem}.pdf", bbox_inches="tight")
     figure.savefig(output_directory / f"{stem}.png", dpi=300, bbox_inches="tight")
@@ -175,6 +183,7 @@ def _clear_figure_files(output_directory: Path) -> None:
             path.unlink()
 
 
+# Apply a consistent publication style before figures are created.
 def _configure_plot_style() -> None:
     import matplotlib
 
@@ -198,6 +207,7 @@ def _configure_plot_style() -> None:
     })
 
 
+# Calculate mean greedy sensor excess for every K and M cell.
 def _cell_mean_excess(rows: list[dict[str, object]]) -> dict[tuple[int, int], float]:
     cells: dict[tuple[int, int], list[float]] = defaultdict(list)
     for row in rows:
@@ -486,6 +496,7 @@ def _guarantee_figure(
     return figure
 
 
+# Measure how summary statistics change as more replicates are included.
 def _convergence_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     results: list[dict[str, object]] = []
     for dimension, dimension_rows in sorted(_group_rows(rows, "spatial_dimension").items()):
@@ -510,6 +521,7 @@ def _convergence_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     return results
 
 
+# Build a short findings template from the current numerical summaries.
 def _claim_text(
     overall_summary: dict[str, object],
     dimension_summaries: list[dict[str, object]],
@@ -566,18 +578,22 @@ def analyze_benchmarks(
         raise ValueError("Missing benchmark results: " + ", ".join(sorted(missing)))
 
     output = Path(output_directory)
-    output.mkdir(parents=True, exist_ok=True)
-    _clear_figure_files(output)
+    tables_directory = output / "tables"
+    figures_directory = output / "figures"
+    tables_directory.mkdir(parents=True, exist_ok=True)
+    figures_directory.mkdir(parents=True, exist_ok=True)
+    _clear_figure_files(figures_directory)
     _configure_plot_style()
     rows = [
         case_metrics(record)
         for records in records_by_dataset.values()
         for record in records
     ]
-    _write_csv(output / "case_metrics.csv", rows)
+    _write_csv(tables_directory / "case_metrics.csv", rows)
 
     summary_rows: list[dict[str, object]] = []
 
+    # Add one reproducible bootstrap summary for a selected group.
     def add_summary(group_type: str, group_value: str, group: list[dict[str, object]]):
         seed = 20261201 + zlib.crc32(f"{group_type}:{group_value}".encode())
         summary_rows.append(summarize_group(
@@ -601,15 +617,15 @@ def analyze_benchmarks(
     for dimension, dimension_rows in sorted(_group_rows(rows, "spatial_dimension").items()):
         for model, group in sorted(_group_rows(dimension_rows, "field_model").items()):
             add_summary("dimension_x_field_model", f"{dimension}D:{model}", group)
-    _write_csv(output / "group_summary.csv", summary_rows)
+    _write_csv(tables_directory / "group_summary.csv", summary_rows)
 
     overall_summary = summary_rows[0]
     dimension_summaries = [
         row for row in summary_rows if row["group_type"] == "dimension"
     ]
     convergence = _convergence_rows(rows)
-    _write_csv(output / "sample_convergence.csv", convergence)
-    (output / "paper_findings.md").write_text(
+    _write_csv(tables_directory / "sample_convergence.csv", convergence)
+    (tables_directory / "paper_findings.md").write_text(
         _claim_text(overall_summary, dimension_summaries), encoding="utf-8"
     )
 
@@ -623,17 +639,17 @@ def analyze_benchmarks(
     figures: dict[str, object] = {
         "heatmaps": _heatmap_figure(
             by_dimension,
-            output,
+            figures_directory,
             color_limit,
         ),
         "families": _family_figure(
             by_dimension,
-            output,
+            figures_directory,
             bootstrap_iterations,
         ),
         "guarantee": _guarantee_figure(
             by_dimension,
-            output,
+            figures_directory,
         ),
     }
     payload = {
@@ -642,7 +658,7 @@ def analyze_benchmarks(
         "dimension_summaries": dimension_summaries,
         "sample_convergence": convergence,
     }
-    (output / "analysis_summary.json").write_text(
+    (tables_directory / "analysis_summary.json").write_text(
         json.dumps(payload, indent=2) + "\n", encoding="utf-8"
     )
     return {

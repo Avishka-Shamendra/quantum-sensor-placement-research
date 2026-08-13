@@ -19,6 +19,7 @@ INPUT_ROOT = HERE / "inputs"
 ZERO_ERROR_ROOT = HERE.parent / "min-sensor-zero-error"
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
+# Reuse the field generators and zero-error solver without modifying that project.
 if str(ZERO_ERROR_ROOT) not in sys.path:
     sys.path.insert(0, str(ZERO_ERROR_ROOT))
 
@@ -172,6 +173,8 @@ def generate_factorial_dataset(
     selected_k = sorted(set(k_values))
     selected_m = sorted(set(m_values))
     factorial_cells = list(product(selected_k, selected_m))
+
+    # Give each K and M cell the same count, with at most one extra case.
     if cases_per_model is None:
         assert replicates is not None
         cell_replicates = [replicates] * len(factorial_cells)
@@ -186,6 +189,7 @@ def generate_factorial_dataset(
     cases: list[dict[str, object]] = []
     case_number = 0
 
+    # Generate every requested family and its balanced K and M cells.
     for model in selected_models:
         for (K, M), replicate_count in zip(
             factorial_cells, cell_replicates
@@ -213,6 +217,8 @@ def generate_factorial_dataset(
                     for pair in combinations(range(K), 2)
                 }
                 thresholds = compute_nijm(K, M, phase_gaps)
+
+                # Use the zero-error optimum to keep every tested budget below N_min.
                 minimum_sensors, _, _ = (
                     optimal_perfect_pairwise_sensor_placement(
                         K, M, thresholds

@@ -84,6 +84,8 @@ def load_sparse_input(
 
         raw_phases: dict[Pair, dict[int, float]] = {}
         raw_errors: dict[Pair, dict[int, dict[int, float]]] = {}
+
+        # Read canonical pairs only; reverse phases are reconstructed when needed.
         for row_number, row in enumerate(reader, start=2):
             try:
                 i = int(row["i"])
@@ -133,6 +135,8 @@ def load_sparse_input(
 
     phase_gaps: PhaseGaps = {}
     pair_errors: PairErrorData = {}
+
+    # Convert sparse row dictionaries into the structure used by the algorithms.
     for pair in pairs:
         if set(raw_errors[pair]) != set(range(M)):
             raise ValueError(

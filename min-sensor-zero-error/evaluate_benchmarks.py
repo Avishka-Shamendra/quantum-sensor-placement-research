@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from eval import INPUT_ROOT, OUTPUT_ROOT, evaluate_dataset
+from eval import INPUT_ROOT, RESULTS_ROOT, evaluate_dataset
 from generate_benchmarks import BENCHMARKS, generate_benchmarks
 from paper_analysis import analyze_benchmarks
 
@@ -12,6 +12,7 @@ from paper_analysis import analyze_benchmarks
 DATASETS = [str(design["dataset"]) for design in BENCHMARKS.values()]
 
 
+# Parse a command-line value that must be a positive integer.
 def _positive_integer(value: str) -> int:
     try:
         parsed = int(value)
@@ -46,7 +47,8 @@ def run_benchmark_evaluation(
         records_by_dataset[dataset] = records
         print(f"  {len(records)} cases -> {output_directory}", flush=True)
 
-    analysis_directory = OUTPUT_ROOT / "benchmark-analysis"
+    dataset_names = "_".join(DATASETS)
+    analysis_directory = RESULTS_ROOT / f"results_summary_{dataset_names}_full"
     analysis = analyze_benchmarks(
         records_by_dataset,
         analysis_directory,
@@ -56,6 +58,7 @@ def run_benchmark_evaluation(
     return analysis
 
 
+# Define command-line options for the complete benchmark pipeline.
 def _parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate, evaluate, and analyze both benchmark datasets."
@@ -80,6 +83,7 @@ def _parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+# Run the benchmark pipeline and return a process status code.
 def main() -> int:
     arguments = _parse_arguments()
     try:

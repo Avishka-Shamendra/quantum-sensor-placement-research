@@ -20,7 +20,7 @@ from input_data import load_sparse_input, validate_reverse_phases
 
 HERE = Path(__file__).resolve().parent
 INPUT_ROOT = HERE / "inputs"
-DEFAULT_RESULTS_ROOT = HERE / "results" / "exhaustive_search_notebook"
+DEFAULT_RESULTS_ROOT = HERE / "results" / "optimal_evaluation"
 
 
 def run_dataset(
@@ -34,6 +34,8 @@ def run_dataset(
         (dataset_directory / "manifest.json").read_text(encoding="utf-8")
     )
     cases = manifest["cases"]
+
+    # A value of None runs every case; a number limits replicates per K and M cell.
     if replicates_per_cell is not None:
         cases = [
             case
@@ -42,6 +44,8 @@ def run_dataset(
         ]
 
     records: list[dict[str, object]] = []
+
+    # Run the exhaustive solver at every selected budget for each case.
     for case_number, case in enumerate(cases, start=1):
         K, M, phase_gaps, pair_errors = load_sparse_input(
             dataset_directory / str(case["file"])
@@ -85,7 +89,8 @@ def run_dataset(
             f"({case['field_model']}, K={K}, M={M})"
         )
 
-    save_results(dataset, records, results_root)
+    run_scope = "full" if replicates_per_cell is None else "test"
+    save_results(dataset, records, results_root, run_scope=run_scope)
     return records
 
 
@@ -93,10 +98,15 @@ def save_results(
     dataset: str,
     records: list[dict[str, object]],
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
+    *,
+    run_scope: str = "test",
 ) -> None:
     """Save detailed JSON and a compact CSV table for one dataset."""
-    tables_directory = Path(results_root) / dataset / "tables"
+    result_directory = _dataset_results_directory(results_root, dataset, run_scope)
+    tables_directory = result_directory / "tables"
     tables_directory.mkdir(parents=True, exist_ok=True)
+
+    # JSON keeps complete strategies; CSV keeps compact numerical columns.
     (tables_directory / "results.json").write_text(
         json.dumps(
             {"dataset": dataset, "result_count": len(records), "results": records},
@@ -135,11 +145,16 @@ def make_candidate_plots(
     dataset: str,
     records: list[dict[str, object]],
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
+    *,
+    run_scope: str = "test",
 ) -> list[tuple[str, plt.Figure]]:
     """Create and save five candidate plots for one dataset."""
-    figures_directory = Path(results_root) / dataset / "figures"
+    result_directory = _dataset_results_directory(results_root, dataset, run_scope)
+    figures_directory = result_directory / "figures"
     figures_directory.mkdir(parents=True, exist_ok=True)
     dimension = int(records[0]["spatial_dimension"])
+
+    # Build each candidate figure before saving it in both output formats.
     figures = [
         (
             "Error versus sensor budget",
@@ -174,6 +189,17 @@ def make_candidate_plots(
         figure.savefig(figures_directory / f"{filename}.pdf")
         result.append((title, figure))
     return result
+
+
+def _dataset_results_directory(
+    results_root: str | Path,
+    dataset: str,
+    run_scope: str,
+) -> Path:
+    """Build the dataset-specific directory for a test or full run."""
+    if run_scope not in {"test", "full"}:
+        raise ValueError("run_scope must be 'test' or 'full'")
+    return Path(results_root) / f"{dataset}_results_{run_scope}"
 
 
 def run_summary(records: list[dict[str, object]]) -> dict[str, object]:

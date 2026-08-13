@@ -40,7 +40,7 @@ jupyter lab min-error-sequential/evaluate_optimal.ipynb
 The notebook evaluates one realization from every field-family, `K`, and `M`
 cell by default. Set `RUN_ALL_REPLICATES = True` in its settings cell to run
 all 3,000 cases per dataset. Notebook tables and figures are written under
-`min-error-sequential/results/exhaustive_search_notebook/`.
+`min-error-sequential/results/optimal_evaluation/`.
 
 To compare the exhaustive and greedy algorithms using paired cases, open:
 
@@ -48,11 +48,27 @@ To compare the exhaustive and greedy algorithms using paired cases, open:
 jupyter lab min-error-sequential/compare_algorithms.ipynb
 ```
 
-Its tables and candidate comparison figures are written under
+Its tables and selected comparison figures are written under
 `min-error-sequential/results/algorithm_comparison/`.
 
-The generated inputs are stored under `inputs/`. Numerical results, optimal
-allocations, pair locations, and decision trees are stored under `output/`.
+The generated inputs are stored under `inputs/`. All numerical results,
+allocations, pair locations, decision trees, and figures are stored under
+`results/`.
+
+The main comparison follows the same layout as the zero-error folder:
+
+```text
+results/
+├── algorithm_comparison/
+│   ├── lite_benchmark_1d_results_<test|full>/tables/
+│   ├── lite_benchmark_2d_results_<test|full>/tables/
+│   └── results_summary_lite_benchmark_1d_lite_benchmark_2d_<test|full>/figures/
+└── optimal_evaluation/       # exhaustive-search-only results
+```
+
+The `_test` suffix identifies the 18-case notebook pilot, while `_full`
+identifies a run over all 3,000 cases in each dataset. Optimal-only notebook
+outputs follow the same `<dataset>_results_<test|full>` rule.
 
 The lite design uses Gaussian, sinusoidal, and quadratic fields in 1D and 2D,
 with `K` in `{3, 4, 5}` and `M` in `{3, 4}`. Each dataset contains exactly

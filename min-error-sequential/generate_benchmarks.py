@@ -7,6 +7,7 @@ import argparse
 from generate_inputs import generate_factorial_dataset
 
 
+# Fixed benchmark parameters used for both spatial dimensions.
 MODELS = ["gaussian", "sinusoidal", "quadratic"]
 K_VALUES = [3, 4, 5]
 M_VALUES = [3, 4]
@@ -16,6 +17,7 @@ CASES_PER_FIELD_MODEL = 1_000
 # sensor-allocation problem and can be changed for larger experiments.
 EXHAUSTIVE_SEARCH_BUDGET_CAP = 12
 
+# Separate seeds make the 1D and 2D datasets reproducible and independent.
 BENCHMARKS: dict[str, dict[str, object]] = {
     "1d": {
         "dataset": "lite_benchmark_1d",

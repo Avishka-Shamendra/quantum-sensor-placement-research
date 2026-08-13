@@ -53,6 +53,7 @@ def uniform(
     """Distribute sensors evenly and build a sequential decision tree."""
     pairs = _validate_inputs(K, M, N, pijmn)
 
+    # Spread the remainder across the first locations after equal division.
     sensors_per_location, remainder = divmod(N, M)
     allocation = tuple(
         sensors_per_location + (1 if m < remainder else 0)
@@ -153,6 +154,7 @@ def _compute_pair_errors(
         best_error = 0.5
 
         for m in range(M):
+            # Use the largest stored count supported by this allocation.
             available_counts = (
                 count for count in pijmn[pair][m] if count <= allocation[m]
             )
@@ -182,6 +184,7 @@ def _build_tree(
     if len(remaining) == 1:
         return DecisionLeaf(declared_field=remaining[0])
 
+    # Test the remaining pair with the smallest available error.
     pair = min(combinations(remaining, 2), key=lambda item: pair_errors[item])
     i, j = pair
     return DecisionNode(
@@ -219,6 +222,8 @@ def _subtree_error(
         )
 
     i, j = tree.pair
+
+    # Pass the probability mass for each possible active field to both branches.
     discard_i_weights = tuple(
         weight
         * _branch_probability(

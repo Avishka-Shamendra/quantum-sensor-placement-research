@@ -81,6 +81,7 @@ def greedy(
         assert best_allocation is not None
         allocation = best_allocation
 
+    # Rebuild the final strategy from the completed allocation.
     pair_locations, pair_errors = _compute_pair_errors(
         pairs, M, allocation, pijmn
     )

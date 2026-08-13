@@ -58,10 +58,12 @@ def exhaustive_search(
     best_pair_locations: dict[Pair, int] | None = None
     best_tree: DecisionTree | None = None
 
+    # Evaluate every allocation whose sensor counts sum to the budget.
     for allocation in _budget_allocations(N, M):
         pair_locations, pair_errors = _compute_pair_errors(
             pairs, M, allocation, pijmn
         )
+        # Each field is assumed to be active with equal prior probability.
         initial_weights = tuple(1.0 / K for _ in range(K))
         error, tree = _best_decision_tree(
             tuple(range(K)), initial_weights, pair_locations, pair_errors
@@ -175,6 +177,7 @@ def _compute_pair_errors(
         best_error = 0.5
 
         for m in range(M):
+            # Use the largest stored count supported by this allocation.
             available_counts = (
                 count for count in pijmn[pair][m] if count <= allocation[m]
             )

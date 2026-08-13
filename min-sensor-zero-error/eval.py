@@ -29,13 +29,14 @@ from phase_data import Thresholds, compute_nijm, load_phase_csv
 
 HERE = Path(__file__).resolve().parent
 INPUT_ROOT = HERE / "inputs"
-OUTPUT_ROOT = HERE / "output"
+RESULTS_ROOT = HERE / "results" / "algorithm_comparison"
 MAX_EXACT_FIELDS = 10
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 SolverResult = Tuple[int, List[int], List[List[Optional[int]]]]
 Solver = Callable[[int, int, Thresholds], SolverResult]
 
 
+# Parse a command-line value that must be a positive integer.
 def _positive_integer(value: str) -> int:
     try:
         parsed = int(value)
@@ -46,6 +47,7 @@ def _positive_integer(value: str) -> int:
     return parsed
 
 
+# Validate a dataset directory name supplied on the command line.
 def _dataset_name(value: str) -> str:
     if not DATASET_NAME.fullmatch(value):
         raise argparse.ArgumentTypeError(
@@ -54,6 +56,7 @@ def _dataset_name(value: str) -> str:
     return value
 
 
+# Define the command-line parameters for dataset evaluation.
 def _parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Run the exact and greedy algorithms on every dataset case."
@@ -74,6 +77,7 @@ def _parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
+# Load the dataset manifest and check its basic structure.
 def _load_manifest(dataset_directory: Path) -> dict[str, object]:
     manifest_path = dataset_directory / "manifest.json"
     try:
@@ -88,6 +92,7 @@ def _load_manifest(dataset_directory: Path) -> dict[str, object]:
     return manifest
 
 
+# Match each manifest entry to an existing CSV case file.
 def _case_entries(
     dataset_directory: Path, manifest: dict[str, object]
 ) -> list[tuple[Path, dict[str, object]]]:
@@ -119,6 +124,7 @@ def _case_entries(
     return entries
 
 
+# Run a deterministic solver repeatedly and return its mean runtime.
 def _run_repeatedly(
     solver: Solver,
     K: int,
@@ -139,6 +145,7 @@ def _run_repeatedly(
     return first_result, elapsed
 
 
+# Check that a solver result covers every pair with a valid allocation.
 def _validate_solution(
     label: str,
     result: SolverResult,
@@ -165,6 +172,7 @@ def _validate_solution(
                 raise RuntimeError(f"{label} did not cover pair {(i, j)}")
 
 
+# Convert one solver result into a JSON-ready record.
 def _solver_record(result: SolverResult, seconds: float) -> dict[str, object]:
     total, allocation, pair_locations = result
     return {
@@ -175,6 +183,7 @@ def _solver_record(result: SolverResult, seconds: float) -> dict[str, object]:
     }
 
 
+# Run and validate both algorithms for one benchmark case.
 def _evaluate_case(
     case_path: Path,
     metadata: dict[str, object],
@@ -202,6 +211,8 @@ def _evaluate_case(
     pair_count = K * (K - 1) // 2
     ratio = greedy_total / optimal_total
     approximation_factor = 1 + log(pair_count)
+
+    # Confirm that the observed ratio respects the theoretical guarantee.
     if ratio > approximation_factor + 1e-12:
         raise RuntimeError(
             f"Greedy result violates the paper's approximation bound in {case_path.name}"
@@ -228,6 +239,7 @@ def _evaluate_case(
     }
 
 
+# Flatten a detailed case record into one summary-table row.
 def _summary_row(record: dict[str, object]) -> dict[str, object]:
     optimal = record["optimal"]
     greedy = record["greedy"]
@@ -263,13 +275,14 @@ def summarize_records(
     return [_summary_row(record) for record in records]
 
 
+# Write detailed JSON results and the compact CSV summary.
 def _write_outputs(
     dataset_name: str,
     manifest: dict[str, object],
     records: list[dict[str, object]],
     repeats: int,
 ) -> Path:
-    output_directory = OUTPUT_ROOT / dataset_name
+    output_directory = RESULTS_ROOT / f"{dataset_name}_results_full" / "tables"
     output_directory.mkdir(parents=True, exist_ok=True)
     payload = {
         "schema_version": 1,
@@ -294,6 +307,7 @@ def _write_outputs(
     return output_directory
 
 
+# Print a readable case-by-case summary for command-line runs.
 def _print_summary(dataset_name: str, records: list[dict[str, object]]) -> None:
     rows = summarize_records(records)
     print(f"\nDataset: {dataset_name} ({len(rows)} cases; exact + greedy)")
@@ -344,6 +358,7 @@ def evaluate_dataset(
     return records, output_directory
 
 
+# Parse arguments, run the evaluation, and report the output directory.
 def main() -> int:
     arguments = _parse_arguments()
 

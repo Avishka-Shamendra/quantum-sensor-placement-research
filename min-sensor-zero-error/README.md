@@ -12,12 +12,13 @@ From the repository root:
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r min-sensor-zero-error/requirements.txt
-jupyter lab min-sensor-zero-error/evaluate_algorithms.ipynb
+jupyter lab min-sensor-zero-error/compare_algorithms.ipynb
 ```
 
 Run all notebook cells. Missing benchmark inputs are generated from fixed
 seeds, both algorithms are run on every case, and the combined tables and
-figures are written below `min-sensor-zero-error/output/benchmark-analysis/`.
+figures are written below
+`min-sensor-zero-error/results/algorithm_comparison/`.
 
 The same workflow can be run without Jupyter:
 
@@ -98,6 +99,21 @@ field pair is distinguishable at least somewhere in each case.
 
 ## Evaluation outputs
 
+Both problem folders use the same main comparison layout:
+
+```text
+results/algorithm_comparison/
+├── benchmark_1d_results_full/
+│   └── tables/
+├── benchmark_2d_results_full/
+│   └── tables/
+└── results_summary_benchmark_1d_benchmark_2d_full/
+    ├── tables/
+    └── figures/
+```
+
+The `_full` suffix shows that this pipeline evaluates every generated case.
+
 The primary solution-quality measure is
 
 ```text
@@ -144,9 +160,9 @@ min-sensor-zero-error/
 ├── eval.py                    # evaluates both algorithms on one dataset
 ├── paper_analysis.py          # statistics and publication figures
 ├── evaluate_benchmarks.py     # complete command-line workflow
-├── evaluate_algorithms.ipynb  # documented interactive workflow
+├── compare_algorithms.ipynb   # documented interactive workflow
 ├── inputs/                    # generated benchmark inputs
-└── output/                    # numerical results and analysis artifacts
+└── results/                   # comparison tables and figures
 ```
 
 Reusable implementation remains in Python modules. The notebook imports those

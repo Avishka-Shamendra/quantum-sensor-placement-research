@@ -19,9 +19,9 @@
     "mean_theorem_excess_fraction_used": 0.06126132102806912,
     "p95_theorem_excess_fraction_used": 0.21743184260125836,
     "max_theorem_excess_fraction_used": 0.6068261510845582,
-    "median_optimal_seconds": 0.000711812997906236,
-    "median_greedy_seconds": 0.0003857495030388236,
-    "median_runtime_speedup": 1.7799558925772605
+    "median_optimal_seconds": 0.0007185000140452757,
+    "median_greedy_seconds": 0.0003900205047102645,
+    "median_runtime_speedup": 1.7936953091913648
   },
   "dimension_summaries": [
     {
@@ -43,9 +43,9 @@
       "mean_theorem_excess_fraction_used": 0.0641185017931806,
       "p95_theorem_excess_fraction_used": 0.21716281044440536,
       "max_theorem_excess_fraction_used": 0.6068261510845582,
-      "median_optimal_seconds": 0.0006736044997524004,
-      "median_greedy_seconds": 0.0003785419976338744,
-      "median_runtime_speedup": 1.7223366672385136
+      "median_optimal_seconds": 0.0006797295063734055,
+      "median_greedy_seconds": 0.0003885415062541142,
+      "median_runtime_speedup": 1.7413732427044923
     },
     {
       "group_type": "dimension",
@@ -66,9 +66,9 @@
       "mean_theorem_excess_fraction_used": 0.058404140262957635,
       "p95_theorem_excess_fraction_used": 0.21746914253793215,
       "max_theorem_excess_fraction_used": 0.6068261510845582,
-      "median_optimal_seconds": 0.000762770498113241,
-      "median_greedy_seconds": 0.0003929164995497558,
-      "median_runtime_speedup": 1.8493994555487827
+      "median_optimal_seconds": 0.0007616460061399266,
+      "median_greedy_seconds": 0.00039195849967654794,
+      "median_runtime_speedup": 1.8641763778355465
     }
   ],
   "sample_convergence": [

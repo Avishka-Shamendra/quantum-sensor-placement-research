@@ -36,6 +36,7 @@ DEFAULT_SEED = 20260728
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
+# Parse a command-line value that must be a positive integer.
 def _positive_int(value: str) -> int:
     try:
         parsed = int(value)
@@ -46,6 +47,7 @@ def _positive_int(value: str) -> int:
     return parsed
 
 
+# Parse a command-line value that must be positive and finite.
 def _positive_float(value: str) -> float:
     try:
         parsed = float(value)
@@ -56,6 +58,7 @@ def _positive_float(value: str) -> float:
     return parsed
 
 
+# Define and validate the custom dataset parameters.
 def _parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate canonical phase-gap inputs for both allocation algorithms."
@@ -111,6 +114,7 @@ def balanced_configurations(
     """Balance every requested dimension independently to within one case."""
     rng = Random(seed)
 
+    # Repeat and shuffle each value list until it contains the requested cases.
     def balanced_values(values: list[object]) -> list[object]:
         result: list[object] = []
         while len(result) < cases:
@@ -128,6 +132,7 @@ def balanced_configurations(
     ]
 
 
+# Write one phase-gap case using the standard CSV schema.
 def _write_case(path: Path, rows: list[CsvRow]) -> None:
     with path.open("w", encoding="utf-8", newline="") as output_file:
         writer = csv.writer(output_file, lineterminator="\n")
@@ -136,6 +141,7 @@ def _write_case(path: Path, rows: list[CsvRow]) -> None:
             writer.writerow((i, j, m, format(phase_gap, ".17g")))
 
 
+# Prepare an empty dataset directory without touching unrelated files.
 def _prepare_directory(directory: Path, overwrite: bool) -> None:
     existing_generated_files = list(directory.glob("case_*.csv")) if directory.exists() else []
     manifest = directory / "manifest.json"
@@ -199,6 +205,8 @@ def generate_factorial_dataset(
     cases: list[dict[str, object]] = []
     case_number = 0
     realization_number = 0
+
+    # Generate every model, K, M, replicate, and phase-scale combination.
     for model in selected_models:
         for K in selected_k:
             for M in selected_m:
@@ -267,6 +275,7 @@ def generate_factorial_dataset(
     return target
 
 
+# Generate a custom balanced dataset from command-line parameters.
 def main() -> int:
     arguments = _parse_arguments()
     target = INPUT_ROOT / arguments.dataset

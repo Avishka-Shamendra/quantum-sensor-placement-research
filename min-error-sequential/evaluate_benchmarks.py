@@ -21,7 +21,7 @@ from input_data import load_sparse_input, validate_reverse_phases
 
 HERE = Path(__file__).resolve().parent
 INPUT_ROOT = HERE / "inputs"
-OUTPUT_ROOT = HERE / "output"
+RESULTS_ROOT = HERE / "results" / "optimal_evaluation"
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
@@ -91,6 +91,8 @@ def evaluate_dataset(dataset: str) -> Path:
         raise ValueError("manifest must contain a non-empty cases list")
 
     records: list[dict[str, object]] = []
+
+    # Evaluate every manifest case using each of its selected budgets.
     for case_number, case in enumerate(raw_cases, start=1):
         if not isinstance(case, dict):
             raise ValueError(f"manifest case {case_number} must be an object")
@@ -113,6 +115,7 @@ def evaluate_dataset(dataset: str) -> Path:
         if K != case.get("K") or M != case.get("M"):
             raise ValueError(f"case dimensions do not match manifest: {filename}")
 
+        # Time and validate one exhaustive-search run for each budget.
         for budget in budgets:
             started = perf_counter()
             result = exhaustive_search(K, M, budget, pair_errors)
@@ -144,8 +147,10 @@ def evaluate_dataset(dataset: str) -> Path:
                 f"time={elapsed:.4f}s"
             )
 
-    output_directory = OUTPUT_ROOT / dataset
+    output_directory = RESULTS_ROOT / f"{dataset}_results_full" / "tables"
     output_directory.mkdir(parents=True, exist_ok=True)
+
+    # Keep full strategies in JSON and main numerical values in CSV.
     (output_directory / "results.json").write_text(
         json.dumps(
             {"dataset": dataset, "result_count": len(records), "results": records},
