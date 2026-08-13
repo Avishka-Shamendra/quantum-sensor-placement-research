@@ -23,22 +23,12 @@ HERE = Path(__file__).resolve().parent
 INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison_lite"
 
-# Use separate palettes for error, runtime, and field-family figures.
+# Use the same algorithm colors in every comparison figure.
 ALGORITHM_COLORS = {
     "Optimal": "#1f77b4",
     "Greedy": "#ff7f0e",
     "Heuristic": "#d62728",
     "Uniform": "#2ca02c",
-}
-RUNTIME_COLORS = {
-    "Greedy": "#9467bd",
-    "Heuristic": "#e377c2",
-    "Uniform": "#17becf",
-}
-FIELD_GAP_COLORS = {
-    "Greedy": "#c44e52",
-    "Heuristic": "#8172b2",
-    "Uniform": "#4c72b0",
 }
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 
@@ -594,9 +584,9 @@ def _plot_mean_error_curves(
         levels = sorted({int(record["budget_level"]) for record in K_records})
         for algorithm, error_key, line_style in (
             ("Optimal", "optimal_error", "-"),
-            ("Greedy", "greedy_error", "--"),
-            ("Heuristic", "tree_aware_error", "-."),
-            ("Uniform", "uniform_error", ":"),
+            ("Greedy", "greedy_error", "-"),
+            ("Heuristic", "tree_aware_error", "-"),
+            ("Uniform", "uniform_error", "-"),
         ):
             x_values = []
             means = []
@@ -821,9 +811,9 @@ def _plot_combined_mean_error_curves(
             )
             for algorithm, error_key, line_style in (
                 ("Optimal", "optimal_error", "-"),
-                ("Greedy", "greedy_error", "--"),
-                ("Heuristic", "tree_aware_error", "-."),
-                ("Uniform", "uniform_error", ":"),
+                ("Greedy", "greedy_error", "-"),
+                ("Heuristic", "tree_aware_error", "-"),
+                ("Uniform", "uniform_error", "-"),
             ):
                 x_values = []
                 means = []
@@ -876,9 +866,9 @@ def _plot_overall_mean_error_curves(
         levels = sorted({int(record["budget_level"]) for record in records})
         for algorithm, error_key, line_style in (
             ("Optimal", "optimal_error", "-"),
-            ("Greedy", "greedy_error", "--"),
-            ("Heuristic", "tree_aware_error", "-."),
-            ("Uniform", "uniform_error", ":"),
+            ("Greedy", "greedy_error", "-"),
+            ("Heuristic", "tree_aware_error", "-"),
+            ("Uniform", "uniform_error", "-"),
         ):
             x_values: list[float] = []
             means: list[float] = []
@@ -1130,7 +1120,7 @@ def _plot_combined_runtime_speedup(
                 medianprops={"color": "black"},
             )
             for box in boxplot["boxes"]:
-                box.set_facecolor(RUNTIME_COLORS[algorithm])
+                box.set_facecolor(ALGORITHM_COLORS[algorithm])
                 box.set_alpha(0.45)
             boxplot["boxes"][0].set_label(algorithm)
         axis.axhline(1, color="black", linestyle="--", linewidth=1)
@@ -1186,7 +1176,7 @@ def _plot_combined_gap_by_family(
                 medianprops={"color": "black"},
             )
             for box in boxplot["boxes"]:
-                box.set_facecolor(FIELD_GAP_COLORS[algorithm])
+                box.set_facecolor(ALGORITHM_COLORS[algorithm])
                 box.set_alpha(0.45)
             boxplot["boxes"][0].set_label(algorithm)
         axis.set(

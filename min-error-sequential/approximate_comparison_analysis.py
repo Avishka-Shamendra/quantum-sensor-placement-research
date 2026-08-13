@@ -22,9 +22,9 @@ INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 ALGORITHM_STYLES = {
-    "Greedy": ("greedy", "#ff7f0e", "--"),
-    "Heuristic": ("heuristic", "#d62728", "-."),
-    "Uniform": ("uniform", "#2ca02c", ":"),
+    "Greedy": ("greedy", "#ff7f0e", "-"),
+    "Heuristic": ("heuristic", "#d62728", "-"),
+    "Uniform": ("uniform", "#2ca02c", "-"),
 }
 SENSOR_BUDGET_LABEL = (
     r"$N/N_{\min}$ "
