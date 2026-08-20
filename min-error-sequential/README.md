@@ -78,7 +78,8 @@ To compare Greedy, Heuristic, and Uniform on the expanded datasets, open:
 jupyter lab min-error-sequential/compare_algorithms.ipynb
 ```
 
-Its test mode uses 360 cases per dataset, while full mode uses all 2,700 cases.
+Its test mode uses 100 balanced cases per dataset, while full mode uses all
+2,700 cases.
 Results are written under `min-error-sequential/results/algorithm_comparison/`.
 
 To study how beam width affects the tree-aware heuristic, open:

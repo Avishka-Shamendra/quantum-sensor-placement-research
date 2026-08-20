@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import csv
 import json
+from collections import defaultdict
 from pathlib import Path
+from random import Random
 from statistics import fmean, median
 from time import perf_counter
 
@@ -47,12 +49,16 @@ def run_approximate_dataset(
     progress_every: int = 25,
     k_values: tuple[int, ...] | None = None,
     m_values: tuple[int, ...] | None = None,
+    case_limit: int | None = None,
+    case_sample_seed: int = 20260820,
 ) -> list[dict[str, object]]:
     """Run Greedy, Heuristic, and Uniform on the same benchmark cases."""
     if replicates_per_cell is not None and replicates_per_cell < 1:
         raise ValueError("replicates_per_cell must be positive or None")
     if progress_every < 1:
         raise ValueError("progress_every must be positive")
+    if case_limit is not None and case_limit < 1:
+        raise ValueError("case_limit must be positive or None")
 
     greedy_parameters = dict(greedy_parameters or {})
     heuristic_parameters = dict(heuristic_parameters or {})
@@ -66,6 +72,8 @@ def run_approximate_dataset(
         replicates_per_cell,
         k_values,
         m_values,
+        case_limit,
+        case_sample_seed,
     )
 
     records: list[dict[str, object]] = []
@@ -155,7 +163,12 @@ def run_approximate_dataset(
 
     run_scope = (
         "full"
-        if replicates_per_cell is None and k_values is None and m_values is None
+        if (
+            replicates_per_cell is None
+            and k_values is None
+            and m_values is None
+            and case_limit is None
+        )
         else "test"
     )
     save_approximate_results(
@@ -177,6 +190,8 @@ def _select_cases(
     replicates_per_cell: int | None,
     k_values: tuple[int, ...] | None,
     m_values: tuple[int, ...] | None,
+    case_limit: int | None,
+    case_sample_seed: int,
 ) -> list[dict[str, object]]:
     """Apply the requested replicate, K, and M filters."""
     selected = cases
@@ -192,9 +207,52 @@ def _select_cases(
     if m_values is not None:
         allowed_m = set(m_values)
         selected = [case for case in selected if int(case["M"]) in allowed_m]
+    if case_limit is not None:
+        selected = _balanced_case_sample(selected, case_limit, case_sample_seed)
     if not selected:
         raise ValueError("the selected settings contain no benchmark cases")
     return selected
+
+
+def _balanced_case_sample(
+    cases: list[dict[str, object]],
+    case_limit: int,
+    random_seed: int,
+) -> list[dict[str, object]]:
+    """Sample cases in rounds so every family, K, and M cell is represented."""
+    if case_limit >= len(cases):
+        return cases
+
+    groups: defaultdict[tuple[str, int, int], list[dict[str, object]]] = (
+        defaultdict(list)
+    )
+    original_positions = {
+        str(case["file"]): position for position, case in enumerate(cases)
+    }
+    for case in cases:
+        key = (str(case["field_model"]), int(case["K"]), int(case["M"]))
+        groups[key].append(case)
+
+    generator = Random(random_seed)
+    selected: list[dict[str, object]] = []
+    replicate_index = 0
+    while len(selected) < case_limit:
+        available_keys = [
+            key for key, group in groups.items() if replicate_index < len(group)
+        ]
+        if not available_keys:
+            break
+        generator.shuffle(available_keys)
+        for key in available_keys:
+            selected.append(groups[key][replicate_index])
+            if len(selected) == case_limit:
+                break
+        replicate_index += 1
+
+    return sorted(
+        selected,
+        key=lambda case: original_positions[str(case["file"])],
+    )
 
 
 def save_approximate_results(
@@ -294,6 +352,43 @@ def approximate_summary(
     return rows
 
 
+def overall_error_curve_summary(
+    records: list[dict[str, object]],
+) -> list[dict[str, float | int | str]]:
+    """Summarize overall Greedy and Heuristic error at each budget level."""
+    dimension = f"{int(records[0]['spatial_dimension'])}D"
+    rows: list[dict[str, float | int | str]] = []
+    levels = sorted({int(record["budget_level"]) for record in records})
+    for level in levels:
+        selected = [
+            record for record in records if int(record["budget_level"]) == level
+        ]
+        greedy_error = fmean(float(record["greedy_error"]) for record in selected)
+        heuristic_error = fmean(
+            float(record["heuristic_error"]) for record in selected
+        )
+        error_reduction = greedy_error - heuristic_error
+        rows.append(
+            {
+                "dimension": dimension,
+                "budget_level": level,
+                "mean_budget_fraction": fmean(
+                    float(record["budget_fraction_of_N_min"])
+                    for record in selected
+                ),
+                "greedy_mean_error": greedy_error,
+                "heuristic_mean_error": heuristic_error,
+                "error_reduction": error_reduction,
+                "error_reduction_percent": (
+                    100.0 * error_reduction / greedy_error
+                    if greedy_error > 0.0
+                    else 0.0
+                ),
+            }
+        )
+    return rows
+
+
 def make_combined_approximate_plots(
     records_by_dataset: dict[str, list[dict[str, object]]],
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
@@ -330,11 +425,6 @@ def make_combined_approximate_plots(
             "Overall mean error curves",
             _plot_overall_mean_error_curves(dimension_records),
             "overall_mean_error_curves",
-        ),
-        (
-            "Runtime distribution by K",
-            _plot_runtime_by_k(dimension_records),
-            "runtime_distribution_by_k",
         ),
         (
             "Error distribution by field family",
@@ -455,54 +545,6 @@ def _plot_overall_mean_error_curves(
     return figure
 
 
-def _plot_runtime_by_k(
-    dimension_records: list[list[dict[str, object]]],
-) -> plt.Figure:
-    """Plot grouped runtime distributions for each number of fields."""
-    figure, axes = plt.subplots(
-        1, 2, figsize=(13.2, 4.8), sharey=True, constrained_layout=True
-    )
-    for axis, records in zip(axes, dimension_records):
-        dimension = int(records[0]["spatial_dimension"])
-        k_values = sorted({int(record["K"]) for record in records})
-        positions = np.arange(1, len(k_values) + 1)
-        for offset, (algorithm, (prefix, color, _)) in zip(
-            (-0.24, 0.0, 0.24), ALGORITHM_STYLES.items()
-        ):
-            values = [
-                [
-                    float(record[f"{prefix}_seconds"])
-                    for record in records
-                    if int(record["K"]) == K
-                ]
-                for K in k_values
-            ]
-            boxplot = axis.boxplot(
-                values,
-                positions=positions + offset,
-                widths=0.22,
-                patch_artist=True,
-                showmeans=True,
-                meanprops={"markerfacecolor": "black", "markeredgecolor": "black"},
-                medianprops={"color": "black"},
-            )
-            for box in boxplot["boxes"]:
-                box.set_facecolor(color)
-                box.set_alpha(0.45)
-            boxplot["boxes"][0].set_label(algorithm)
-        axis.set_yscale("log")
-        axis.set(
-            title=f"{dimension}D",
-            xlabel="Number of fields",
-            xticks=positions,
-            xticklabels=[f"K={K}" for K in k_values],
-        )
-        axis.grid(axis="y", alpha=0.25, which="both")
-    axes[0].set_ylabel("Runtime (seconds, log scale)")
-    axes[1].legend()
-    return figure
-
-
 def _plot_error_by_family(
     dimension_records: list[list[dict[str, object]]],
 ) -> plt.Figure:
@@ -549,7 +591,13 @@ def _plot_error_by_family(
         )
         axis.grid(axis="y", alpha=0.25)
     axes[0].set_ylabel("Final error")
-    axes[1].legend()
+    handles, labels = axes[1].get_legend_handles_labels()
+    figure.legend(
+        handles,
+        labels,
+        loc="outside upper center",
+        ncol=len(labels),
+    )
     return figure
 
 

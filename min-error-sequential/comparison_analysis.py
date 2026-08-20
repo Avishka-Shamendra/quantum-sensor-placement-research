@@ -521,6 +521,59 @@ def paired_summary(records: list[dict[str, object]]) -> dict[str, float | int]:
     }
 
 
+def overall_error_curve_summary(
+    records: list[dict[str, object]],
+) -> list[dict[str, float | int | str]]:
+    """Summarize overall Optimal, Greedy, and Heuristic error curves."""
+    dimension = f"{int(records[0]['spatial_dimension'])}D"
+    rows: list[dict[str, float | int | str]] = []
+    levels = sorted({int(record["budget_level"]) for record in records})
+    for level in levels:
+        selected = [
+            record for record in records if int(record["budget_level"]) == level
+        ]
+        optimal_error = fmean(float(record["optimal_error"]) for record in selected)
+        greedy_error = fmean(float(record["greedy_error"]) for record in selected)
+        heuristic_error = fmean(
+            float(record["tree_aware_error"]) for record in selected
+        )
+        optimal_from_greedy = greedy_error - optimal_error
+        optimal_from_heuristic = heuristic_error - optimal_error
+        heuristic_from_greedy = greedy_error - heuristic_error
+        rows.append(
+            {
+                "dimension": dimension,
+                "budget_level": level,
+                "mean_budget_fraction": fmean(
+                    float(record["budget_fraction_of_N_min"])
+                    for record in selected
+                ),
+                "optimal_mean_error": optimal_error,
+                "greedy_mean_error": greedy_error,
+                "heuristic_mean_error": heuristic_error,
+                "optimal_from_greedy": optimal_from_greedy,
+                "optimal_from_greedy_percent": (
+                    100.0 * optimal_from_greedy / greedy_error
+                    if greedy_error > 0.0
+                    else 0.0
+                ),
+                "optimal_from_heuristic": optimal_from_heuristic,
+                "optimal_from_heuristic_percent": (
+                    100.0 * optimal_from_heuristic / heuristic_error
+                    if heuristic_error > 0.0
+                    else 0.0
+                ),
+                "heuristic_from_greedy": heuristic_from_greedy,
+                "heuristic_from_greedy_percent": (
+                    100.0 * heuristic_from_greedy / greedy_error
+                    if greedy_error > 0.0
+                    else 0.0
+                ),
+            }
+        )
+    return rows
+
+
 def _validate_strategy(
     allocation: tuple[int, ...],
     pair_locations: dict[tuple[int, int], int],
@@ -1175,5 +1228,11 @@ def _plot_combined_gap_by_family(
         )
         axis.grid(axis="y", alpha=0.25)
     axes[0].set_ylabel(r"Error gap $P_{method}-P_{optimal}$")
-    axes[1].legend()
+    handles, labels = axes[1].get_legend_handles_labels()
+    figure.legend(
+        handles,
+        labels,
+        loc="outside upper center",
+        ncol=len(labels),
+    )
     return figure

@@ -13,6 +13,8 @@ from random import Random
 
 Pair = tuple[int, int]
 PairErrorTable = Mapping[Pair, Sequence[Mapping[int, float]]]
+# Stores an allocation and compact pair locations and errors in pair order.
+_SensorMove = tuple[tuple[int, ...], tuple[int, ...], tuple[float, ...]]
 
 
 @dataclass(frozen=True)
@@ -135,11 +137,14 @@ def heuristic(
         move_generator.shuffle(candidates)
 
         accepted = False
-        for candidate_allocation in candidates:
+        for (
+            candidate_allocation,
+            candidate_location_values,
+            candidate_error_values,
+        ) in candidates:
             # Step 10: Rebuild the full tree before judging a proposed move.
-            candidate_locations, candidate_errors = _compute_pair_errors(
-                pairs, M, candidate_allocation, pijmn
-            )
+            candidate_locations = dict(zip(pairs, candidate_location_values))
+            candidate_errors = dict(zip(pairs, candidate_error_values))
             candidate_tree = _build_tree_with_beam_search(
                 K,
                 candidate_locations,
@@ -538,9 +543,9 @@ def _improving_sensor_moves(
     pijmn: PairErrorTable,
     pair_weights: Mapping[Pair, float],
     current_pair_errors: Mapping[Pair, float],
-) -> list[tuple[int, ...]]:
+) -> list[_SensorMove]:
     """Return all one-sensor moves that reduce the fixed objective J."""
-    improving: list[tuple[int, ...]] = []
+    improving: list[_SensorMove] = []
     current_objective = sum(
         pair_weights.get(pair, 0.0) * current_pair_errors[pair]
         for pair in pairs
@@ -558,7 +563,7 @@ def _improving_sensor_moves(
             candidate[source] -= 1
             candidate[destination] += 1
             candidate_allocation = tuple(candidate)
-            _, candidate_errors = _compute_pair_errors(
+            candidate_locations, candidate_errors = _compute_pair_errors(
                 pairs, M, candidate_allocation, pijmn
             )
             # Step 7: Hold the weights fixed and calculate J for this move.
@@ -567,7 +572,13 @@ def _improving_sensor_moves(
                 for pair in pairs
             )
             if objective < current_objective:
-                improving.append(candidate_allocation)
+                improving.append(
+                    (
+                        candidate_allocation,
+                        tuple(candidate_locations[pair] for pair in pairs),
+                        tuple(candidate_errors[pair] for pair in pairs),
+                    )
+                )
 
     return improving
 
