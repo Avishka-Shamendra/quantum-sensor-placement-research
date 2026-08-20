@@ -22,7 +22,7 @@ from uniform import uniform
 
 HERE = Path(__file__).resolve().parent
 INPUT_ROOT = HERE / "inputs"
-DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison_lite"
+DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison_compact"
 
 # Use the same algorithm colors in every comparison figure.
 ALGORITHM_COLORS = {

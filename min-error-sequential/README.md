@@ -37,11 +37,17 @@ root:
 python min-error-sequential/generate_benchmarks.py all
 ```
 
-Run the exact algorithm on the smaller legacy datasets:
+Generate the compact one- and two-dimensional input datasets:
 
 ```bash
-python min-error-sequential/evaluate_benchmarks.py lite_benchmark_1d
-python min-error-sequential/evaluate_benchmarks.py lite_benchmark_2d
+python min-error-sequential/generate_compact_benchmarks.py all
+```
+
+Run the exact algorithm on the compact datasets:
+
+```bash
+python min-error-sequential/evaluate_benchmarks.py compact_benchmark_1d
+python min-error-sequential/evaluate_benchmarks.py compact_benchmark_2d
 ```
 
 For an interactive pilot with inline plots, open and run:
@@ -53,18 +59,18 @@ jupyter lab min-error-sequential/evaluate_optimal.ipynb
 
 The notebook evaluates one realization from every field-family, `K`, and `M`
 cell by default. Set `RUN_ALL_REPLICATES = True` in its settings cell to run
-all 3,000 cases per dataset. Notebook tables and figures are written under
+all 2,520 cases per dataset. Notebook tables and figures are written under
 `min-error-sequential/results/optimal_evaluation/`.
 
-To compare all four algorithms against the exact optimum on the lite datasets,
+To compare all four algorithms against the exact optimum on the compact datasets,
 open:
 
 ```bash
-jupyter lab min-error-sequential/compare_algorithms_lite.ipynb
+jupyter lab min-error-sequential/compare_algorithms_compact.ipynb
 ```
 
 Its test mode uses 180 cases per dataset. Results are written under
-`min-error-sequential/results/algorithm_comparison_lite/`.
+`min-error-sequential/results/algorithm_comparison_compact/`.
 
 To compare Greedy, Heuristic, and Uniform on the expanded datasets, open:
 
@@ -93,10 +99,10 @@ The main comparison follows the same layout as the zero-error folder:
 
 ```text
 results/
-├── algorithm_comparison_lite/
-│   ├── lite_benchmark_1d_results_<test|full>/tables/
-│   ├── lite_benchmark_2d_results_<test|full>/tables/
-│   └── results_summary_lite_benchmark_1d_lite_benchmark_2d_<test|full>/figures/
+├── algorithm_comparison_compact/
+│   ├── compact_benchmark_1d_results_<test|full>/tables/
+│   ├── compact_benchmark_2d_results_<test|full>/tables/
+│   └── results_summary_compact_benchmark_1d_compact_benchmark_2d_<test|full>/figures/
 ├── algorithm_comparison/
 │   ├── benchmark_1d_results_<test|full>/tables/
 │   ├── benchmark_2d_results_<test|full>/tables/
@@ -107,6 +113,9 @@ results/
 The `_test` suffix identifies a notebook pilot, while `_full` identifies a run
 over every selected case. Optimal-only notebook outputs follow the same
 `<dataset>_results_<test|full>` rule.
+
+The compact design uses `K=3,4,5` and `M=3,4`. Each of its 18 field-family,
+`K`, and `M` cells contains 140 cases, giving 2,520 cases per dimension.
 
 The expanded design uses Gaussian, sinusoidal, and quadratic fields in 1D and
 2D, with `K` ranging from 3 through 7 and `M` ranging from 3 through 8. Every
@@ -120,10 +129,10 @@ minimum.
 The benchmarks cap the sensor budget at 12 only to limit algorithm runtime.
 This is not a constraint of the sensor-allocation problem. The cap does not
 make exhaustive search practical for the largest `K` values, so the expanded
-datasets are intended primarily for heuristic studies. The older lite datasets
+datasets are intended primarily for heuristic studies. The compact datasets
 remain available for exact-optimal comparisons. The cap is defined by
-`EXHAUSTIVE_SEARCH_BUDGET_CAP` in `generate_benchmarks.py`; custom datasets can
-change it with `--budget-cap` or remove it with `--no-budget-cap`.
+`EXHAUSTIVE_SEARCH_BUDGET_CAP` in the relevant benchmark generator; custom
+datasets can change it with `--budget-cap` or remove it with `--no-budget-cap`.
 
 The beam-width notebook uses five allocation iterations. Representative 2D,
 `M=8`, `N=12` timings showed that `K=8` was several times slower than `K=7`,

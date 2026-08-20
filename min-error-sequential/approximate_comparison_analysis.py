@@ -10,6 +10,7 @@ from time import perf_counter
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import MaxNLocator
 
 from greedy import greedy
 from heuristic import heuristic
@@ -123,6 +124,10 @@ def run_approximate_dataset(
                     "greedy_seconds": greedy_seconds,
                     "heuristic_seconds": heuristic_seconds,
                     "uniform_seconds": uniform_seconds,
+                    "heuristic_iterations": heuristic_result.iterations_run,
+                    "heuristic_accepted_moves": heuristic_result.accepted_moves,
+                    "heuristic_stopping_reason": heuristic_result.stopping_reason,
+                    "heuristic_max_iterations": heuristic_result.max_iterations,
                     "greedy_allocation": list(greedy_result.allocation),
                     "heuristic_allocation": list(heuristic_result.allocation),
                     "uniform_allocation": list(uniform_result.allocation),
@@ -233,6 +238,10 @@ def save_approximate_results(
         "greedy_seconds",
         "heuristic_seconds",
         "uniform_seconds",
+        "heuristic_iterations",
+        "heuristic_accepted_moves",
+        "heuristic_stopping_reason",
+        "heuristic_max_iterations",
     ]
     with (tables_directory / "summary.csv").open(
         "w", encoding="utf-8", newline=""
@@ -331,6 +340,11 @@ def make_combined_approximate_plots(
             "Error distribution by field family",
             _plot_error_by_family(dimension_records),
             "error_distribution_by_field_family",
+        ),
+        (
+            "Heuristic iteration distribution",
+            _plot_heuristic_iteration_distribution(dimension_records),
+            "heuristic_iteration_distribution",
         ),
     ]
     for _, figure, filename in figure_specs:
@@ -535,6 +549,81 @@ def _plot_error_by_family(
         )
         axis.grid(axis="y", alpha=0.25)
     axes[0].set_ylabel("Final error")
+    axes[1].legend()
+    return figure
+
+
+def _plot_heuristic_iteration_distribution(
+    dimension_records: list[list[dict[str, object]]],
+) -> plt.Figure:
+    """Plot how many iterations the heuristic performs before stopping."""
+    required_fields = {
+        "heuristic_iterations",
+        "heuristic_stopping_reason",
+        "heuristic_max_iterations",
+    }
+    for records in dimension_records:
+        if any(not required_fields.issubset(record) for record in records):
+            raise ValueError(
+                "saved results do not contain heuristic iteration data; "
+                "rerun the algorithm comparison before creating this plot"
+            )
+
+    figure, axes = plt.subplots(
+        1, 2, figsize=(13.2, 4.8), sharey=True, constrained_layout=True
+    )
+    for axis, records in zip(axes, dimension_records):
+        dimension = int(records[0]["spatial_dimension"])
+        iteration_limits = {
+            int(record["heuristic_max_iterations"]) for record in records
+        }
+        if len(iteration_limits) != 1:
+            raise ValueError(
+                "each dataset must use one heuristic maximum iteration setting"
+            )
+        iteration_limit = iteration_limits.pop()
+        iterations = [int(record["heuristic_iterations"]) for record in records]
+        bins = np.arange(0.5, iteration_limit + 1.5, 1.0)
+        weights = np.full(len(iterations), 100.0 / len(iterations))
+
+        axis.hist(
+            iterations,
+            bins=bins,
+            weights=weights,
+            color=ALGORITHM_STYLES["Heuristic"][1],
+            alpha=0.65,
+            edgecolor="black",
+            linewidth=0.5,
+        )
+        axis.axvline(
+            iteration_limit,
+            color="black",
+            linestyle="--",
+            linewidth=1.5,
+            label=f"Maximum iterations ({iteration_limit})",
+        )
+        reached_limit = sum(
+            record["heuristic_stopping_reason"] == "maximum_iterations"
+            for record in records
+        )
+        reached_limit_percentage = 100.0 * reached_limit / len(records)
+        axis.text(
+            0.97,
+            0.92,
+            f"Reached limit: {reached_limit_percentage:.1f}%",
+            ha="right",
+            va="top",
+            transform=axis.transAxes,
+        )
+        axis.set(
+            title=f"{dimension}D",
+            xlabel="Heuristic iterations performed",
+            xlim=(0.5, iteration_limit + 0.5),
+            ylim=(0, None),
+        )
+        axis.xaxis.set_major_locator(MaxNLocator(integer=True))
+        axis.grid(axis="y", alpha=0.25)
+    axes[0].set_ylabel("Percentage of runs (%)")
     axes[1].legend()
     return figure
 

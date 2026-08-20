@@ -44,6 +44,10 @@ class HeuristicResult:
     pair_locations: dict[Pair, int]
     decision_tree: DecisionTree
     error_probability: float
+    iterations_run: int
+    accepted_moves: int
+    stopping_reason: str
+    max_iterations: int
 
 
 @dataclass(frozen=True)
@@ -74,8 +78,8 @@ def heuristic(
     pijmn: PairErrorTable,
     *,
     beam_width: int = 8,
-    max_iterations: int = 50,
-    improvement_threshold: float = 1e-4,
+    max_iterations: int = 25,
+    improvement_threshold: float = 1e-3,
     initialization: str = "near_uniform",
     random_seed: int | None = 0,
 ) -> HeuristicResult:
@@ -108,9 +112,14 @@ def heuristic(
     )
     error = _tree_error(tree, K)
     move_generator = Random(random_seed)
+    iterations_run = 0
+    accepted_moves = 0
+    stopping_reason = "maximum_iterations"
 
     # Steps 4-14: Alternate between tree analysis and sensor-allocation moves.
     for _ in range(max_iterations):
+        iterations_run += 1
+
         # Steps 4-6: Propagate mass through the tree and combine node weights.
         pair_weights = _compute_pair_weights(tree, K)
 
@@ -148,10 +157,12 @@ def heuristic(
                 tree = candidate_tree
                 error = candidate_error
                 accepted = True
+                accepted_moves += 1
                 break
 
         # Step 14: Stop when no J-reducing move improves the actual error.
         if not accepted:
+            stopping_reason = "no_accepted_move"
             break
 
         # Step 13: Repeat with the accepted allocation and rebuilt tree.
@@ -162,6 +173,10 @@ def heuristic(
         pair_locations=pair_locations,
         decision_tree=tree,
         error_probability=error,
+        iterations_run=iterations_run,
+        accepted_moves=accepted_moves,
+        stopping_reason=stopping_reason,
+        max_iterations=max_iterations,
     )
 
 

@@ -9,7 +9,7 @@ def configure_plot_style() -> None:
     """Use 12-point Times New Roman text in every figure."""
     plt.rcParams.update(
         {
-            "font.family": "serif",
+            "font.family": "Times New Roman",
             "font.serif": ["Times New Roman"],
             "font.size": 12,
             "axes.labelsize": 12,
@@ -17,6 +17,7 @@ def configure_plot_style() -> None:
             "xtick.labelsize": 12,
             "ytick.labelsize": 12,
             "legend.fontsize": 12,
+            "figure.labelsize": 12,
             "figure.titlesize": 12,
             "mathtext.fontset": "stix",
             "pdf.fonttype": 42,
