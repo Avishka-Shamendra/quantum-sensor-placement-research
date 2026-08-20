@@ -193,11 +193,13 @@ def _configure_plot_style() -> None:
     plt.rcParams.update({
         "font.family": "serif",
         "font.serif": ["Times New Roman"],
-        "font.size": 9,
-        "axes.labelsize": 9,
-        "axes.titlesize": 10,
-        "legend.fontsize": 8,
-        "figure.titlesize": 11,
+        "font.size": 12,
+        "axes.labelsize": 12,
+        "axes.titlesize": 12,
+        "xtick.labelsize": 12,
+        "ytick.labelsize": 12,
+        "legend.fontsize": 12,
+        "figure.titlesize": 12,
         "mathtext.fontset": "stix",
         "pdf.fonttype": 42,
         "ps.fonttype": 42,
@@ -254,7 +256,7 @@ def _draw_quality_heatmap(
                 f"{value:.1f}",
                 ha="center",
                 va="center",
-                fontsize=6.5,
+                fontsize=12,
                 color="white" if value > 0.55 * color_limit else "#202020",
             )
     return image

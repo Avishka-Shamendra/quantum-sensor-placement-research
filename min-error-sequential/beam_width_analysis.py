@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 
 from heuristic import heuristic
 from input_data import load_sparse_input, validate_reverse_phases
+from plot_style import configure_plot_style
 
 
 HERE = Path(__file__).resolve().parent
@@ -22,6 +23,8 @@ DEFAULT_RESULTS_ROOT = HERE / "results" / "heuristic_beam_width"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 BEAM_WIDTH_COLORS = ("#4C78A8", "#F28E2B", "#59A14F", "#E15759", "#B279A2")
 LINE_STYLES = ("-", "--", "-.", ":")
+
+configure_plot_style()
 
 
 def run_beam_width_study(
@@ -274,8 +277,6 @@ def make_beam_width_plot(
     figure.supxlabel(
         r"$N/N_{\min}$ (Sensor Budget / Required Min Sensors for Perfect Discrimination)"
     )
-    figure.suptitle("Tree-aware heuristic error versus sensor budget by beam width")
-
     figures_directory = (
         Path(results_root)
         / f"results_summary_heuristic_beam_width_{run_scope}"

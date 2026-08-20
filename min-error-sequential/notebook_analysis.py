@@ -16,11 +16,14 @@ import numpy as np
 from evaluate_benchmarks import tree_to_dict, validate_result
 from exhaustive_search import exhaustive_search
 from input_data import load_sparse_input, validate_reverse_phases
+from plot_style import configure_plot_style
 
 
 HERE = Path(__file__).resolve().parent
 INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "optimal_evaluation"
+
+configure_plot_style()
 
 
 def run_dataset(
@@ -264,7 +267,6 @@ def _plot_error_vs_budget(
     axis.set(
         xlabel=r"Sensor budget $N/N_{min}$",
         ylabel="Mean optimal error",
-        title=f"{dimension}D: optimal error versus sensor budget",
         ylim=(0, None),
     )
     axis.grid(alpha=0.25)
@@ -292,7 +294,6 @@ def _plot_error_by_family(
     axis.set(
         xlabel="Field family",
         ylabel="Optimal error at largest tested budget",
-        title=f"{dimension}D: error distribution by field family",
         ylim=(0, None),
     )
     axis.grid(axis="y", alpha=0.25)
@@ -323,7 +324,6 @@ def _plot_error_heatmap(
     axis.set(
         xlabel="Number of locations M",
         ylabel="Number of fields K",
-        title=f"{dimension}D: mean optimal error at largest budget",
     )
     for row in range(len(K_values)):
         for column in range(len(M_values)):
@@ -362,7 +362,6 @@ def _plot_runtime(
     axis.set(
         xlabel="Budget level (smallest to largest)",
         ylabel="Median runtime (seconds, log scale)",
-        title=f"{dimension}D: exhaustive-search runtime",
         xticks=sorted({int(record["budget_level"]) for record in records}),
     )
     axis.grid(alpha=0.25, which="both")
@@ -401,9 +400,6 @@ def _plot_representative_cases(
     axis.set(
         xlabel=r"Sensor budget $N/N_{min}$",
         ylabel="Optimal error",
-        title=(
-            f"{dimension}D: representative K={maximum_K}, M={maximum_M} cases"
-        ),
         ylim=(0, None),
     )
     axis.grid(alpha=0.25)

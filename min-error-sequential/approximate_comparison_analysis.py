@@ -14,6 +14,7 @@ import numpy as np
 from greedy import greedy
 from heuristic import heuristic
 from input_data import load_sparse_input, validate_reverse_phases
+from plot_style import configure_plot_style
 from uniform import uniform
 
 
@@ -30,6 +31,8 @@ SENSOR_BUDGET_LABEL = (
     r"$N/N_{\min}$ "
     "(Sensor Budget / Required Min Sensors for Perfect Discrimination)"
 )
+
+configure_plot_style()
 
 
 def run_approximate_dataset(
@@ -391,7 +394,6 @@ def _plot_mean_error_curves(
                 axis.set_ylabel("Mean final error")
     axes[0, 1].legend()
     figure.supxlabel(SENSOR_BUDGET_LABEL)
-    figure.suptitle("Greedy, heuristic, and uniform error versus sensor budget")
     return figure
 
 
@@ -436,9 +438,6 @@ def _plot_overall_mean_error_curves(
     axes[0].set_ylabel("Mean final error")
     axes[1].legend()
     figure.supxlabel(SENSOR_BUDGET_LABEL)
-    figure.suptitle(
-        "Overall algorithm error versus sensor budget across all K and M values"
-    )
     return figure
 
 
@@ -487,7 +486,6 @@ def _plot_runtime_by_k(
         axis.grid(axis="y", alpha=0.25, which="both")
     axes[0].set_ylabel("Runtime (seconds, log scale)")
     axes[1].legend()
-    figure.suptitle("Runtime distribution by number of fields")
     return figure
 
 
@@ -538,7 +536,6 @@ def _plot_error_by_family(
         axis.grid(axis="y", alpha=0.25)
     axes[0].set_ylabel("Final error")
     axes[1].legend()
-    figure.suptitle("Final-error distribution by field family")
     return figure
 
 

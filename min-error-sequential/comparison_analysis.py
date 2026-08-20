@@ -16,6 +16,7 @@ from exhaustive_search import exhaustive_search
 from greedy import greedy
 from heuristic import heuristic as tree_aware_heuristic
 from input_data import load_sparse_input, validate_reverse_phases
+from plot_style import configure_plot_style
 from uniform import uniform
 
 
@@ -31,6 +32,8 @@ ALGORITHM_COLORS = {
     "Uniform": "#2ca02c",
 }
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
+
+configure_plot_style()
 
 
 def run_paired_dataset(
@@ -620,7 +623,6 @@ def _plot_mean_error_curves(
     figure.supxlabel(
         r"$N/N_{\min}$ (Sensor Budget / Required Min Sensors for Perfect Discrimination)"
     )
-    figure.suptitle(f"{dimension}D: algorithm error versus sensor budget")
     figure.tight_layout()
     return figure
 
@@ -646,7 +648,6 @@ def _plot_error_scatter(
     axis.set(
         xlabel="Optimal error",
         ylabel="Greedy error",
-        title=f"{dimension}D: paired error comparison",
         xlim=(0, limit * 1.03),
         ylim=(0, limit * 1.03),
     )
@@ -680,7 +681,6 @@ def _plot_error_gap(
     axis.set(
         xlabel="Budget level (smallest to largest)",
         ylabel=r"Mean error gap $P_{greedy}-P_{optimal}$",
-        title=f"{dimension}D: quality loss from the greedy heuristic",
         xticks=sorted({int(record["budget_level"]) for record in records}),
         ylim=(0, None),
     )
@@ -712,7 +712,6 @@ def _plot_match_heatmap(
     axis.set(
         xlabel="Number of locations M",
         ylabel="Number of fields K",
-        title=f"{dimension}D: greedy exact-error match rate",
     )
     for row in range(len(K_values)):
         for column in range(len(M_values)):
@@ -750,7 +749,6 @@ def _plot_runtime_speedup(
     axis.set(
         xlabel="Number of fields",
         ylabel="Runtime speedup (optimal / greedy, log scale)",
-        title=f"{dimension}D: computational benefit of the greedy heuristic",
     )
     axis.grid(axis="y", alpha=0.25, which="both")
     figure.tight_layout()
@@ -779,7 +777,6 @@ def _plot_gap_by_family(
     axis.set(
         xlabel="Field family",
         ylabel=r"Error gap $P_{greedy}-P_{optimal}$",
-        title=f"{dimension}D: greedy quality loss by field family",
         ylim=(0, None),
     )
     axis.grid(axis="y", alpha=0.25)
@@ -848,9 +845,6 @@ def _plot_combined_mean_error_curves(
     figure.supxlabel(
         r"$N/N_{\min}$ (Sensor Budget / Required Min Sensors for Perfect Discrimination)"
     )
-    figure.suptitle(
-        "Optimal, greedy, heuristic, and uniform error versus sensor budget"
-    )
     return figure
 
 
@@ -901,9 +895,6 @@ def _plot_overall_mean_error_curves(
     axes[1].legend()
     figure.supxlabel(
         r"$N/N_{\min}$ (Sensor Budget / Required Min Sensors for Perfect Discrimination)"
-    )
-    figure.suptitle(
-        "Overall algorithm error versus sensor budget across all K and M values"
     )
     return figure
 
@@ -958,7 +949,6 @@ def _plot_combined_error_scatter(
         axis.grid(alpha=0.25)
     axes[0].set_ylabel("Heuristic error")
     axes[1].legend()
-    figure.suptitle("Paired heuristic and optimal error")
     return figure
 
 
@@ -1026,7 +1016,6 @@ def _plot_combined_error_gap(
             axis.grid(alpha=0.25)
     axes[0, 1].legend()
     figure.supxlabel("Budget level (smallest to largest)")
-    figure.suptitle("Quality loss from greedy and uniform allocation", y=0.995)
     return figure
 
 
@@ -1082,7 +1071,6 @@ def _plot_combined_match_heatmap(
                     )
     assert image is not None
     figure.colorbar(image, ax=axes, label="Exact-error match rate")
-    figure.suptitle("Exact-optimum error match rate")
     return figure
 
 
@@ -1134,7 +1122,6 @@ def _plot_combined_runtime_speedup(
         axis.grid(axis="y", alpha=0.25, which="both")
     axes[0].set_ylabel("Runtime speedup (optimal / method, log scale)")
     axes[1].legend()
-    figure.suptitle("Runtime speedup relative to exhaustive search")
     return figure
 
 
@@ -1189,5 +1176,4 @@ def _plot_combined_gap_by_family(
         axis.grid(axis="y", alpha=0.25)
     axes[0].set_ylabel(r"Error gap $P_{method}-P_{optimal}$")
     axes[1].legend()
-    figure.suptitle("Quality loss by field family")
     return figure
