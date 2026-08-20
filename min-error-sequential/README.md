@@ -1,8 +1,8 @@
 # Minimum-Error Sequential Discrimination
 
 This directory contains the exact exhaustive-search pipeline for the
-fixed-budget sequential discrimination problem, two heuristics, and a
-uniform-allocation baseline.
+fixed-budget sequential discrimination problem, two heuristics, and uniform
+and random baselines.
 
 The algorithm entry points are:
 
@@ -10,12 +10,14 @@ The algorithm entry points are:
 from exhaustive_search import exhaustive_search
 from greedy import greedy
 from heuristic import heuristic
+from random_baseline import random_baseline
 from uniform import uniform
 
 optimal_result = exhaustive_search(K, M, N, pijmn)
 greedy_result = greedy(K, M, N, pijmn)
 tree_aware_result = heuristic(K, M, N, pijmn)
 uniform_result = uniform(K, M, N, pijmn)
+random_result = random_baseline(K, M, N, pijmn)
 ```
 
 The tree-aware alternating heuristic accepts optional `beam_width`,
@@ -29,6 +31,11 @@ The uniform baseline uses every sensor. It assigns `N // M` sensors to every
 location and randomly selects distinct locations to receive the remainder.
 Its optional `random_seed` argument makes this near-uniform allocation
 reproducible. The heuristic uses the same rule for its default starting point.
+
+The Random baseline places every sensor at a uniformly sampled location and
+selects a random valid field pair at each decision-tree node. It still uses the
+best sensing location supported by that random allocation for each pair. Its
+optional `random_seed` argument makes the strategy reproducible.
 
 Generate the expanded one- and two-dimensional input datasets from the repository
 root:
@@ -62,7 +69,7 @@ cell by default. Set `RUN_ALL_REPLICATES = True` in its settings cell to run
 all 2,520 cases per dataset. Notebook tables and figures are written under
 `min-error-sequential/results/optimal_evaluation/`.
 
-To compare all four algorithms against the exact optimum on the compact datasets,
+To compare all five algorithms against the exact optimum on the compact datasets,
 open:
 
 ```bash
@@ -72,7 +79,7 @@ jupyter lab min-error-sequential/compare_algorithms_compact.ipynb
 Its test mode uses 180 cases per dataset. Results are written under
 `min-error-sequential/results/algorithm_comparison_compact/`.
 
-To compare Greedy, Heuristic, and Uniform on the expanded datasets, open:
+To compare Greedy, Heuristic, Uniform, and Random on the expanded datasets, open:
 
 ```bash
 jupyter lab min-error-sequential/compare_algorithms.ipynb

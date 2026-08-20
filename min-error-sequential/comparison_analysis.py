@@ -1,4 +1,4 @@
-"""Paired evaluation and plotting helpers for four allocation algorithms."""
+"""Paired evaluation and plotting helpers for allocation algorithms."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from math import isclose, sqrt
 from pathlib import Path
 from statistics import fmean, median, stdev
 from time import perf_counter
+from zlib import crc32
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -17,6 +18,7 @@ from greedy import greedy
 from heuristic import heuristic as tree_aware_heuristic
 from input_data import load_sparse_input, validate_reverse_phases
 from plot_style import configure_plot_style
+from random_baseline import random_baseline
 from uniform import uniform
 
 
@@ -30,6 +32,7 @@ ALGORITHM_COLORS = {
     "Greedy": "#ff7f0e",
     "Heuristic": "#d62728",
     "Uniform": "#2ca02c",
+    "Random": "#9467bd",
 }
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 
@@ -45,12 +48,14 @@ def run_paired_dataset(
     greedy_parameters: dict[str, object] | None = None,
     tree_aware_parameters: dict[str, object] | None = None,
     uniform_parameters: dict[str, object] | None = None,
+    random_parameters: dict[str, object] | None = None,
 ) -> list[dict[str, object]]:
-    """Run all four algorithms on the same cases and budgets."""
+    """Run all algorithms on the same cases and budgets."""
     optimal_parameters = dict(optimal_parameters or {})
     greedy_parameters = dict(greedy_parameters or {})
     tree_aware_parameters = dict(tree_aware_parameters or {})
     uniform_parameters = dict(uniform_parameters or {})
+    random_parameters = dict(random_parameters or {})
     dataset_directory = INPUT_ROOT / dataset
     manifest = json.loads(
         (dataset_directory / "manifest.json").read_text(encoding="utf-8")
@@ -67,7 +72,7 @@ def run_paired_dataset(
 
     records: list[dict[str, object]] = []
 
-    # Give all four algorithms the same input case and sensor budget.
+    # Give every algorithm the same input case and sensor budget.
     for case_number, case in enumerate(cases, start=1):
         K, M, phase_gaps, pair_errors = load_sparse_input(
             dataset_directory / str(case["file"])
@@ -98,6 +103,18 @@ def run_paired_dataset(
             started = perf_counter()
             baseline = uniform(K, M, budget, pair_errors, **uniform_parameters)
             uniform_seconds = perf_counter() - started
+
+            started = perf_counter()
+            random_result = random_baseline(
+                K,
+                M,
+                budget,
+                pair_errors,
+                **_case_random_parameters(
+                    random_parameters, dataset, case, budget
+                ),
+            )
+            random_seconds = perf_counter() - started
 
             _validate_strategy(
                 optimal.allocation,
@@ -131,12 +148,22 @@ def run_paired_dataset(
                 M,
                 budget,
             )
+            _validate_strategy(
+                random_result.allocation,
+                random_result.pair_locations,
+                random_result.error_probability,
+                K,
+                M,
+                budget,
+            )
             if optimal.minimum_error > greedy_result.error_probability + 1e-12:
                 raise RuntimeError("greedy error is below the exact optimum")
             if optimal.minimum_error > tree_aware_result.error_probability + 1e-12:
                 raise RuntimeError("heuristic error is below the exact optimum")
             if optimal.minimum_error > baseline.error_probability + 1e-12:
                 raise RuntimeError("uniform error is below the exact optimum")
+            if optimal.minimum_error > random_result.error_probability + 1e-12:
+                raise RuntimeError("random error is below the exact optimum")
 
             # Measure quality and allocation differences from the exact optimum.
             greedy_error_gap = (
@@ -146,6 +173,9 @@ def run_paired_dataset(
                 tree_aware_result.error_probability - optimal.minimum_error
             )
             uniform_error_gap = baseline.error_probability - optimal.minimum_error
+            random_error_gap = (
+                random_result.error_probability - optimal.minimum_error
+            )
             greedy_allocation_distance = sum(
                 abs(greedy_count - optimal_count)
                 for greedy_count, optimal_count in zip(
@@ -162,6 +192,12 @@ def run_paired_dataset(
                 abs(uniform_count - optimal_count)
                 for uniform_count, optimal_count in zip(
                     baseline.allocation, optimal.allocation
+                )
+            )
+            random_allocation_distance = sum(
+                abs(random_count - optimal_count)
+                for random_count, optimal_count in zip(
+                    random_result.allocation, optimal.allocation
                 )
             )
             records.append(
@@ -182,9 +218,11 @@ def run_paired_dataset(
                     "greedy_error": greedy_result.error_probability,
                     "tree_aware_error": tree_aware_result.error_probability,
                     "uniform_error": baseline.error_probability,
+                    "random_error": random_result.error_probability,
                     "greedy_error_gap": greedy_error_gap,
                     "tree_aware_error_gap": tree_aware_error_gap,
                     "uniform_error_gap": uniform_error_gap,
+                    "random_error_gap": random_error_gap,
                     "greedy_exact_error_match": isclose(
                         greedy_error_gap, 0.0, abs_tol=1e-12
                     ),
@@ -194,24 +232,31 @@ def run_paired_dataset(
                     "uniform_exact_error_match": isclose(
                         uniform_error_gap, 0.0, abs_tol=1e-12
                     ),
+                    "random_exact_error_match": isclose(
+                        random_error_gap, 0.0, abs_tol=1e-12
+                    ),
                     "optimal_seconds": optimal_seconds,
                     "greedy_seconds": greedy_seconds,
                     "tree_aware_seconds": tree_aware_seconds,
                     "uniform_seconds": uniform_seconds,
+                    "random_seconds": random_seconds,
                     "greedy_runtime_speedup": optimal_seconds / greedy_seconds,
                     "tree_aware_runtime_speedup": (
                         optimal_seconds / tree_aware_seconds
                     ),
                     "uniform_runtime_speedup": optimal_seconds / uniform_seconds,
+                    "random_runtime_speedup": optimal_seconds / random_seconds,
                     "optimal_allocation": list(optimal.allocation),
                     "greedy_allocation": list(greedy_result.allocation),
                     "tree_aware_allocation": list(tree_aware_result.allocation),
                     "uniform_allocation": list(baseline.allocation),
+                    "random_allocation": list(random_result.allocation),
                     "greedy_allocation_l1_distance": greedy_allocation_distance,
                     "tree_aware_allocation_l1_distance": (
                         tree_aware_allocation_distance
                     ),
                     "uniform_allocation_l1_distance": uniform_allocation_distance,
+                    "random_allocation_l1_distance": random_allocation_distance,
                     "greedy_allocation_difference_fraction": (
                         greedy_allocation_distance / (2 * budget)
                         if budget > 0
@@ -227,6 +272,11 @@ def run_paired_dataset(
                         if budget > 0
                         else 0.0
                     ),
+                    "random_allocation_difference_fraction": (
+                        random_allocation_distance / (2 * budget)
+                        if budget > 0
+                        else 0.0
+                    ),
                     "optimal_pair_locations": _pair_locations_to_dict(
                         optimal.pair_locations
                     ),
@@ -239,6 +289,9 @@ def run_paired_dataset(
                     "uniform_pair_locations": _pair_locations_to_dict(
                         baseline.pair_locations
                     ),
+                    "random_pair_locations": _pair_locations_to_dict(
+                        random_result.pair_locations
+                    ),
                     "optimal_decision_tree": _tree_to_dict(optimal.decision_tree),
                     "greedy_decision_tree": _tree_to_dict(
                         greedy_result.decision_tree
@@ -248,6 +301,9 @@ def run_paired_dataset(
                     ),
                     "uniform_decision_tree": _tree_to_dict(
                         baseline.decision_tree
+                    ),
+                    "random_decision_tree": _tree_to_dict(
+                        random_result.decision_tree
                     ),
                 }
             )
@@ -263,6 +319,7 @@ def run_paired_dataset(
         "greedy": greedy_parameters,
         "tree_aware": tree_aware_parameters,
         "uniform": uniform_parameters,
+        "random": random_parameters,
     }
     save_paired_results(
         dataset,
@@ -319,25 +376,32 @@ def save_paired_results(
         "greedy_error",
         "tree_aware_error",
         "uniform_error",
+        "random_error",
         "greedy_error_gap",
         "tree_aware_error_gap",
         "uniform_error_gap",
+        "random_error_gap",
         "greedy_exact_error_match",
         "tree_aware_exact_error_match",
         "uniform_exact_error_match",
+        "random_exact_error_match",
         "optimal_seconds",
         "greedy_seconds",
         "tree_aware_seconds",
         "uniform_seconds",
+        "random_seconds",
         "greedy_runtime_speedup",
         "tree_aware_runtime_speedup",
         "uniform_runtime_speedup",
+        "random_runtime_speedup",
         "greedy_allocation_l1_distance",
         "tree_aware_allocation_l1_distance",
         "uniform_allocation_l1_distance",
+        "random_allocation_l1_distance",
         "greedy_allocation_difference_fraction",
         "tree_aware_allocation_difference_fraction",
         "uniform_allocation_difference_fraction",
+        "random_allocation_difference_fraction",
     ]
     with (tables_directory / "summary.csv").open(
         "w", encoding="utf-8", newline=""
@@ -490,15 +554,18 @@ def paired_summary(records: list[dict[str, object]]) -> dict[str, float | int]:
         float(record["tree_aware_error_gap"]) for record in records
     ]
     uniform_gaps = [float(record["uniform_error_gap"]) for record in records]
+    random_gaps = [float(record["random_error_gap"]) for record in records]
     return {
         "cases": len({record["case"] for record in records}),
         "runs": len(records),
         "greedy_mean_gap": fmean(greedy_gaps),
         "tree_aware_mean_gap": fmean(tree_aware_gaps),
         "uniform_mean_gap": fmean(uniform_gaps),
+        "random_mean_gap": fmean(random_gaps),
         "greedy_maximum_gap": max(greedy_gaps),
         "tree_aware_maximum_gap": max(tree_aware_gaps),
         "uniform_maximum_gap": max(uniform_gaps),
+        "random_maximum_gap": max(random_gaps),
         "greedy_exact_match_rate": fmean(
             float(bool(record["greedy_exact_error_match"])) for record in records
         ),
@@ -509,6 +576,9 @@ def paired_summary(records: list[dict[str, object]]) -> dict[str, float | int]:
         "uniform_exact_match_rate": fmean(
             float(bool(record["uniform_exact_error_match"])) for record in records
         ),
+        "random_exact_match_rate": fmean(
+            float(bool(record["random_exact_error_match"])) for record in records
+        ),
         "greedy_median_speedup": median(
             float(record["greedy_runtime_speedup"]) for record in records
         ),
@@ -517,6 +587,9 @@ def paired_summary(records: list[dict[str, object]]) -> dict[str, float | int]:
         ),
         "uniform_median_speedup": median(
             float(record["uniform_runtime_speedup"]) for record in records
+        ),
+        "random_median_speedup": median(
+            float(record["random_runtime_speedup"]) for record in records
         ),
     }
 
@@ -537,6 +610,12 @@ def overall_error_curve_summary(
         heuristic_error = fmean(
             float(record["tree_aware_error"]) for record in selected
         )
+        uniform_error = fmean(
+            float(record["uniform_error"]) for record in selected
+        )
+        random_error = fmean(
+            float(record["random_error"]) for record in selected
+        )
         optimal_from_greedy = greedy_error - optimal_error
         optimal_from_heuristic = heuristic_error - optimal_error
         heuristic_from_greedy = greedy_error - heuristic_error
@@ -551,6 +630,8 @@ def overall_error_curve_summary(
                 "optimal_mean_error": optimal_error,
                 "greedy_mean_error": greedy_error,
                 "heuristic_mean_error": heuristic_error,
+                "uniform_mean_error": uniform_error,
+                "random_mean_error": random_error,
                 "optimal_from_greedy": optimal_from_greedy,
                 "optimal_from_greedy_percent": (
                     100.0 * optimal_from_greedy / greedy_error
@@ -568,6 +649,99 @@ def overall_error_curve_summary(
                     100.0 * heuristic_from_greedy / greedy_error
                     if greedy_error > 0.0
                     else 0.0
+                ),
+            }
+        )
+    return rows
+
+
+def runtime_by_k_summary(
+    records: list[dict[str, object]],
+) -> list[dict[str, float | int | str]]:
+    """Summarize runtime and optimal-search speedup for each K value."""
+    dimension = f"{int(records[0]['spatial_dimension'])}D"
+    rows: list[dict[str, float | int | str]] = []
+    for number_of_fields in sorted({int(record["K"]) for record in records}):
+        selected = [
+            record
+            for record in records
+            if int(record["K"]) == number_of_fields
+        ]
+        rows.append(
+            {
+                "dimension": dimension,
+                "K": number_of_fields,
+                "optimal_median_seconds": median(
+                    float(record["optimal_seconds"]) for record in selected
+                ),
+                "greedy_median_seconds": median(
+                    float(record["greedy_seconds"]) for record in selected
+                ),
+                "heuristic_median_seconds": median(
+                    float(record["tree_aware_seconds"]) for record in selected
+                ),
+                "uniform_median_seconds": median(
+                    float(record["uniform_seconds"]) for record in selected
+                ),
+                "random_median_seconds": median(
+                    float(record["random_seconds"]) for record in selected
+                ),
+                "greedy_median_speedup": median(
+                    float(record["greedy_runtime_speedup"])
+                    for record in selected
+                ),
+                "heuristic_median_speedup": median(
+                    float(record["tree_aware_runtime_speedup"])
+                    for record in selected
+                ),
+                "uniform_median_speedup": median(
+                    float(record["uniform_runtime_speedup"])
+                    for record in selected
+                ),
+                "random_median_speedup": median(
+                    float(record["random_runtime_speedup"])
+                    for record in selected
+                ),
+            }
+        )
+    return rows
+
+
+def field_family_summary(
+    records: list[dict[str, object]],
+) -> list[dict[str, float | int | str]]:
+    """Summarize the mean error gap for each field family."""
+    dimension = f"{int(records[0]['spatial_dimension'])}D"
+    present = {str(record["field_model"]) for record in records}
+    families = [family for family in FIELD_FAMILY_ORDER if family in present]
+    families.extend(sorted(present - set(FIELD_FAMILY_ORDER)))
+    rows: list[dict[str, float | int | str]] = []
+    for family in families:
+        selected = [
+            record for record in records if str(record["field_model"]) == family
+        ]
+        greedy_gap = fmean(
+            float(record["greedy_error_gap"]) for record in selected
+        )
+        heuristic_gap = fmean(
+            float(record["tree_aware_error_gap"]) for record in selected
+        )
+        reduction = greedy_gap - heuristic_gap
+        rows.append(
+            {
+                "dimension": dimension,
+                "field_family": family,
+                "greedy_mean_gap": greedy_gap,
+                "heuristic_mean_gap": heuristic_gap,
+                "uniform_mean_gap": fmean(
+                    float(record["uniform_error_gap"]) for record in selected
+                ),
+                "random_mean_gap": fmean(
+                    float(record["random_error_gap"]) for record in selected
+                ),
+                "heuristic_gap_reduction": reduction,
+                "heuristic_gap_reduction_percent": (
+                    100.0 * reduction / greedy_gap if greedy_gap > 0.0 else 0.0
                 ),
             }
         )
@@ -619,6 +793,21 @@ def _pair_locations_to_dict(
     return {f"{i},{j}": location for (i, j), location in locations.items()}
 
 
+def _case_random_parameters(
+    parameters: dict[str, object],
+    dataset: str,
+    case: dict[str, object],
+    budget: int,
+) -> dict[str, object]:
+    """Create a stable random seed for one case and sensor budget."""
+    case_parameters = dict(parameters)
+    base_seed = case_parameters.get("random_seed", 0)
+    if isinstance(base_seed, int) and not isinstance(base_seed, bool):
+        seed_text = f"{base_seed}|{dataset}|{case['file']}|{budget}"
+        case_parameters["random_seed"] = crc32(seed_text.encode("utf-8"))
+    return case_parameters
+
+
 def _mean_and_sem(values: list[float]) -> tuple[float, float]:
     """Return the sample mean and standard error."""
     if len(values) < 2:
@@ -629,7 +818,7 @@ def _mean_and_sem(values: list[float]) -> tuple[float, float]:
 def _plot_mean_error_curves(
     records: list[dict[str, object]], dimension: int
 ) -> plt.Figure:
-    """Compare mean error curves for all four algorithms at each K."""
+    """Compare mean error curves for every algorithm at each K."""
     K_values = sorted({int(record["K"]) for record in records})
     figure, axes = plt.subplots(
         1, len(K_values), figsize=(5.2 * len(K_values), 4.4), sharey=True
@@ -643,6 +832,7 @@ def _plot_mean_error_curves(
             ("Greedy", "greedy_error", "-"),
             ("Heuristic", "tree_aware_error", "-"),
             ("Uniform", "uniform_error", "-"),
+            ("Random", "random_error", "-"),
         ):
             x_values = []
             means = []
@@ -840,7 +1030,7 @@ def _plot_gap_by_family(
 def _plot_combined_mean_error_curves(
     dimension_records: list[list[dict[str, object]]],
 ) -> plt.Figure:
-    """Compare all four algorithms with dimensions in columns and K in rows."""
+    """Compare all algorithms with dimensions in columns and K in rows."""
     K_values = sorted(
         {int(record["K"]) for records in dimension_records for record in records}
     )
@@ -864,6 +1054,7 @@ def _plot_combined_mean_error_curves(
                 ("Greedy", "greedy_error", "-"),
                 ("Heuristic", "tree_aware_error", "-"),
                 ("Uniform", "uniform_error", "-"),
+                ("Random", "random_error", "-"),
             ):
                 x_values = []
                 means = []
@@ -916,6 +1107,7 @@ def _plot_overall_mean_error_curves(
             ("Greedy", "greedy_error", "-"),
             ("Heuristic", "tree_aware_error", "-"),
             ("Uniform", "uniform_error", "-"),
+            ("Random", "random_error", "-"),
         ):
             x_values: list[float] = []
             means: list[float] = []
@@ -1139,9 +1331,10 @@ def _plot_combined_runtime_speedup(
         K_values = sorted({int(record["K"]) for record in records})
         positions = np.arange(1, len(K_values) + 1)
         for algorithm, speedup_key, offset in (
-            ("Greedy", "greedy_runtime_speedup", -0.24),
-            ("Heuristic", "tree_aware_runtime_speedup", 0.0),
-            ("Uniform", "uniform_runtime_speedup", 0.24),
+            ("Greedy", "greedy_runtime_speedup", -0.3),
+            ("Heuristic", "tree_aware_runtime_speedup", -0.1),
+            ("Uniform", "uniform_runtime_speedup", 0.1),
+            ("Random", "random_runtime_speedup", 0.3),
         ):
             values = [
                 [
@@ -1154,7 +1347,7 @@ def _plot_combined_runtime_speedup(
             boxplot = axis.boxplot(
                 values,
                 positions=positions + offset,
-                widths=0.22,
+                widths=0.18,
                 patch_artist=True,
                 showmeans=True,
                 meanprops={"markerfacecolor": "black", "markeredgecolor": "black"},
@@ -1194,9 +1387,10 @@ def _plot_combined_gap_by_family(
         families.extend(sorted(present_families - set(FIELD_FAMILY_ORDER)))
         positions = np.arange(1, len(families) + 1)
         for algorithm, gap_key, offset in (
-            ("Greedy", "greedy_error_gap", -0.24),
-            ("Heuristic", "tree_aware_error_gap", 0.0),
-            ("Uniform", "uniform_error_gap", 0.24),
+            ("Greedy", "greedy_error_gap", -0.3),
+            ("Heuristic", "tree_aware_error_gap", -0.1),
+            ("Uniform", "uniform_error_gap", 0.1),
+            ("Random", "random_error_gap", 0.3),
         ):
             values = [
                 [
@@ -1209,7 +1403,7 @@ def _plot_combined_gap_by_family(
             boxplot = axis.boxplot(
                 values,
                 positions=positions + offset,
-                widths=0.22,
+                widths=0.18,
                 patch_artist=True,
                 showmeans=True,
                 meanprops={"markerfacecolor": "black", "markeredgecolor": "black"},

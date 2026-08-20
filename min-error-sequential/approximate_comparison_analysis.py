@@ -9,6 +9,7 @@ from pathlib import Path
 from random import Random
 from statistics import fmean, median
 from time import perf_counter
+from zlib import crc32
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,6 +19,7 @@ from greedy import greedy
 from heuristic import heuristic
 from input_data import load_sparse_input, validate_reverse_phases
 from plot_style import configure_plot_style
+from random_baseline import random_baseline
 from uniform import uniform
 
 
@@ -29,6 +31,7 @@ ALGORITHM_STYLES = {
     "Greedy": ("greedy", "#ff7f0e", "-"),
     "Heuristic": ("heuristic", "#d62728", "-"),
     "Uniform": ("uniform", "#2ca02c", "-"),
+    "Random": ("random", "#9467bd", "-"),
 }
 SENSOR_BUDGET_LABEL = (
     r"$N/N_{\min}$ "
@@ -46,13 +49,14 @@ def run_approximate_dataset(
     greedy_parameters: dict[str, object] | None = None,
     heuristic_parameters: dict[str, object] | None = None,
     uniform_parameters: dict[str, object] | None = None,
+    random_parameters: dict[str, object] | None = None,
     progress_every: int = 25,
     k_values: tuple[int, ...] | None = None,
     m_values: tuple[int, ...] | None = None,
     case_limit: int | None = None,
     case_sample_seed: int = 20260820,
 ) -> list[dict[str, object]]:
-    """Run Greedy, Heuristic, and Uniform on the same benchmark cases."""
+    """Run all scalable algorithms on the same benchmark cases."""
     if replicates_per_cell is not None and replicates_per_cell < 1:
         raise ValueError("replicates_per_cell must be positive or None")
     if progress_every < 1:
@@ -63,6 +67,7 @@ def run_approximate_dataset(
     greedy_parameters = dict(greedy_parameters or {})
     heuristic_parameters = dict(heuristic_parameters or {})
     uniform_parameters = dict(uniform_parameters or {})
+    random_parameters = dict(random_parameters or {})
     dataset_directory = INPUT_ROOT / dataset
     manifest = json.loads(
         (dataset_directory / "manifest.json").read_text(encoding="utf-8")
@@ -102,7 +107,24 @@ def run_approximate_dataset(
             )
             uniform_seconds = perf_counter() - started
 
-            for result in (greedy_result, heuristic_result, uniform_result):
+            started = perf_counter()
+            random_result = random_baseline(
+                K,
+                M,
+                budget,
+                pair_errors,
+                **_case_random_parameters(
+                    random_parameters, dataset, case, budget
+                ),
+            )
+            random_seconds = perf_counter() - started
+
+            for result in (
+                greedy_result,
+                heuristic_result,
+                uniform_result,
+                random_result,
+            ):
                 _validate_strategy(
                     result.allocation,
                     result.pair_locations,
@@ -129,9 +151,11 @@ def run_approximate_dataset(
                     "greedy_error": greedy_result.error_probability,
                     "heuristic_error": heuristic_result.error_probability,
                     "uniform_error": uniform_result.error_probability,
+                    "random_error": random_result.error_probability,
                     "greedy_seconds": greedy_seconds,
                     "heuristic_seconds": heuristic_seconds,
                     "uniform_seconds": uniform_seconds,
+                    "random_seconds": random_seconds,
                     "heuristic_iterations": heuristic_result.iterations_run,
                     "heuristic_accepted_moves": heuristic_result.accepted_moves,
                     "heuristic_stopping_reason": heuristic_result.stopping_reason,
@@ -139,6 +163,7 @@ def run_approximate_dataset(
                     "greedy_allocation": list(greedy_result.allocation),
                     "heuristic_allocation": list(heuristic_result.allocation),
                     "uniform_allocation": list(uniform_result.allocation),
+                    "random_allocation": list(random_result.allocation),
                     "greedy_pair_locations": _pair_locations_to_dict(
                         greedy_result.pair_locations
                     ),
@@ -147,6 +172,9 @@ def run_approximate_dataset(
                     ),
                     "uniform_pair_locations": _pair_locations_to_dict(
                         uniform_result.pair_locations
+                    ),
+                    "random_pair_locations": _pair_locations_to_dict(
+                        random_result.pair_locations
                     ),
                 }
             )
@@ -180,6 +208,7 @@ def run_approximate_dataset(
             "greedy": greedy_parameters,
             "heuristic": heuristic_parameters,
             "uniform": uniform_parameters,
+            "random": random_parameters,
         },
     )
     return records
@@ -293,9 +322,11 @@ def save_approximate_results(
         "greedy_error",
         "heuristic_error",
         "uniform_error",
+        "random_error",
         "greedy_seconds",
         "heuristic_seconds",
         "uniform_seconds",
+        "random_seconds",
         "heuristic_iterations",
         "heuristic_accepted_moves",
         "heuristic_stopping_reason",
@@ -355,7 +386,7 @@ def approximate_summary(
 def overall_error_curve_summary(
     records: list[dict[str, object]],
 ) -> list[dict[str, float | int | str]]:
-    """Summarize overall Greedy and Heuristic error at each budget level."""
+    """Summarize overall algorithm error at each budget level."""
     dimension = f"{int(records[0]['spatial_dimension'])}D"
     rows: list[dict[str, float | int | str]] = []
     levels = sorted({int(record["budget_level"]) for record in records})
@@ -366,6 +397,12 @@ def overall_error_curve_summary(
         greedy_error = fmean(float(record["greedy_error"]) for record in selected)
         heuristic_error = fmean(
             float(record["heuristic_error"]) for record in selected
+        )
+        uniform_error = fmean(
+            float(record["uniform_error"]) for record in selected
+        )
+        random_error = fmean(
+            float(record["random_error"]) for record in selected
         )
         error_reduction = greedy_error - heuristic_error
         rows.append(
@@ -378,9 +415,90 @@ def overall_error_curve_summary(
                 ),
                 "greedy_mean_error": greedy_error,
                 "heuristic_mean_error": heuristic_error,
+                "uniform_mean_error": uniform_error,
+                "random_mean_error": random_error,
                 "error_reduction": error_reduction,
                 "error_reduction_percent": (
                     100.0 * error_reduction / greedy_error
+                    if greedy_error > 0.0
+                    else 0.0
+                ),
+            }
+        )
+    return rows
+
+
+def runtime_by_k_summary(
+    records: list[dict[str, object]],
+) -> list[dict[str, float | int | str]]:
+    """Summarize algorithm runtimes for each number of fields."""
+    dimension = f"{int(records[0]['spatial_dimension'])}D"
+    rows: list[dict[str, float | int | str]] = []
+    for number_of_fields in sorted({int(record["K"]) for record in records}):
+        selected = [
+            record
+            for record in records
+            if int(record["K"]) == number_of_fields
+        ]
+        rows.append(
+            {
+                "dimension": dimension,
+                "K": number_of_fields,
+                "greedy_median_seconds": median(
+                    float(record["greedy_seconds"]) for record in selected
+                ),
+                "heuristic_median_seconds": median(
+                    float(record["heuristic_seconds"]) for record in selected
+                ),
+                "uniform_median_seconds": median(
+                    float(record["uniform_seconds"]) for record in selected
+                ),
+                "random_median_seconds": median(
+                    float(record["random_seconds"]) for record in selected
+                ),
+                "heuristic_to_greedy_ratio": median(
+                    float(record["heuristic_seconds"])
+                    / float(record["greedy_seconds"])
+                    for record in selected
+                ),
+            }
+        )
+    return rows
+
+
+def field_family_summary(
+    records: list[dict[str, object]],
+) -> list[dict[str, float | int | str]]:
+    """Summarize mean final error for each field family."""
+    dimension = f"{int(records[0]['spatial_dimension'])}D"
+    present = {str(record["field_model"]) for record in records}
+    families = [family for family in FIELD_FAMILY_ORDER if family in present]
+    families.extend(sorted(present - set(FIELD_FAMILY_ORDER)))
+    rows: list[dict[str, float | int | str]] = []
+    for family in families:
+        selected = [
+            record for record in records if str(record["field_model"]) == family
+        ]
+        greedy_error = fmean(float(record["greedy_error"]) for record in selected)
+        heuristic_error = fmean(
+            float(record["heuristic_error"]) for record in selected
+        )
+        reduction = greedy_error - heuristic_error
+        rows.append(
+            {
+                "dimension": dimension,
+                "field_family": family,
+                "greedy_mean_error": greedy_error,
+                "heuristic_mean_error": heuristic_error,
+                "uniform_mean_error": fmean(
+                    float(record["uniform_error"]) for record in selected
+                ),
+                "random_mean_error": fmean(
+                    float(record["random_error"]) for record in selected
+                ),
+                "heuristic_reduction": reduction,
+                "heuristic_reduction_percent": (
+                    100.0 * reduction / greedy_error
                     if greedy_error > 0.0
                     else 0.0
                 ),
@@ -395,7 +513,7 @@ def make_combined_approximate_plots(
     *,
     run_scope: str = "test",
 ) -> list[tuple[str, plt.Figure]]:
-    """Create and save the three-algorithm 1D and 2D comparison plots."""
+    """Create and save the scalable 1D and 2D comparison plots."""
     if run_scope not in {"test", "full"}:
         raise ValueError("run_scope must be 'test' or 'full'")
     dimension_records = sorted(
@@ -559,7 +677,7 @@ def _plot_error_by_family(
         families.extend(sorted(present - set(FIELD_FAMILY_ORDER)))
         positions = np.arange(1, len(families) + 1)
         for offset, (algorithm, (prefix, color, _)) in zip(
-            (-0.24, 0.0, 0.24), ALGORITHM_STYLES.items()
+            (-0.3, -0.1, 0.1, 0.3), ALGORITHM_STYLES.items()
         ):
             values = [
                 [
@@ -572,7 +690,7 @@ def _plot_error_by_family(
             boxplot = axis.boxplot(
                 values,
                 positions=positions + offset,
-                widths=0.22,
+                widths=0.18,
                 patch_artist=True,
                 showmeans=True,
                 meanprops={"markerfacecolor": "black", "markeredgecolor": "black"},
@@ -705,3 +823,18 @@ def _pair_locations_to_dict(
 ) -> dict[str, int]:
     """Convert pair-location tuple keys to JSON string keys."""
     return {f"{i},{j}": location for (i, j), location in locations.items()}
+
+
+def _case_random_parameters(
+    parameters: dict[str, object],
+    dataset: str,
+    case: dict[str, object],
+    budget: int,
+) -> dict[str, object]:
+    """Create a stable random seed for one case and sensor budget."""
+    case_parameters = dict(parameters)
+    base_seed = case_parameters.get("random_seed", 0)
+    if isinstance(base_seed, int) and not isinstance(base_seed, bool):
+        seed_text = f"{base_seed}|{dataset}|{case['file']}|{budget}"
+        case_parameters["random_seed"] = crc32(seed_text.encode("utf-8"))
+    return case_parameters
