@@ -89,6 +89,17 @@ Its test mode uses 100 balanced cases per dataset, while full mode uses all
 2,700 cases.
 Results are written under `min-error-sequential/results/algorithm_comparison/`.
 
+To combine the saved compact and extended overall mean-error curves in one
+four-panel figure, open:
+
+```bash
+jupyter lab min-error-sequential/compare_compact_extended.ipynb
+```
+
+This notebook reads the existing result tables and does not rerun the
+algorithms. Its default `full` mode creates 1D Compact, 2D Compact, 1D
+Extended, and 2D Extended panels.
+
 To study how beam width affects the tree-aware heuristic, open:
 
 ```bash
