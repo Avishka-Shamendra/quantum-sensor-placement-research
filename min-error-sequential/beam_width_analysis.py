@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 from random import Random
@@ -13,12 +14,17 @@ from time import perf_counter
 import matplotlib.pyplot as plt
 
 from heuristic import heuristic
-from input_data import load_sparse_input, validate_reverse_phases
 from plot_style import configure_plot_style
 
 
 HERE = Path(__file__).resolve().parent
-INPUT_ROOT = HERE / "inputs"
+DATASET_ROOT = HERE.parent / "min-error-datasets"
+if str(DATASET_ROOT) not in sys.path:
+    sys.path.insert(0, str(DATASET_ROOT))
+
+from input_data import load_sparse_input, validate_reverse_phases  # noqa: E402
+
+INPUT_ROOT = DATASET_ROOT / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "heuristic_beam_width"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 BEAM_WIDTH_COLORS = ("#4C78A8", "#F28E2B", "#59A14F", "#E15759", "#B279A2")

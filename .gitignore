@@ -10,9 +10,9 @@ min-sensor-zero-error/inputs/benchmark_2d/
 min-sensor-zero-error/results/algorithm_comparison/benchmark_1d_results_full/
 min-sensor-zero-error/results/algorithm_comparison/benchmark_2d_results_full/
 
-# Sparse minimum-error benchmark inputs and exact-search outputs.
-min-error-sequential/inputs/compact_benchmark_1d/
-min-error-sequential/inputs/compact_benchmark_2d/
-min-error-sequential/inputs/benchmark_1d/
-min-error-sequential/inputs/benchmark_2d/
+# Shared sparse minimum-error benchmark inputs and exact-search outputs.
+min-error-datasets/inputs/compact_benchmark_1d/
+min-error-datasets/inputs/compact_benchmark_2d/
+min-error-datasets/inputs/benchmark_1d/
+min-error-datasets/inputs/benchmark_2d/
 min-error-sequential/results/

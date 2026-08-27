@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import sys
 from collections import defaultdict
 from pathlib import Path
 from random import Random
@@ -17,14 +18,19 @@ from matplotlib.ticker import MaxNLocator
 
 from greedy import greedy
 from heuristic import heuristic
-from input_data import load_sparse_input, validate_reverse_phases
 from plot_style import configure_plot_style
 from random_baseline import random_baseline
 from uniform import uniform
 
 
 HERE = Path(__file__).resolve().parent
-INPUT_ROOT = HERE / "inputs"
+DATASET_ROOT = HERE.parent / "min-error-datasets"
+if str(DATASET_ROOT) not in sys.path:
+    sys.path.insert(0, str(DATASET_ROOT))
+
+from input_data import load_sparse_input, validate_reverse_phases  # noqa: E402
+
+INPUT_ROOT = DATASET_ROOT / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 ALGORITHM_STYLES = {
