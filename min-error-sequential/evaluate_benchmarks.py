@@ -6,7 +6,6 @@ import argparse
 import csv
 import json
 import re
-import sys
 from pathlib import Path
 from time import perf_counter
 
@@ -18,13 +17,9 @@ from exhaustive_search import (
     exhaustive_search,
 )
 HERE = Path(__file__).resolve().parent
-DATASET_ROOT = HERE.parent / "min-error-datasets"
-if str(DATASET_ROOT) not in sys.path:
-    sys.path.insert(0, str(DATASET_ROOT))
+from input_data import load_sparse_input, validate_reverse_phases
 
-from input_data import load_sparse_input, validate_reverse_phases  # noqa: E402
-
-INPUT_ROOT = DATASET_ROOT / "inputs"
+INPUT_ROOT = HERE / "inputs"
 RESULTS_ROOT = HERE / "results" / "optimal_evaluation"
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 

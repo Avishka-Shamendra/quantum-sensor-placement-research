@@ -41,13 +41,13 @@ Generate the expanded one- and two-dimensional input datasets from the repositor
 root:
 
 ```bash
-python min-error-datasets/generate_benchmarks.py all
+python min-error-sequential/generate_benchmarks.py all
 ```
 
 Generate the compact one- and two-dimensional input datasets:
 
 ```bash
-python min-error-datasets/generate_compact_benchmarks.py all
+python min-error-sequential/generate_compact_benchmarks.py all
 ```
 
 Run the exact algorithm on the compact datasets:
@@ -110,7 +110,7 @@ The default study compares beam widths 1, 3, and 5 on `benchmark_1d` and
 `benchmark_2d`. Its tables and side-by-side 1D/2D figure are written under
 `min-error-sequential/results/heuristic_beam_width/`.
 
-The shared generated inputs are stored under `min-error-datasets/inputs/`.
+The sequential generated inputs are stored under `min-error-sequential/inputs/`.
 All numerical results, allocations, pair locations, decision trees, and
 figures remain under `min-error-sequential/results/`.
 
@@ -166,7 +166,7 @@ at stored locations, so this fallback value is not written to the CSV files.
 For a custom or larger design, run:
 
 ```bash
-python min-error-datasets/generate_inputs.py my_dataset \
+python min-error-sequential/generate_inputs.py my_dataset \
   --dimension 2 --k-values 3 4 5 --m-values 3 4 5 \
   --replicates 3 --budget-cap 16 --samples-per-location 5
 ```

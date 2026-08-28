@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import csv
 import json
-import sys
 from collections import defaultdict
 from math import sqrt
 from pathlib import Path
@@ -20,13 +19,9 @@ from plot_style import configure_plot_style
 
 
 HERE = Path(__file__).resolve().parent
-DATASET_ROOT = HERE.parent / "min-error-datasets"
-if str(DATASET_ROOT) not in sys.path:
-    sys.path.insert(0, str(DATASET_ROOT))
+from input_data import load_sparse_input, validate_reverse_phases
 
-from input_data import load_sparse_input, validate_reverse_phases  # noqa: E402
-
-INPUT_ROOT = DATASET_ROOT / "inputs"
+INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "optimal_evaluation"
 
 configure_plot_style()

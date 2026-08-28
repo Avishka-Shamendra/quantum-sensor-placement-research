@@ -1,15 +1,20 @@
-"""Shared validation and objective equations for the global problem."""
+"""Gram-matrix objective functions for minimum-error global discrimination."""
 
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from math import cos, isfinite, pi, prod
+from itertools import combinations
+from math import cos, isfinite, prod
 from numbers import Real
 from typing import Literal
 
+import numpy as np
+
+from input_data import validate_delta_consistency
+
 
 Pair = tuple[int, int]
-PhaseTable = Mapping[Pair, Sequence[Real]]
+DeltaTable = Mapping[Pair, Sequence[Real]]
 StateModel = Literal["product", "local_ghz", "global_ghz"]
 
 STATE_MODELS: tuple[StateModel, ...] = (
@@ -23,100 +28,171 @@ def validate_problem(
     K: int,
     M: int,
     N: int,
-    rijm: PhaseTable,
+    delta_ijm: DeltaTable,
     state_model: str,
 ) -> tuple[tuple[Pair, ...], StateModel]:
-    """Validate dimensions, the phase table, and the input-state model."""
+    """Validate dimensions, unwrapped phase differences, and state model."""
     if isinstance(K, bool) or not isinstance(K, int) or K < 2:
-        raise ValueError("K must be an integer of at least 2.")
+        raise ValueError("K must be an integer of at least 2")
     if isinstance(M, bool) or not isinstance(M, int) or M < 1:
-        raise ValueError("M must be a positive integer.")
+        raise ValueError("M must be a positive integer")
     if isinstance(N, bool) or not isinstance(N, int) or N < 0:
-        raise ValueError("N must be a nonnegative integer sensor budget.")
-    if not isinstance(rijm, Mapping):
-        raise ValueError("rijm must be a mapping keyed by field-pair tuples.")
+        raise ValueError("N must be a nonnegative integer sensor budget")
+    if not isinstance(delta_ijm, Mapping):
+        raise ValueError("delta_ijm must be keyed by field-pair tuples")
     if state_model not in STATE_MODELS:
         choices = ", ".join(repr(model) for model in STATE_MODELS)
-        raise ValueError(f"state_model must be one of: {choices}.")
+        raise ValueError(f"state_model must be one of: {choices}")
 
-    pairs = tuple((i, j) for i in range(K) for j in range(i + 1, K))
-    if set(rijm) != set(pairs):
+    pairs = tuple(combinations(range(K), 2))
+    if set(delta_ijm) != set(pairs):
         raise ValueError(
-            "rijm must contain exactly every canonical pair (i, j) with "
-            "0 <= i < j < K."
+            "delta_ijm must contain every canonical pair (i, j) with "
+            "0 <= i < j < K"
         )
-
     for pair in pairs:
-        phases = rijm[pair]
-        if isinstance(phases, (str, bytes)):
-            raise ValueError(f"rijm[{pair}] must be a sequence of M phases.")
+        deltas = delta_ijm[pair]
+        if isinstance(deltas, (str, bytes)):
+            raise ValueError(
+                f"delta_ijm[{pair}] must be a sequence of exactly M={M} values"
+            )
         try:
-            phase_count = len(phases)
+            delta_count = len(deltas)
         except TypeError as error:
             raise ValueError(
-                f"rijm[{pair}] must be an indexable sequence of M phases."
+                f"delta_ijm[{pair}] must be an indexable sequence"
             ) from error
-        if phase_count != M:
-            raise ValueError(f"rijm[{pair}] must contain exactly M={M} phases.")
+        if delta_count != M:
+            raise ValueError(
+                f"delta_ijm[{pair}] must contain exactly M={M} values"
+            )
+        if any(
+            isinstance(delta, bool)
+            or not isinstance(delta, Real)
+            or not isfinite(float(delta))
+            for delta in deltas
+        ):
+            raise ValueError("every delta_ijm value must be a finite real number")
 
-        for phase in phases:
-            if (
-                isinstance(phase, bool)
-                or not isinstance(phase, Real)
-                or not isfinite(float(phase))
-                or not -pi < float(phase) <= pi
-            ):
-                raise ValueError(
-                    "Every r_ijm phase must be a finite real number in "
-                    "the paper's interval (-pi, pi]."
-                )
-
-    # The membership check above narrows this value to the supported literals.
+    validate_delta_consistency(delta_ijm, K, M)
     return pairs, state_model  # type: ignore[return-value]
+
+
+def output_state_gram_matrix(
+    K: int,
+    M: int,
+    allocation: Sequence[int],
+    delta_ijm: DeltaTable,
+    state_model: StateModel,
+    pairs: Sequence[Pair] | None = None,
+) -> np.ndarray:
+    """Construct the signed Gram matrix of the K final pure states.
+
+    Unwrapped, mutually consistent ``delta_ijm`` values preserve the signs of
+    all pairwise overlaps. This is required for one positive-semidefinite Gram
+    matrix; independently wrapping pairwise differences can lose that global
+    consistency.
+    """
+    _validate_allocation(allocation, M)
+    if pairs is None:
+        pairs = tuple(combinations(range(K), 2))
+
+    gram = np.eye(K, dtype=float)
+    for i, j in pairs:
+        overlap = _state_overlap(
+            M,
+            allocation,
+            delta_ijm[(i, j)],
+            state_model,
+        )
+        gram[i, j] = overlap
+        gram[j, i] = overlap
+    return gram
+
+
+def pgm_error_probability(
+    K: int,
+    M: int,
+    allocation: Sequence[int],
+    delta_ijm: DeltaTable,
+    state_model: StateModel,
+    pairs: Sequence[Pair] | None = None,
+) -> float:
+    """Return the actual equal-prior PGM error for one allocation.
+
+    For output-state Gram matrix ``G``, the equal-prior PGM success probability
+    is ``sum_i |sqrt(G)[i, i]|^2 / K``. The returned objective is therefore a
+    probability in ``[0, 1]`` rather than an analytical upper bound.
+    """
+    gram = output_state_gram_matrix(
+        K,
+        M,
+        allocation,
+        delta_ijm,
+        state_model,
+        pairs,
+    )
+    eigenvalues, eigenvectors = np.linalg.eigh(gram)
+    if float(eigenvalues[0]) < -1e-9:
+        raise ValueError("delta_ijm values produced a non-PSD Gram matrix")
+    eigenvalues = np.clip(eigenvalues, 0.0, None)
+    gram_square_root = (
+        eigenvectors * np.sqrt(eigenvalues)
+    ) @ eigenvectors.T
+    success_probability = float(
+        np.sum(np.diag(gram_square_root) ** 2) / K
+    )
+    error_probability = 1.0 - success_probability
+    if not -1e-10 <= error_probability <= 1.0 + 1e-10:
+        raise RuntimeError("computed PGM error lies outside [0, 1]")
+    return min(1.0, max(0.0, error_probability))
 
 
 def pgm_error_upper_bound(
     K: int,
     M: int,
     allocation: Sequence[int],
-    rijm: PhaseTable,
+    delta_ijm: DeltaTable,
     state_model: StateModel,
     pairs: Sequence[Pair] | None = None,
 ) -> float:
-    """Evaluate Section V's Pretty Good Measurement error upper bound.
-
-    ``allocation[m]`` is the number of sensors at location ``m``. The three
-    supported models implement Equations (18), (19), and (20) of the paper.
-    Inputs are expected to have been checked by :func:`validate_problem`.
-    """
+    """Evaluate the analytical PGM upper bound for reporting only."""
+    _validate_allocation(allocation, M)
     if pairs is None:
-        pairs = tuple((i, j) for i in range(K) for j in range(i + 1, K))
-
-    overlap_sum = 0.0
-    for pair in pairs:
-        phases = rijm[pair]
-
-        if state_model == "product":
-            # Independent |+> sensors: multiply one-sensor overlaps.
-            overlap = prod(
-                abs(cos(float(phases[m]) / 2.0)) ** allocation[m]
-                for m in range(M)
-            )
-        elif state_model == "local_ghz":
-            # Sensors share a GHZ state only with sensors at the same location.
-            overlap = prod(
-                abs(cos(allocation[m] * float(phases[m]) / 2.0))
-                for m in range(M)
-            )
-        else:
-            # One GHZ state spans all sensors and accumulates all local phases.
-            accumulated_phase = sum(
-                allocation[m] * float(phases[m]) for m in range(M)
-            )
-            overlap = abs(cos(accumulated_phase / 2.0))
-
-        overlap_sum += overlap
-
-    # Sum over unordered pairs; this equals (1/K) times the ordered-pair sum.
-    # This is the paper's analytical bound, so values above one are not clipped.
+        pairs = tuple(combinations(range(K), 2))
+    overlap_sum = sum(
+        abs(_state_overlap(M, allocation, delta_ijm[pair], state_model))
+        for pair in pairs
+    )
     return (2.0 / K) * overlap_sum
+
+
+def _state_overlap(
+    M: int,
+    allocation: Sequence[int],
+    deltas: Sequence[Real],
+    state_model: StateModel,
+) -> float:
+    """Return the signed output-state overlap for an input-state model."""
+    if state_model == "product":
+        return prod(
+            cos(float(deltas[m]) / 2.0) ** allocation[m]
+            for m in range(M)
+        )
+    if state_model == "local_ghz":
+        return prod(
+            cos(allocation[m] * float(deltas[m]) / 2.0)
+            for m in range(M)
+        )
+    return cos(
+        sum(allocation[m] * float(deltas[m]) for m in range(M)) / 2.0
+    )
+
+
+def _validate_allocation(allocation: Sequence[int], M: int) -> None:
+    """Validate nonnegative integer sensor counts for M locations."""
+    if len(allocation) != M or any(
+        isinstance(count, bool) or not isinstance(count, int) or count < 0
+        for count in allocation
+    ):
+        raise ValueError("allocation must contain M nonnegative integers")

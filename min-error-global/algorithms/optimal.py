@@ -13,8 +13,9 @@ if str(PROBLEM_ROOT) not in sys.path:
     sys.path.insert(0, str(PROBLEM_ROOT))
 
 from objective import (  # noqa: E402
-    PhaseTable,
+    DeltaTable,
     StateModel,
+    pgm_error_probability,
     pgm_error_upper_bound,
     validate_problem,
 )
@@ -25,6 +26,7 @@ class OptimalResult:
     """The best allocation found by exhaustive search."""
 
     allocation: tuple[int, ...]
+    error_probability: float
     error_upper_bound: float
     state_model: StateModel
 
@@ -33,14 +35,14 @@ def optimal_global_discrimination(
     K: int,
     M: int,
     N: int,
-    rijm: PhaseTable,
+    delta_ijm: DeltaTable,
     state_model: str,
 ) -> OptimalResult:
     """Find the globally optimal fixed-budget sensor allocation.
 
-    This is Algorithm 6 in Section V of the paper. It enumerates every
-    nonnegative integer allocation whose entries sum to ``N`` and minimizes
-    the PGM error upper bound for the selected input-state model.
+    It enumerates every nonnegative integer allocation whose entries sum to
+    ``N`` and minimizes the actual equal-prior PGM error obtained from the
+    output-state Gram matrix for the selected input-state model.
 
     Args:
         K: Number of candidate fields, indexed ``0`` through ``K - 1``.
@@ -49,18 +51,19 @@ def optimal_global_discrimination(
             ``M - 1``.
         N: Fixed total number of one-qubit sensors. Every returned allocation
             uses exactly this budget.
-        rijm: Pairwise phase differences in radians. This mapping must contain
+        delta_ijm: Unwrapped pairwise phase differences in radians. This mapping must contain
             every canonical field pair ``(i, j)`` with ``0 <= i < j < K``.
-            ``rijm[(i, j)]`` is a length-``M`` sequence, and entry ``m`` is
-            ``r_ijm`` at location ``m`` in the principal interval ``(-pi, pi]``.
+            ``delta_ijm[(i, j)]`` is a length-``M`` sequence, and entry ``m``
+            equals ``c*(f_i(x_m)-f_j(x_m))`` without phase wrapping.
         state_model: Fixed input-state model. Use ``"product"`` for independent
             ``|+>`` sensors, ``"local_ghz"`` for location-wise GHZ states, or
             ``"global_ghz"`` for one GHZ state across all ``N`` sensors.
 
     Returns:
         An :class:`OptimalResult`. ``allocation[m]`` is the number of sensors
-        assigned to location ``m`` and ``error_upper_bound`` is the minimized
-        Pretty Good Measurement (PGM) upper bound from Section V.
+        assigned to location ``m`` and ``error_probability`` is the minimized
+        actual Pretty Good Measurement (PGM) error. ``error_upper_bound`` is
+        also returned as a secondary reporting metric.
 
     Raises:
         ValueError: If a dimension, budget, phase, pair key, or state model is
@@ -68,27 +71,37 @@ def optimal_global_discrimination(
 
     Notes:
         There are ``binomial(N + M - 1, M - 1)`` feasible allocations. The
-        paper gives total complexity O(binomial(N+M-1, M-1) * M * K^2).
-        Equal objective values are resolved by the first allocation generated.
+        Each objective evaluation includes an eigendecomposition of a ``K`` by
+        ``K`` Gram matrix. Equal values use the first generated allocation.
     """
-    pairs, checked_model = validate_problem(K, M, N, rijm, state_model)
+    pairs, checked_model = validate_problem(
+        K, M, N, delta_ijm, state_model
+    )
 
     best_allocation: tuple[int, ...] | None = None
-    best_bound = float("inf")
+    best_error = float("inf")
 
     # Exhaust all weak compositions of N into M location counts.
     for allocation in _budget_allocations(N, M):
-        bound = pgm_error_upper_bound(
-            K, M, allocation, rijm, checked_model, pairs
+        error = pgm_error_probability(
+            K, M, allocation, delta_ijm, checked_model, pairs
         )
-        if bound < best_bound:
+        if error < best_error:
             best_allocation = allocation
-            best_bound = bound
+            best_error = error
 
     assert best_allocation is not None
     return OptimalResult(
         allocation=best_allocation,
-        error_upper_bound=best_bound,
+        error_probability=best_error,
+        error_upper_bound=pgm_error_upper_bound(
+            K,
+            M,
+            best_allocation,
+            delta_ijm,
+            checked_model,
+            pairs,
+        ),
         state_model=checked_model,
     )
 
