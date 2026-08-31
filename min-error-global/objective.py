@@ -122,7 +122,7 @@ def pgm_error_probability(
 
     For output-state Gram matrix ``G``, the equal-prior PGM success probability
     is ``sum_i |sqrt(G)[i, i]|^2 / K``. The returned objective is therefore a
-    probability in ``[0, 1]`` rather than an analytical upper bound.
+    probability in ``[0, 1]``.
     """
     gram = output_state_gram_matrix(
         K,
@@ -146,25 +146,6 @@ def pgm_error_probability(
     if not -1e-10 <= error_probability <= 1.0 + 1e-10:
         raise RuntimeError("computed PGM error lies outside [0, 1]")
     return min(1.0, max(0.0, error_probability))
-
-
-def pgm_error_upper_bound(
-    K: int,
-    M: int,
-    allocation: Sequence[int],
-    delta_ijm: DeltaTable,
-    state_model: StateModel,
-    pairs: Sequence[Pair] | None = None,
-) -> float:
-    """Evaluate the analytical PGM upper bound for reporting only."""
-    _validate_allocation(allocation, M)
-    if pairs is None:
-        pairs = tuple(combinations(range(K), 2))
-    overlap_sum = sum(
-        abs(_state_overlap(M, allocation, delta_ijm[pair], state_model))
-        for pair in pairs
-    )
-    return (2.0 / K) * overlap_sum
 
 
 def _state_overlap(

@@ -1,4 +1,4 @@
-"""Evaluate Optimal, Greedy, and VND global-discrimination allocations."""
+"""Evaluate four allocation methods using the actual global PGM error."""
 
 from __future__ import annotations
 
@@ -21,45 +21,76 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
 from algorithms.greedy import greedy_global_discrimination  # noqa: E402
+from algorithms.near_uniform import (  # noqa: E402
+    near_uniform_global_discrimination,
+)
 from algorithms.optimal import optimal_global_discrimination  # noqa: E402
-from algorithms.vnd import (  # noqa: E402
-    DEFAULT_IMPROVEMENT_THRESHOLD,
-    vnd_global_discrimination,
+from algorithms.random_allocation import (  # noqa: E402
+    random_global_discrimination,
 )
 from input_data import load_delta_input  # noqa: E402
 from objective import STATE_MODELS, pgm_error_probability  # noqa: E402
 
 
 INPUT_ROOT = HERE / "inputs"
-DEFAULT_RESULTS_ROOT = HERE / "results" / "actual_pgm_optimal_greedy_vnd"
+DEFAULT_RESULTS_ROOT = HERE / "results" / "actual_pgm_four_methods_c_pi"
+EXACT_ERROR_TOLERANCE = 1e-12
 STATE_MODEL_LABELS = {
     "product": "Product",
     "local_ghz": "Local GHZ",
     "global_ghz": "Global GHZ",
+}
+FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
+FIELD_FAMILY_LABELS = {
+    "gaussian": "Gaussian",
+    "sinusoidal": "Sinusoidal",
+    "quadratic": "Quadratic",
+}
+METHOD_KEYS = ("optimal", "greedy", "near_uniform", "random")
+SCALABLE_METHOD_KEYS = ("greedy", "near_uniform", "random")
+METHOD_LABELS = {
+    "optimal": "Optimal",
+    "greedy": "Greedy",
+    "near_uniform": "Near-uniform",
+    "random": "Random",
 }
 METHOD_STYLES = {
     "Optimal": {
         "color": "#2171B5",
         "linestyle": "-",
         "marker": "o",
-        "markersize": 6,
-        "zorder": 3,
     },
     "Greedy": {
         "color": "#D95F02",
-        "linestyle": "--",
+        "linestyle": "-",
         "marker": "s",
-        "markersize": 5,
-        "zorder": 2,
     },
-    # The x marker remains visible when VND and Optimal have identical means.
-    "VND": {
-        "color": "#287271",
-        "linestyle": ":",
-        "marker": "x",
-        "markersize": 7,
-        "markeredgewidth": 1.5,
-        "zorder": 4,
+    "Near-uniform": {
+        "color": "#238B45",
+        "linestyle": "-",
+        "marker": "^",
+    },
+    "Random": {
+        "color": "#756BB1",
+        "linestyle": "-",
+        "marker": "D",
+    },
+}
+STATE_COMPARISON_STYLES = {
+    "product": {
+        "color": "#A23B72",
+        "linestyle": "-",
+        "marker": "o",
+    },
+    "local_ghz": {
+        "color": "#2A9D8F",
+        "linestyle": "-",
+        "marker": "s",
+    },
+    "global_ghz": {
+        "color": "#D4A017",
+        "linestyle": "-",
+        "marker": "^",
     },
 }
 
@@ -67,22 +98,19 @@ METHOD_STYLES = {
 def run_paired_dataset(
     dataset: str,
     *,
-    sensor_budgets: tuple[int, ...] = tuple(range(1, 11)),
-    vnd_improvement_threshold: float = DEFAULT_IMPROVEMENT_THRESHOLD,
+    sensor_budgets: tuple[int, ...] = tuple(range(3, 13)),
     run_mode: str = "test",
     test_case_count: int = 100,
     sample_seed: int = 20260827,
     progress_every: int = 10,
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
 ) -> list[dict[str, object]]:
-    """Run Optimal, Greedy, and VND on one compact benchmark.
+    """Evaluate all four methods for one benchmark dataset.
 
-    In ``test`` mode, exactly ``test_case_count`` cases are sampled as evenly
-    as possible across field-family, K, and M cells. ``full`` mode evaluates
-    every case. Each selected case uses the requested budgets and all three
-    Section V input-state models. ``sensor_budgets`` is an absolute-N schedule
-    defined by this global-discrimination experiment; manifest budgets and
-    sequential zero-error thresholds are deliberately ignored.
+    ``test`` mode samples cases evenly across field-family, K, and M cells;
+    ``full`` mode evaluates every case. Random baseline seeds depend only on
+    dataset, case, and budget, so each state model receives the same baseline
+    allocation for a paired comparison.
     """
     if run_mode not in {"test", "full"}:
         raise ValueError("run_mode must be 'test' or 'full'")
@@ -97,8 +125,9 @@ def run_paired_dataset(
     budgets = _validate_sensor_budgets(sensor_budgets)
 
     dataset_directory = INPUT_ROOT / dataset
-    manifest_path = dataset_directory / "manifest.json"
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest = json.loads(
+        (dataset_directory / "manifest.json").read_text(encoding="utf-8")
+    )
     all_cases = list(manifest["cases"])
     cases = (
         all_cases
@@ -112,702 +141,988 @@ def run_paired_dataset(
 
     records: list[dict[str, object]] = []
     for case_number, case in enumerate(cases, start=1):
-        K, M, delta_ijm = load_delta_input(
-            dataset_directory / str(case["file"])
-        )
+        case_file = str(case["file"])
+        K, M, delta_ijm = load_delta_input(dataset_directory / case_file)
+        delta_values = [
+            float(delta)
+            for pair_values in delta_ijm.values()
+            for delta in pair_values
+        ]
+        delta_min = min(delta_values)
+        delta_max = max(delta_values)
+        delta_abs_min = min(abs(delta) for delta in delta_values)
+        delta_abs_max = max(abs(delta) for delta in delta_values)
+
         for budget in budgets:
+            near_uniform_seed = _allocation_seed(
+                dataset, case_file, budget, "near_uniform", sample_seed
+            )
+            random_seed = _allocation_seed(
+                dataset, case_file, budget, "random", sample_seed
+            )
             for state_model in STATE_MODELS:
-                started = perf_counter()
-                optimal = optimal_global_discrimination(
-                    K, M, budget, delta_ijm, state_model
-                )
-                optimal_seconds = perf_counter() - started
+                method_results: dict[str, object] = {}
+                method_seconds: dict[str, float] = {}
+                calls = {
+                    "optimal": lambda: optimal_global_discrimination(
+                        K, M, budget, delta_ijm, state_model
+                    ),
+                    "greedy": lambda: greedy_global_discrimination(
+                        K, M, budget, delta_ijm, state_model
+                    ),
+                    "near_uniform": lambda: near_uniform_global_discrimination(
+                        K,
+                        M,
+                        budget,
+                        delta_ijm,
+                        state_model,
+                        seed=near_uniform_seed,
+                    ),
+                    "random": lambda: random_global_discrimination(
+                        K,
+                        M,
+                        budget,
+                        delta_ijm,
+                        state_model,
+                        seed=random_seed,
+                    ),
+                }
+                for method, call in calls.items():
+                    started = perf_counter()
+                    method_results[method] = call()
+                    method_seconds[method] = perf_counter() - started
 
-                started = perf_counter()
-                greedy = greedy_global_discrimination(
-                    K, M, budget, delta_ijm, state_model
-                )
-                greedy_seconds = perf_counter() - started
-
-                started = perf_counter()
-                vnd = vnd_global_discrimination(
-                    K,
-                    M,
-                    budget,
-                    delta_ijm,
-                    state_model,
-                    improvement_threshold=vnd_improvement_threshold,
-                )
-                vnd_seconds = perf_counter() - started
-
-                _validate_result(
-                    optimal.allocation,
-                    optimal.error_probability,
-                    optimal.error_upper_bound,
-                    M,
-                    budget,
-                    K,
-                )
-                _validate_result(
-                    greedy.allocation,
-                    greedy.error_probability,
-                    greedy.error_upper_bound,
-                    M,
-                    budget,
-                    K,
-                )
-                _validate_result(
-                    vnd.allocation,
-                    vnd.error_probability,
-                    vnd.error_upper_bound,
-                    M,
-                    budget,
-                    K,
-                )
-                if optimal.error_probability > greedy.error_probability + 1e-12:
-                    raise RuntimeError("greedy PGM error is below the exact optimum")
-                if optimal.error_probability > vnd.error_probability + 1e-12:
-                    raise RuntimeError("VND PGM error is below the exact optimum")
-
-                optimal_pgm_error = pgm_error_probability(
-                    K,
-                    M,
-                    optimal.allocation,
-                    delta_ijm,
-                    state_model,
-                )
-                greedy_pgm_error = pgm_error_probability(
-                    K,
-                    M,
-                    greedy.allocation,
-                    delta_ijm,
-                    state_model,
-                )
-                vnd_pgm_error = pgm_error_probability(
-                    K,
-                    M,
-                    vnd.allocation,
-                    delta_ijm,
-                    state_model,
-                )
-                _validate_probability(optimal_pgm_error)
-                _validate_probability(greedy_pgm_error)
-                _validate_probability(vnd_pgm_error)
-                for algorithm_name, reported, recomputed in (
-                    ("Optimal", optimal.error_probability, optimal_pgm_error),
-                    ("Greedy", greedy.error_probability, greedy_pgm_error),
-                    ("VND", vnd.error_probability, vnd_pgm_error),
-                ):
-                    if abs(reported - recomputed) > 1e-12:
+                errors: dict[str, float] = {}
+                allocations: dict[str, tuple[int, ...]] = {}
+                for method in METHOD_KEYS:
+                    result = method_results[method]
+                    allocation = tuple(result.allocation)  # type: ignore[attr-defined]
+                    reported = float(result.error_probability)  # type: ignore[attr-defined]
+                    _validate_result(allocation, reported, M, budget)
+                    recomputed = pgm_error_probability(
+                        K, M, allocation, delta_ijm, state_model
+                    )
+                    if abs(reported - recomputed) > EXACT_ERROR_TOLERANCE:
                         raise RuntimeError(
-                            f"{algorithm_name} returned an inconsistent PGM error"
+                            f"{METHOD_LABELS[method]} returned an inconsistent "
+                            "PGM error"
+                        )
+                    allocations[method] = allocation
+                    errors[method] = recomputed
+
+                optimal_error = errors["optimal"]
+                for method in METHOD_KEYS[1:]:
+                    if optimal_error > errors[method] + EXACT_ERROR_TOLERANCE:
+                        raise RuntimeError(
+                            f"{METHOD_LABELS[method]} PGM error is below the "
+                            "exact optimum"
                         )
 
-                gap = greedy.error_upper_bound - optimal.error_upper_bound
-                pgm_error_gap = max(
-                    0.0, greedy_pgm_error - optimal_pgm_error
-                )
-                vnd_gap = vnd.error_upper_bound - optimal.error_upper_bound
-                vnd_pgm_error_gap = max(
-                    0.0, vnd_pgm_error - optimal_pgm_error
-                )
-                records.append(
-                    {
-                        "dataset": dataset,
-                        "case": Path(str(case["file"])).stem,
-                        "field_model": str(case["field_model"]),
-                        "spatial_dimension": int(case["spatial_dimension"]),
-                        "replicate": int(case["replicate"]),
-                        "K": K,
-                        "M": M,
-                        "sensor_budget": budget,
-                        "state_model": state_model,
-                        "optimal_upper_bound": optimal.error_upper_bound,
-                        "greedy_upper_bound": greedy.error_upper_bound,
-                        "vnd_upper_bound": vnd.error_upper_bound,
-                        "optimal_pgm_error": optimal_pgm_error,
-                        "greedy_pgm_error": greedy_pgm_error,
-                        "vnd_pgm_error": vnd_pgm_error,
-                        "greedy_upper_bound_difference": gap,
-                        "greedy_pgm_error_gap": pgm_error_gap,
-                        "vnd_upper_bound_difference": vnd_gap,
-                        "vnd_pgm_error_gap": vnd_pgm_error_gap,
-                        "greedy_relative_pgm_error_gap": (
-                            pgm_error_gap / optimal_pgm_error
-                            if optimal_pgm_error > 1e-15
-                            else (0.0 if pgm_error_gap <= 1e-15 else None)
-                        ),
-                        "vnd_relative_pgm_error_gap": (
-                            vnd_pgm_error_gap / optimal_pgm_error
-                            if optimal_pgm_error > 1e-15
-                            else (0.0 if vnd_pgm_error_gap <= 1e-15 else None)
-                        ),
-                        "greedy_same_allocation": (
-                            optimal.allocation == greedy.allocation
-                        ),
-                        "vnd_same_allocation": optimal.allocation == vnd.allocation,
-                        "optimal_seconds": optimal_seconds,
-                        "greedy_seconds": greedy_seconds,
-                        "vnd_seconds": vnd_seconds,
-                        "greedy_runtime_speedup": (
-                            optimal_seconds / greedy_seconds
-                            if greedy_seconds > 0.0
-                            else float("inf")
-                        ),
-                        "vnd_runtime_speedup": (
-                            optimal_seconds / vnd_seconds
-                            if vnd_seconds > 0.0
-                            else float("inf")
-                        ),
-                        "vnd_improvement_threshold": vnd_improvement_threshold,
-                        "vnd_objective_evaluations": vnd.objective_evaluations,
-                        "vnd_cache_hits": vnd.cache_hits,
-                        "vnd_accepted_v1_moves": vnd.accepted_v1_moves,
-                        "vnd_accepted_v2_moves": vnd.accepted_v2_moves,
-                        "optimal_allocation": list(optimal.allocation),
-                        "greedy_allocation": list(greedy.allocation),
-                        "vnd_allocation": list(vnd.allocation),
-                    }
-                )
+                record: dict[str, object] = {
+                    "dataset": dataset,
+                    "case": case_file,
+                    "field_model": case["field_model"],
+                    "spatial_dimension": int(case["spatial_dimension"]),
+                    "K": K,
+                    "M": M,
+                    "sensor_budget": budget,
+                    "state_model": state_model,
+                    "near_uniform_seed": near_uniform_seed,
+                    "random_seed": random_seed,
+                    "delta_min": delta_min,
+                    "delta_max": delta_max,
+                    "delta_abs_min": delta_abs_min,
+                    "delta_abs_max": delta_abs_max,
+                    "n_delta_min": budget * delta_min,
+                    "n_delta_max": budget * delta_max,
+                    "n_delta_abs_min": budget * delta_abs_min,
+                    "n_delta_abs_max": budget * delta_abs_max,
+                }
+                for method in METHOD_KEYS:
+                    record[f"{method}_allocation"] = list(allocations[method])
+                    record[f"{method}_pgm_error"] = errors[method]
+                    record[f"{method}_seconds"] = method_seconds[method]
+                for method in METHOD_KEYS[1:]:
+                    gap = max(0.0, errors[method] - optimal_error)
+                    record[f"{method}_pgm_error_gap"] = gap
+                    record[f"{method}_relative_pgm_error_gap"] = (
+                        gap / optimal_error if optimal_error > 0.0 else 0.0
+                    )
+                    record[f"{method}_same_allocation_as_optimal"] = (
+                        allocations[method] == allocations["optimal"]
+                    )
+                records.append(record)
 
         if case_number % progress_every == 0 or case_number == len(cases):
-            print(
-                f"{dataset}: completed {case_number}/{len(cases)} cases "
-                f"({case['field_model']}, K={K}, M={M})"
-            )
+            print(f"{dataset}: completed {case_number}/{len(cases)} cases")
 
-    save_paired_results(
-        dataset,
+    _save_results(
         records,
-        results_root,
+        dataset=dataset,
         run_mode=run_mode,
+        sensor_budgets=budgets,
         selected_case_count=len(cases),
-        available_case_count=len(all_cases),
+        total_case_count=len(all_cases),
         sample_seed=sample_seed,
+        results_root=Path(results_root),
     )
     return records
 
 
-def _validate_sensor_budgets(sensor_budgets: tuple[int, ...]) -> tuple[int, ...]:
-    """Validate and canonicalize the global experiment's absolute budgets."""
-    if not sensor_budgets:
-        raise ValueError("sensor_budgets must not be empty")
-    if any(
-        isinstance(value, bool) or not isinstance(value, int) or value < 1
-        for value in sensor_budgets
-    ):
-        raise ValueError("sensor_budgets must contain positive integers")
-    if len(set(sensor_budgets)) != len(sensor_budgets):
-        raise ValueError("sensor_budgets must not contain duplicates")
-    return tuple(sorted(sensor_budgets))
-
-
-def _stratified_case_sample(
-    cases: list[dict[str, object]],
-    sample_size: int,
-    seed: int,
-) -> list[dict[str, object]]:
-    """Sample exactly ``sample_size`` cases nearly evenly across design cells."""
-    if sample_size > len(cases):
-        raise ValueError("test_case_count exceeds the available case count")
-
-    grouped: defaultdict[tuple[str, int, int], list[dict[str, object]]] = (
-        defaultdict(list)
-    )
-    for case in cases:
-        key = (str(case["field_model"]), int(case["K"]), int(case["M"]))
-        grouped[key].append(case)
-
-    cells = sorted(grouped)
-    if sample_size < len(cells):
-        raise ValueError(
-            "test_case_count must be at least the number of field-family/K/M cells"
-        )
-    base_count, extra_count = divmod(sample_size, len(cells))
-    rng = Random(seed)
-    extra_cells = set(rng.sample(cells, extra_count))
-    if any(
-        len(grouped[cell]) < base_count + int(cell in extra_cells)
-        for cell in cells
-    ):
-        raise ValueError("a design cell does not contain enough cases")
-    selected: list[dict[str, object]] = []
-    for cell in cells:
-        count = base_count + int(cell in extra_cells)
-        selected.extend(rng.sample(grouped[cell], count))
-
-    # Restore source order so progress output and saved records remain stable.
-    source_order = {str(case["file"]): index for index, case in enumerate(cases)}
-    selected.sort(key=lambda case: source_order[str(case["file"])])
-    return selected
-
-
-def _validate_result(
-    allocation: tuple[int, ...],
-    error_probability: float,
-    upper_bound: float,
-    M: int,
-    budget: int,
-    K: int,
-) -> None:
-    """Validate an allocation and both returned PGM metrics."""
-    if len(allocation) != M or sum(allocation) != budget:
-        raise RuntimeError("algorithm returned an invalid sensor allocation")
-    if any(count < 0 for count in allocation):
-        raise RuntimeError("algorithm returned a negative sensor count")
-    if not isfinite(upper_bound) or not -1e-12 <= upper_bound <= K - 1 + 1e-12:
-        raise RuntimeError("algorithm returned an invalid PGM upper bound")
-    _validate_probability(error_probability)
-
-
-def _validate_probability(value: float) -> None:
-    """Validate a computed PGM error probability."""
-    if not isfinite(value) or not 0.0 <= value <= 1.0:
-        raise RuntimeError("computed PGM error is not a probability")
-
-
-def save_paired_results(
+def run_scalable_dataset(
     dataset: str,
-    records: list[dict[str, object]],
-    results_root: str | Path = DEFAULT_RESULTS_ROOT,
     *,
-    run_mode: str,
-    selected_case_count: int,
-    available_case_count: int,
-    sample_seed: int,
-) -> None:
-    """Save complete JSON records and a compact CSV table."""
-    tables_directory = _dataset_results_directory(
-        results_root, dataset, run_mode
-    ) / "tables"
-    tables_directory.mkdir(parents=True, exist_ok=True)
+    sensor_budgets: tuple[int, ...] = tuple(range(3, 13)),
+    run_mode: str = "test",
+    test_case_count: int = 100,
+    sample_seed: int = 20260827,
+    progress_every: int = 10,
+    results_root: str | Path,
+) -> list[dict[str, object]]:
+    """Evaluate scalable methods without exhaustive Optimal search.
 
-    payload = {
-        "dataset": dataset,
-        "run_mode": run_mode,
-        "selected_case_count": selected_case_count,
-        "available_case_count": available_case_count,
-        "sample_seed": sample_seed,
-        "result_count": len(records),
-        "sensor_budgets": sorted(
-            {int(record["sensor_budget"]) for record in records}
-        ),
-        "state_models": list(STATE_MODELS),
-        "optimization_objective": "actual_equal_prior_pgm_error",
-        "input_phase_definition": "unwrapped_delta_ijm",
-        "vnd_improvement_threshold": (
-            records[0]["vnd_improvement_threshold"] if records else None
-        ),
-        "results": records,
-    }
-    (tables_directory / "results.json").write_text(
-        json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+    This runner is intended for the extended benchmarks, where the complete
+    ``K``/``M`` design makes exhaustive allocation enumeration unsuitable as a
+    full-dataset reference.
+    """
+    if run_mode not in {"test", "full"}:
+        raise ValueError("run_mode must be 'test' or 'full'")
+    if (
+        isinstance(test_case_count, bool)
+        or not isinstance(test_case_count, int)
+        or test_case_count < 1
+    ):
+        raise ValueError("test_case_count must be a positive integer")
+    if progress_every < 1:
+        raise ValueError("progress_every must be positive")
+    budgets = _validate_sensor_budgets(sensor_budgets)
+
+    dataset_directory = INPUT_ROOT / dataset
+    manifest = json.loads(
+        (dataset_directory / "manifest.json").read_text(encoding="utf-8")
+    )
+    all_cases = list(manifest["cases"])
+    cases = (
+        all_cases
+        if run_mode == "full"
+        else _stratified_case_sample(
+            all_cases,
+            test_case_count,
+            sample_seed + crc32(dataset.encode("utf-8")),
+        )
     )
 
-    columns = [
-        "dataset",
-        "case",
-        "field_model",
-        "spatial_dimension",
-        "replicate",
-        "K",
-        "M",
-        "sensor_budget",
-        "state_model",
-        "optimal_upper_bound",
-        "greedy_upper_bound",
-        "vnd_upper_bound",
-        "optimal_pgm_error",
-        "greedy_pgm_error",
-        "vnd_pgm_error",
-        "greedy_upper_bound_difference",
-        "greedy_pgm_error_gap",
-        "vnd_upper_bound_difference",
-        "vnd_pgm_error_gap",
-        "greedy_relative_pgm_error_gap",
-        "vnd_relative_pgm_error_gap",
-        "greedy_same_allocation",
-        "vnd_same_allocation",
-        "optimal_seconds",
-        "greedy_seconds",
-        "vnd_seconds",
-        "greedy_runtime_speedup",
-        "vnd_runtime_speedup",
-        "vnd_improvement_threshold",
-        "vnd_objective_evaluations",
-        "vnd_cache_hits",
-        "vnd_accepted_v1_moves",
-        "vnd_accepted_v2_moves",
-        "optimal_allocation",
-        "greedy_allocation",
-        "vnd_allocation",
-    ]
-    with (tables_directory / "summary.csv").open(
-        "w", encoding="utf-8", newline=""
-    ) as output_file:
-        writer = csv.DictWriter(output_file, fieldnames=columns, lineterminator="\n")
-        writer.writeheader()
-        for record in records:
-            writer.writerow({column: record[column] for column in columns})
+    records: list[dict[str, object]] = []
+    for case_number, case in enumerate(cases, start=1):
+        case_file = str(case["file"])
+        K, M, delta_ijm = load_delta_input(dataset_directory / case_file)
+        delta_values = [
+            float(delta)
+            for pair_values in delta_ijm.values()
+            for delta in pair_values
+        ]
+        delta_min = min(delta_values)
+        delta_max = max(delta_values)
+        delta_abs_min = min(abs(delta) for delta in delta_values)
+        delta_abs_max = max(abs(delta) for delta in delta_values)
+
+        for budget in budgets:
+            near_uniform_seed = _allocation_seed(
+                dataset, case_file, budget, "near_uniform", sample_seed
+            )
+            random_seed = _allocation_seed(
+                dataset, case_file, budget, "random", sample_seed
+            )
+            for state_model in STATE_MODELS:
+                calls = {
+                    "greedy": lambda: greedy_global_discrimination(
+                        K, M, budget, delta_ijm, state_model
+                    ),
+                    "near_uniform": lambda: near_uniform_global_discrimination(
+                        K,
+                        M,
+                        budget,
+                        delta_ijm,
+                        state_model,
+                        seed=near_uniform_seed,
+                    ),
+                    "random": lambda: random_global_discrimination(
+                        K,
+                        M,
+                        budget,
+                        delta_ijm,
+                        state_model,
+                        seed=random_seed,
+                    ),
+                }
+                errors: dict[str, float] = {}
+                allocations: dict[str, tuple[int, ...]] = {}
+                method_seconds: dict[str, float] = {}
+                for method, call in calls.items():
+                    started = perf_counter()
+                    result = call()
+                    method_seconds[method] = perf_counter() - started
+                    allocation = tuple(result.allocation)
+                    reported = float(result.error_probability)
+                    _validate_result(allocation, reported, M, budget)
+                    recomputed = pgm_error_probability(
+                        K, M, allocation, delta_ijm, state_model
+                    )
+                    if abs(reported - recomputed) > EXACT_ERROR_TOLERANCE:
+                        raise RuntimeError(
+                            f"{METHOD_LABELS[method]} returned an inconsistent "
+                            "PGM error"
+                        )
+                    allocations[method] = allocation
+                    errors[method] = recomputed
+
+                record: dict[str, object] = {
+                    "dataset": dataset,
+                    "case": case_file,
+                    "field_model": case["field_model"],
+                    "spatial_dimension": int(case["spatial_dimension"]),
+                    "K": K,
+                    "M": M,
+                    "sensor_budget": budget,
+                    "state_model": state_model,
+                    "near_uniform_seed": near_uniform_seed,
+                    "random_seed": random_seed,
+                    "delta_min": delta_min,
+                    "delta_max": delta_max,
+                    "delta_abs_min": delta_abs_min,
+                    "delta_abs_max": delta_abs_max,
+                    "n_delta_min": budget * delta_min,
+                    "n_delta_max": budget * delta_max,
+                    "n_delta_abs_min": budget * delta_abs_min,
+                    "n_delta_abs_max": budget * delta_abs_max,
+                }
+                for method in SCALABLE_METHOD_KEYS:
+                    record[f"{method}_allocation"] = list(allocations[method])
+                    record[f"{method}_pgm_error"] = errors[method]
+                    record[f"{method}_seconds"] = method_seconds[method]
+                records.append(record)
+
+        if case_number % progress_every == 0 or case_number == len(cases):
+            print(f"{dataset}: completed {case_number}/{len(cases)} cases")
+
+    _save_results(
+        records,
+        dataset=dataset,
+        run_mode=run_mode,
+        sensor_budgets=budgets,
+        selected_case_count=len(cases),
+        total_case_count=len(all_cases),
+        sample_seed=sample_seed,
+        results_root=Path(results_root),
+        method_keys=SCALABLE_METHOD_KEYS,
+    )
+    return records
 
 
 def load_paired_results(
     dataset: str,
-    results_root: str | Path = DEFAULT_RESULTS_ROOT,
     *,
-    run_mode: str = "test",
+    results_root: str | Path = DEFAULT_RESULTS_ROOT,
 ) -> list[dict[str, object]]:
-    """Load saved records without rerunning the allocation algorithms."""
-    results_path = (
-        _dataset_results_directory(results_root, dataset, run_mode)
-        / "tables"
-        / "results.json"
-    )
-    return list(json.loads(results_path.read_text(encoding="utf-8"))["results"])
+    """Load saved JSON records for one dataset."""
+    path = Path(results_root) / dataset / "paired_results.json"
+    return list(json.loads(path.read_text(encoding="utf-8"))["records"])
 
 
-def paired_summary(
+def error_curve_summary(
     records: list[dict[str, object]],
-) -> list[dict[str, float | int | str]]:
-    """Summarize actual-error-optimal Greedy and VND gaps by state model."""
-    rows: list[dict[str, float | int | str]] = []
-    dimension = f"{int(records[0]['spatial_dimension'])}D"
-    for state_model in STATE_MODELS:
-        selected = [
-            record for record in records if record["state_model"] == state_model
-        ]
-        rows.append(
-            {
-                "dimension": dimension,
-                "state_model": state_model,
-                "cases": len({record["case"] for record in selected}),
-                "runs": len(selected),
-                "optimal_mean_bound": fmean(
-                    float(record["optimal_upper_bound"]) for record in selected
-                ),
-                "greedy_mean_bound": fmean(
-                    float(record["greedy_upper_bound"]) for record in selected
-                ),
-                "vnd_mean_bound": fmean(
-                    float(record["vnd_upper_bound"]) for record in selected
-                ),
-                "optimal_mean_pgm_error": fmean(
-                    float(record["optimal_pgm_error"]) for record in selected
-                ),
-                "greedy_mean_pgm_error": fmean(
-                    float(record["greedy_pgm_error"]) for record in selected
-                ),
-                "vnd_mean_pgm_error": fmean(
-                    float(record["vnd_pgm_error"]) for record in selected
-                ),
-                "mean_greedy_upper_bound_difference": fmean(
-                    float(record["greedy_upper_bound_difference"])
-                    for record in selected
-                ),
-                "mean_greedy_pgm_error_gap": fmean(
-                    float(record["greedy_pgm_error_gap"])
-                    for record in selected
-                ),
-                "mean_vnd_upper_bound_difference": fmean(
-                    float(record["vnd_upper_bound_difference"])
-                    for record in selected
-                ),
-                "mean_vnd_pgm_error_gap": fmean(
-                    float(record["vnd_pgm_error_gap"])
-                    for record in selected
-                ),
-            }
+) -> list[dict[str, object]]:
+    """Aggregate actual PGM errors and gaps by dimension, state, and budget."""
+    groups: dict[tuple[int, str, int], list[dict[str, object]]] = defaultdict(list)
+    for record in records:
+        key = (
+            int(record["spatial_dimension"]),
+            str(record["state_model"]),
+            int(record["sensor_budget"]),
         )
+        groups[key].append(record)
+
+    rows: list[dict[str, object]] = []
+    for (dimension, state_model, budget), group in sorted(groups.items()):
+        row: dict[str, object] = {
+            "spatial_dimension": dimension,
+            "state_model": state_model,
+            "sensor_budget": budget,
+            "instances": len(group),
+        }
+        for method in METHOD_KEYS:
+            row[f"{method}_mean_pgm_error"] = fmean(
+                float(record[f"{method}_pgm_error"])
+                for record in group
+            )
+        for method in METHOD_KEYS[1:]:
+            row[f"{method}_mean_pgm_error_gap"] = fmean(
+                float(record[f"{method}_pgm_error_gap"])
+                for record in group
+            )
+        rows.append(row)
     return rows
 
 
-def bound_curve_summary(
+def scalable_error_curve_summary(
     records: list[dict[str, object]],
-) -> list[dict[str, float | int | str]]:
-    """Summarize both PGM metrics at each absolute sensor budget."""
-    rows: list[dict[str, float | int | str]] = []
-    dimension = f"{int(records[0]['spatial_dimension'])}D"
-    for state_model in STATE_MODELS:
-        model_records = [
-            record for record in records if record["state_model"] == state_model
-        ]
-        for budget in sorted(
-            {int(record["sensor_budget"]) for record in model_records}
-        ):
-            selected = [
-                record
-                for record in model_records
-                if int(record["sensor_budget"]) == budget
-            ]
+) -> list[dict[str, object]]:
+    """Aggregate actual PGM errors for the three scalable methods."""
+    groups: dict[tuple[int, str, int], list[dict[str, object]]] = defaultdict(list)
+    for record in records:
+        key = (
+            int(record["spatial_dimension"]),
+            str(record["state_model"]),
+            int(record["sensor_budget"]),
+        )
+        groups[key].append(record)
+
+    rows: list[dict[str, object]] = []
+    for (dimension, state_model, budget), group in sorted(groups.items()):
+        row: dict[str, object] = {
+            "spatial_dimension": dimension,
+            "state_model": state_model,
+            "sensor_budget": budget,
+            "instances": len(group),
+        }
+        for method in SCALABLE_METHOD_KEYS:
+            row[f"{method}_mean_pgm_error"] = fmean(
+                float(record[f"{method}_pgm_error"])
+                for record in group
+            )
+        rows.append(row)
+    return rows
+
+
+def diagnostic_gap_summary(
+    records: list[dict[str, object]],
+    *,
+    exact_tolerance: float = EXACT_ERROR_TOLERANCE,
+) -> list[dict[str, object]]:
+    """Summarize absolute/relative gaps and exact-optimal fractions."""
+    groups: dict[tuple[int, str], list[dict[str, object]]] = defaultdict(list)
+    for record in records:
+        groups[
+            int(record["spatial_dimension"]), str(record["state_model"])
+        ].append(record)
+
+    rows: list[dict[str, object]] = []
+    for (dimension, state_model), group in sorted(groups.items()):
+        for method in METHOD_KEYS[1:]:
+            absolute = sorted(
+                float(record[f"{method}_pgm_error_gap"])
+                for record in group
+            )
+            relative = sorted(
+                float(record[f"{method}_relative_pgm_error_gap"])
+                for record in group
+            )
             rows.append(
                 {
-                    "dimension": dimension,
+                    "spatial_dimension": dimension,
                     "state_model": state_model,
-                    "sensor_budget": budget,
-                    "optimal_mean_bound": fmean(
-                        float(record["optimal_upper_bound"]) for record in selected
-                    ),
-                    "greedy_mean_bound": fmean(
-                        float(record["greedy_upper_bound"]) for record in selected
-                    ),
-                    "vnd_mean_bound": fmean(
-                        float(record["vnd_upper_bound"]) for record in selected
-                    ),
-                    "optimal_mean_pgm_error": fmean(
-                        float(record["optimal_pgm_error"]) for record in selected
-                    ),
-                    "greedy_mean_pgm_error": fmean(
-                        float(record["greedy_pgm_error"]) for record in selected
-                    ),
-                    "vnd_mean_pgm_error": fmean(
-                        float(record["vnd_pgm_error"]) for record in selected
-                    ),
-                    "mean_greedy_upper_bound_difference": fmean(
-                        float(record["greedy_upper_bound_difference"])
-                        for record in selected
-                    ),
-                    "mean_greedy_pgm_error_gap": fmean(
-                        float(record["greedy_pgm_error_gap"])
-                        for record in selected
-                    ),
-                    "mean_vnd_upper_bound_difference": fmean(
-                        float(record["vnd_upper_bound_difference"])
-                        for record in selected
-                    ),
-                    "mean_vnd_pgm_error_gap": fmean(
-                        float(record["vnd_pgm_error_gap"])
-                        for record in selected
-                    ),
-                    "runs": len(selected),
+                    "method": METHOD_LABELS[method],
+                    "runs": len(group),
+                    "mean_absolute_gap": fmean(absolute),
+                    "p90_absolute_gap": _percentile(absolute, 0.90),
+                    "max_absolute_gap": max(absolute),
+                    "mean_relative_gap": fmean(relative),
+                    "p90_relative_gap": _percentile(relative, 0.90),
+                    "max_relative_gap": max(relative),
+                    "fraction_exactly_optimal": sum(
+                        gap <= exact_tolerance for gap in absolute
+                    )
+                    / len(group),
                 }
             )
     return rows
 
 
+def phase_range_summary(records: list[dict[str, object]]) -> dict[str, object]:
+    """Return observed signed and absolute ranges of delta and N*delta."""
+    unique_cases = {
+        (str(record["dataset"]), str(record["case"])) for record in records
+    }
+    return {
+        "cases": len(unique_cases),
+        "delta_min": min(float(record["delta_min"]) for record in records),
+        "delta_max": max(float(record["delta_max"]) for record in records),
+        "delta_abs_min": min(
+            float(record["delta_abs_min"]) for record in records
+        ),
+        "delta_abs_max": max(
+            float(record["delta_abs_max"]) for record in records
+        ),
+        "n_delta_min": min(
+            float(record["n_delta_min"]) for record in records
+        ),
+        "n_delta_max": max(
+            float(record["n_delta_max"]) for record in records
+        ),
+        "n_delta_abs_min": min(
+            float(record["n_delta_abs_min"]) for record in records
+        ),
+        "n_delta_abs_max": max(
+            float(record["n_delta_abs_max"]) for record in records
+        ),
+    }
+
+
 def make_combined_comparison_plots(
-    records_by_dataset: dict[str, list[dict[str, object]]],
-    results_root: str | Path = DEFAULT_RESULTS_ROOT,
+    records: list[dict[str, object]],
     *,
-    run_mode: str = "test",
+    output_directory: str | Path | None = None,
 ) -> list[tuple[str, plt.Figure]]:
-    """Create absolute three-method curves and Optimal-relative gap curves."""
-    if run_mode not in {"test", "full"}:
-        raise ValueError("run_mode must be 'test' or 'full'")
-    dimension_records = sorted(
-        records_by_dataset.values(),
-        key=lambda records: int(records[0]["spatial_dimension"]),
-    )
-    if [int(records[0]["spatial_dimension"]) for records in dimension_records] != [1, 2]:
-        raise ValueError("combined plots require one 1D and one 2D dataset")
-
-    dataset_names = "_".join(records_by_dataset)
-    figures_directory = (
-        Path(results_root)
-        / f"results_summary_{dataset_names}_{run_mode}"
-        / "figures"
-    )
-    figures_directory.mkdir(parents=True, exist_ok=True)
+    """Create error, gap, state-comparison, and runtime figures."""
+    if not records:
+        raise ValueError("records must not be empty")
     _configure_plot_style()
-
-    for obsolete_name in (
-        "upper_bound_gap_curves",
-        "upper_bound_gap_by_field_family",
-        "greedy_runtime_speedup",
-    ):
-        for suffix in ("png", "pdf"):
-            (figures_directory / f"{obsolete_name}.{suffix}").unlink(
-                missing_ok=True
-            )
+    summary = error_curve_summary(records)
+    output = Path(output_directory) if output_directory is not None else None
+    if output is not None:
+        output.mkdir(parents=True, exist_ok=True)
 
     figures = [
         (
-            "Mean PGM upper bounds (all methods)",
-            _plot_mean_metric_curves(
-                dimension_records,
-                summary_keys={
-                    "Optimal": "optimal_mean_bound",
-                    "Greedy": "greedy_mean_bound",
-                    "VND": "vnd_mean_bound",
-                },
-                ylabel="mean PGM upper bound",
-            ),
-            "mean_upper_bound_curves",
+            "Mean actual PGM errors across input states",
+            _make_method_grid(summary, gap=False),
+            "mean_actual_pgm_errors",
         ),
         (
-            "Mean actual PGM errors (all methods)",
-            _plot_mean_metric_curves(
-                dimension_records,
-                summary_keys={
-                    "Optimal": "optimal_mean_pgm_error",
-                    "Greedy": "greedy_mean_pgm_error",
-                    "VND": "vnd_mean_pgm_error",
-                },
-                ylabel="mean actual PGM error",
-            ),
-            "mean_pgm_error_curves",
+            "Mean actual PGM-error gaps",
+            _make_method_grid(summary, gap=True),
+            "mean_actual_pgm_error_gaps",
         ),
         (
-            "Mean PGM upper-bound differences (Method - actual-error Optimal)",
-            _plot_mean_gap_curves(
-                dimension_records,
-                summary_keys={
-                    "Greedy": "mean_greedy_upper_bound_difference",
-                    "VND": "mean_vnd_upper_bound_difference",
-                },
-                ylabel="mean upper-bound difference",
+            "PGM-error gap by field family",
+            _make_field_family_boxplots(
+                records,
+                methods=SCALABLE_METHOD_KEYS,
+                gap=True,
             ),
-            "mean_upper_bound_gap_curves",
+            "pgm_error_gap_by_field_family",
         ),
         (
-            "Mean actual PGM-error gaps (Method - Optimal)",
-            _plot_mean_gap_curves(
-                dimension_records,
-                summary_keys={
-                    "Greedy": "mean_greedy_pgm_error_gap",
-                    "VND": "mean_vnd_pgm_error_gap",
-                },
-                ylabel="mean PGM-error gap",
-                nonnegative=True,
-            ),
-            "mean_pgm_error_gap_curves",
+            "Greedy input-state comparison",
+            _make_state_comparison(summary, "greedy"),
+            "greedy_input_state_comparison",
+        ),
+        (
+            "Optimal input-state comparison",
+            _make_state_comparison(summary, "optimal"),
+            "optimal_input_state_comparison",
+        ),
+        (
+            "Runtime speedup relative to Optimal",
+            _make_runtime_speedup_boxplots(records),
+            "runtime_boxplots",
         ),
     ]
-
-    output: list[tuple[str, plt.Figure]] = []
-    for title, figure, filename in figures:
-        figure.savefig(figures_directory / f"{filename}.png", dpi=300)
-        figure.savefig(figures_directory / f"{filename}.pdf")
-        output.append((title, figure))
-    return output
+    for _, figure, filename in figures:
+        if output is not None:
+            figure.savefig(output / f"{filename}.png", dpi=300)
+            figure.savefig(output / f"{filename}.pdf")
+    return [(title, figure) for title, figure, _ in figures]
 
 
-def _plot_mean_metric_curves(
-    dimension_records: list[list[dict[str, object]]],
+def make_extended_comparison_plots(
+    records: list[dict[str, object]],
     *,
-    summary_keys: dict[str, str],
-    ylabel: str,
+    output_directory: str | Path | None = None,
+) -> list[tuple[str, plt.Figure]]:
+    """Create the concise error and runtime figures for extended benchmarks."""
+    if not records:
+        raise ValueError("records must not be empty")
+    _configure_plot_style()
+    summary = scalable_error_curve_summary(records)
+    output = Path(output_directory) if output_directory is not None else None
+    if output is not None:
+        output.mkdir(parents=True, exist_ok=True)
+
+    figures = [
+        (
+            "Extended-benchmark mean actual PGM errors",
+            _make_method_grid(
+                summary,
+                gap=False,
+                methods=SCALABLE_METHOD_KEYS,
+            ),
+            "extended_mean_actual_pgm_errors",
+        ),
+        (
+            "Extended-benchmark PGM error by field family",
+            _make_field_family_boxplots(
+                records,
+                methods=SCALABLE_METHOD_KEYS,
+                gap=False,
+            ),
+            "extended_pgm_error_by_field_family",
+        ),
+        (
+            "Extended-benchmark runtimes",
+            _make_raw_runtime_boxplots(records, SCALABLE_METHOD_KEYS),
+            "extended_runtime_boxplots",
+        ),
+    ]
+    for _, figure, filename in figures:
+        if output is not None:
+            figure.savefig(output / f"{filename}.png", dpi=300)
+            figure.savefig(output / f"{filename}.pdf")
+    return [(title, figure) for title, figure, _ in figures]
+
+
+def _make_method_grid(
+    summary: list[dict[str, object]],
+    *,
+    gap: bool,
+    methods: tuple[str, ...] | None = None,
 ) -> plt.Figure:
-    """Plot absolute mean metrics for Optimal, Greedy, and VND."""
+    """Plot state-model rows and dimension columns for errors or gaps."""
     figure, axes = plt.subplots(
-        3, 2, figsize=(10.8, 11.0), sharex="col", sharey="row"
+        3, 2, figsize=(12, 12), sharex=True, sharey="row", constrained_layout=True
     )
-    for row, state_model in enumerate(STATE_MODELS):
-        for column, records in enumerate(dimension_records):
-            axis = axes[row, column]
-            summaries = [
-                item
-                for item in bound_curve_summary(records)
-                if item["state_model"] == state_model
-            ]
-            x = [int(item["sensor_budget"]) for item in summaries]
-            for method, summary_key in summary_keys.items():
+    selected_methods = methods or (METHOD_KEYS[1:] if gap else METHOD_KEYS)
+    budgets = sorted({int(row["sensor_budget"]) for row in summary})
+    for row_index, state_model in enumerate(STATE_MODELS):
+        row_values: list[float] = []
+        for column_index, dimension in enumerate((1, 2)):
+            axis = axes[row_index, column_index]
+            subset = sorted(
+                (
+                    row
+                    for row in summary
+                    if int(row["spatial_dimension"]) == dimension
+                    and row["state_model"] == state_model
+                ),
+                key=lambda row: int(row["sensor_budget"]),
+            )
+            for method in selected_methods:
+                label = METHOD_LABELS[method]
+                key = (
+                    f"{method}_mean_pgm_error_gap"
+                    if gap
+                    else f"{method}_mean_pgm_error"
+                )
+                values = [float(row[key]) for row in subset]
+                row_values.extend(values)
                 axis.plot(
-                    x,
-                    [float(item[summary_key]) for item in summaries],
-                    label=method,
-                    **METHOD_STYLES[method],
+                    [int(row["sensor_budget"]) for row in subset],
+                    values,
+                    label=label,
+                    linewidth=1.8,
+                    markersize=5,
+                    **METHOD_STYLES[label],
                 )
-            if row == 0:
-                axis.set_title(f"{int(records[0]['spatial_dimension'])}D")
-            if column == 0:
-                axis.set_ylabel(
-                    f"{STATE_MODEL_LABELS[state_model]}\n{ylabel}"
-                )
-            if row == len(STATE_MODELS) - 1:
-                axis.set_xlabel(r"Sensor budget $N$")
-                axis.set_xticks(x)
-            axis.margins(y=0.1)
+            axis.set_title(f"{dimension}D")
+            axis.set_xticks(budgets)
             axis.grid(alpha=0.25)
+            if column_index == 0:
+                measure = "mean PGM-error gap" if gap else "mean PGM error"
+                axis.set_ylabel(
+                    f"{STATE_MODEL_LABELS[state_model]}\n{measure}"
+                )
+            if row_index == 2:
+                axis.set_xlabel(r"Sensor budget $N$")
+        if gap:
+            upper = max(row_values, default=0.0)
+            axes[row_index, 0].set_ylim(0.0, upper * 1.08 or 1.0)
+        else:
+            _set_padded_probability_limits(axes[row_index, 0], row_values)
     handles, labels = axes[0, 0].get_legend_handles_labels()
     figure.legend(
         handles,
         labels,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.995),
-        ncol=3,
-        frameon=False,
+        loc="outside upper center",
+        ncol=len(selected_methods),
     )
-    figure.tight_layout(rect=(0, 0, 1, 0.96))
     return figure
 
 
-def _plot_mean_gap_curves(
-    dimension_records: list[list[dict[str, object]]],
+def _make_field_family_boxplots(
+    records: list[dict[str, object]],
     *,
-    summary_keys: dict[str, str],
-    ylabel: str,
-    nonnegative: bool = False,
+    methods: tuple[str, ...],
+    gap: bool,
 ) -> plt.Figure:
-    """Plot method-minus-actual-error-Optimal differences by state model."""
+    """Compare method distributions across field families and input states."""
     figure, axes = plt.subplots(
-        3, 2, figsize=(10.8, 11.0), sharex="col", sharey="row"
+        3, 2, figsize=(12, 12), sharey="row", constrained_layout=True
     )
-    for row, state_model in enumerate(STATE_MODELS):
-        for column, records in enumerate(dimension_records):
-            axis = axes[row, column]
-            summaries = [
-                item
-                for item in bound_curve_summary(records)
-                if item["state_model"] == state_model
+    present = {str(record["field_model"]) for record in records}
+    families = [family for family in FIELD_FAMILY_ORDER if family in present]
+    families.extend(sorted(present - set(FIELD_FAMILY_ORDER)))
+    positions = list(range(1, len(families) + 1))
+    box_width = 0.22
+
+    for row_index, state_model in enumerate(STATE_MODELS):
+        for column_index, dimension in enumerate((1, 2)):
+            axis = axes[row_index, column_index]
+            selected = [
+                record
+                for record in records
+                if int(record["spatial_dimension"]) == dimension
+                and record["state_model"] == state_model
             ]
-            x = [int(item["sensor_budget"]) for item in summaries]
-            for method, summary_key in summary_keys.items():
-                axis.plot(
-                    x,
-                    [float(item[summary_key]) for item in summaries],
-                    label=method,
-                    **METHOD_STYLES[method],
+            for method_index, method in enumerate(methods):
+                value_key = (
+                    f"{method}_pgm_error_gap"
+                    if gap
+                    else f"{method}_pgm_error"
                 )
-            axis.axhline(0.0, color="#555555", linewidth=0.9)
-            if row == 0:
-                axis.set_title(f"{int(records[0]['spatial_dimension'])}D")
-            if column == 0:
+                values = [
+                    [
+                        float(record[value_key])
+                        for record in selected
+                        if record["field_model"] == family
+                    ]
+                    for family in families
+                ]
+                offset = (method_index - (len(methods) - 1) / 2) * box_width
+                boxplot = axis.boxplot(
+                    values,
+                    positions=[position + offset for position in positions],
+                    widths=box_width * 0.85,
+                    patch_artist=True,
+                    showfliers=False,
+                    showmeans=True,
+                    meanprops={
+                        "marker": "^",
+                        "markerfacecolor": "#FFFFFF",
+                        "markeredgecolor": "#111111",
+                        "markersize": 4,
+                    },
+                    medianprops={"color": "#111111", "linewidth": 1.2},
+                )
+                label = METHOD_LABELS[method]
+                for box in boxplot["boxes"]:
+                    box.set_facecolor(METHOD_STYLES[label]["color"])
+                    box.set_alpha(0.65)
+                boxplot["boxes"][0].set_label(label)
+
+            axis.set_title(f"{dimension}D")
+            axis.set_xticks(
+                positions,
+                [FIELD_FAMILY_LABELS.get(family, family.title()) for family in families],
+            )
+            axis.grid(axis="y", alpha=0.25)
+            if column_index == 0:
+                measure = "PGM-error gap" if gap else "PGM error"
                 axis.set_ylabel(
-                    f"{STATE_MODEL_LABELS[state_model]}\n{ylabel}"
+                    f"{STATE_MODEL_LABELS[state_model]}\n{measure}"
                 )
-            if row == len(STATE_MODELS) - 1:
-                axis.set_xlabel(r"Sensor budget $N$")
-                axis.set_xticks(x)
-            axis.margins(y=0.15)
-            if nonnegative:
-                axis.set_ylim(bottom=0.0)
-            axis.grid(alpha=0.25)
+            if row_index == 2:
+                axis.set_xlabel("Field family")
+        if gap:
+            axes[row_index, 0].set_ylim(bottom=0.0)
+
     handles, labels = axes[0, 0].get_legend_handles_labels()
     figure.legend(
         handles,
         labels,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 0.995),
-        ncol=2,
-        frameon=False,
+        loc="outside upper center",
+        ncol=len(methods),
     )
-    figure.suptitle("Method - actual-error Optimal", y=0.955)
-    figure.tight_layout(rect=(0, 0, 1, 0.93))
     return figure
 
 
-def _dataset_results_directory(
-    results_root: str | Path,
-    dataset: str,
-    run_mode: str,
-) -> Path:
-    """Return the test- or full-mode directory for one dataset."""
-    if run_mode not in {"test", "full"}:
-        raise ValueError("run_mode must be 'test' or 'full'")
-    return Path(results_root) / f"{dataset}_results_{run_mode}"
+def _make_state_comparison(
+    summary: list[dict[str, object]],
+    method: str,
+) -> plt.Figure:
+    """Compare the three state models for one allocation method."""
+    figure, axes = plt.subplots(
+        1, 2, figsize=(12, 4.8), sharey=True, constrained_layout=True
+    )
+    budgets = sorted({int(row["sensor_budget"]) for row in summary})
+    plotted_values: list[float] = []
+    for axis, dimension in zip(axes, (1, 2)):
+        for state_model in STATE_MODELS:
+            subset = sorted(
+                (
+                    row
+                    for row in summary
+                    if int(row["spatial_dimension"]) == dimension
+                    and row["state_model"] == state_model
+                ),
+                key=lambda row: int(row["sensor_budget"]),
+            )
+            values = [float(row[f"{method}_mean_pgm_error"]) for row in subset]
+            plotted_values.extend(values)
+            axis.plot(
+                [int(row["sensor_budget"]) for row in subset],
+                values,
+                label=STATE_MODEL_LABELS[state_model],
+                linewidth=1.8,
+                markersize=5,
+                **STATE_COMPARISON_STYLES[state_model],
+            )
+        axis.set_title(f"{dimension}D")
+        axis.set_xlabel(r"Sensor budget $N$")
+        axis.set_xticks(budgets)
+        axis.grid(alpha=0.25)
+    _set_padded_probability_limits(axes[0], plotted_values)
+    axes[0].set_ylabel("mean PGM error")
+    handles, labels = axes[0].get_legend_handles_labels()
+    figure.legend(handles, labels, loc="outside upper center", ncol=3)
+    return figure
+
+
+def _make_raw_runtime_boxplots(
+    records: list[dict[str, object]],
+    methods: tuple[str, ...],
+) -> plt.Figure:
+    """Plot raw runtime distributions when no exact reference is available."""
+    figure, axes = plt.subplots(
+        1, 2, figsize=(12, 4.8), sharey=True, constrained_layout=True
+    )
+    labels = [METHOD_LABELS[method] for method in methods]
+    colors = [METHOD_STYLES[label]["color"] for label in labels]
+    for axis, dimension in zip(axes, (1, 2)):
+        dimension_records = [
+            record
+            for record in records
+            if int(record["spatial_dimension"]) == dimension
+        ]
+        distributions = [
+            [
+                max(float(record[f"{method}_seconds"]), 1e-12)
+                for record in dimension_records
+            ]
+            for method in methods
+        ]
+        if any(not values for values in distributions):
+            raise ValueError(f"runtime records are missing for {dimension}D")
+        boxplot = axis.boxplot(
+            distributions,
+            tick_labels=labels,
+            patch_artist=True,
+            showfliers=False,
+            showmeans=True,
+            widths=0.6,
+            medianprops={"color": "#111111", "linewidth": 1.5},
+            meanprops={
+                "marker": "^",
+                "markerfacecolor": "#FFFFFF",
+                "markeredgecolor": "#111111",
+                "markersize": 5,
+            },
+        )
+        for box, color in zip(boxplot["boxes"], colors):
+            box.set_facecolor(color)
+            box.set_alpha(0.65)
+        axis.set_title(f"{dimension}D")
+        axis.set_xlabel("Allocation method")
+        axis.set_yscale("log")
+        axis.grid(axis="y", which="both", alpha=0.25)
+    axes[0].set_ylabel("runtime per problem run (seconds, log scale)")
+    return figure
+
+
+def _make_runtime_speedup_boxplots(
+    records: list[dict[str, object]],
+) -> plt.Figure:
+    """Plot paired runtime speedups relative to Optimal in 1D and 2D."""
+    figure, axes = plt.subplots(
+        1, 2, figsize=(12, 4.8), sharey=True, constrained_layout=True
+    )
+    labels = [METHOD_LABELS[method] for method in METHOD_KEYS]
+    colors = [METHOD_STYLES[label]["color"] for label in labels]
+    for axis, dimension in zip(axes, (1, 2)):
+        dimension_records = [
+            record
+            for record in records
+            if int(record["spatial_dimension"]) == dimension
+        ]
+        distributions = [
+            [
+                max(float(record["optimal_seconds"]), 1e-12)
+                / max(float(record[f"{method}_seconds"]), 1e-12)
+                for record in dimension_records
+            ]
+            for method in METHOD_KEYS
+        ]
+        if any(not values for values in distributions):
+            raise ValueError(f"runtime records are missing for {dimension}D")
+        boxplot = axis.boxplot(
+            distributions,
+            tick_labels=labels,
+            patch_artist=True,
+            showfliers=False,
+            showmeans=True,
+            widths=0.6,
+            medianprops={"color": "#111111", "linewidth": 1.5},
+            meanprops={
+                "marker": "^",
+                "markerfacecolor": "#FFFFFF",
+                "markeredgecolor": "#111111",
+                "markersize": 5,
+            },
+        )
+        for box, color in zip(boxplot["boxes"], colors):
+            box.set_facecolor(color)
+            box.set_alpha(0.65)
+        axis.set_title(f"{dimension}D")
+        axis.set_xlabel("Allocation method")
+        axis.set_yscale("log")
+        axis.axhline(1.0, color="#555555", linewidth=1.0, linestyle="-")
+        axis.grid(axis="y", which="both", alpha=0.25)
+    axes[0].set_ylabel("runtime speedup (Optimal / method, log scale)")
+    return figure
+
+
+def _set_padded_probability_limits(
+    axis: plt.Axes,
+    values: list[float],
+) -> None:
+    """Set a readable probability range while preserving shared axes."""
+    if not values:
+        return
+    minimum = min(values)
+    maximum = max(values)
+    span = maximum - minimum
+    padding = 0.05 * span if span > 0.0 else max(0.01, 0.03 * maximum)
+    lower = max(0.0, minimum - padding)
+    upper = min(1.0, maximum + padding)
+    if upper <= lower:
+        upper = min(1.0, lower + 0.01)
+    axis.set_ylim(lower, upper)
 
 
 def _configure_plot_style() -> None:
-    """Apply a restrained publication-oriented Matplotlib style."""
+    """Apply the requested publication typography to every output figure."""
     plt.rcParams.update(
         {
-            "figure.dpi": 110,
-            "font.size": 10,
-            "axes.titlesize": 11,
-            "axes.labelsize": 10,
-            "legend.fontsize": 9,
-            "lines.linewidth": 1.8,
-            "axes.spines.top": False,
-            "axes.spines.right": False,
+            "font.family": "serif",
+            "font.serif": ["Times New Roman", "Times", "Liberation Serif"],
+            "font.size": 12,
+            "axes.titlesize": 12,
+            "axes.labelsize": 12,
+            "legend.fontsize": 12,
+            "xtick.labelsize": 12,
+            "ytick.labelsize": 12,
         }
+    )
+
+
+def _allocation_seed(
+    dataset: str,
+    case_file: str,
+    budget: int,
+    method: str,
+    sample_seed: int,
+) -> int:
+    """Derive a stable allocation seed from the paired run identifiers."""
+    token = f"{dataset}|{case_file}|{budget}|{method}".encode("utf-8")
+    return crc32(token, sample_seed) & 0xFFFFFFFF
+
+
+def _validate_sensor_budgets(values: tuple[int, ...]) -> tuple[int, ...]:
+    """Return unique sorted positive sensor budgets."""
+    if not values or any(
+        isinstance(value, bool) or not isinstance(value, int) or value < 1
+        for value in values
+    ):
+        raise ValueError("sensor_budgets must contain positive integers")
+    return tuple(sorted(set(values)))
+
+
+def _validate_result(
+    allocation: tuple[int, ...],
+    error_probability: float,
+    M: int,
+    budget: int,
+) -> None:
+    """Validate one algorithm's fixed-budget allocation and probability."""
+    if len(allocation) != M or sum(allocation) != budget:
+        raise RuntimeError("algorithm returned an invalid fixed-budget allocation")
+    if any(count < 0 for count in allocation):
+        raise RuntimeError("algorithm returned a negative sensor count")
+    _validate_probability(error_probability)
+
+
+def _validate_probability(value: float) -> None:
+    """Reject nonfinite values and values outside the probability interval."""
+    if not isfinite(value) or not 0.0 <= value <= 1.0:
+        raise RuntimeError("algorithm returned an invalid PGM-error probability")
+
+
+def _stratified_case_sample(
+    cases: list[dict[str, object]],
+    requested_count: int,
+    seed: int,
+) -> list[dict[str, object]]:
+    """Sample cases evenly from field-family, K, and M design cells."""
+    if requested_count >= len(cases):
+        return list(cases)
+    groups: dict[tuple[str, int, int], list[dict[str, object]]] = defaultdict(list)
+    for case in cases:
+        key = (str(case["field_model"]), int(case["K"]), int(case["M"]))
+        groups[key].append(case)
+    if requested_count < len(groups):
+        raise ValueError(
+            f"test_case_count must be at least {len(groups)} to cover every "
+            "field-family/K/M cell"
+        )
+
+    rng = Random(seed)
+    shuffled = {key: rng.sample(group, len(group)) for key, group in groups.items()}
+    selected: list[dict[str, object]] = []
+    ordered_keys = sorted(groups)
+    while len(selected) < requested_count:
+        for key in ordered_keys:
+            if shuffled[key] and len(selected) < requested_count:
+                selected.append(shuffled[key].pop())
+    return selected
+
+
+def _save_results(
+    records: list[dict[str, object]],
+    *,
+    dataset: str,
+    run_mode: str,
+    sensor_budgets: tuple[int, ...],
+    selected_case_count: int,
+    total_case_count: int,
+    sample_seed: int,
+    results_root: Path,
+    method_keys: tuple[str, ...] = METHOD_KEYS,
+) -> None:
+    """Write machine-readable paired records and run metadata."""
+    output = results_root / dataset
+    output.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "dataset": dataset,
+        "objective": "actual equal-prior PGM error from the Gram matrix",
+        "methods": [METHOD_LABELS[key] for key in method_keys],
+        "input_phase": "unwrapped delta_ijm with c = pi",
+        "run_mode": run_mode,
+        "sensor_budgets": list(sensor_budgets),
+        "selected_case_count": selected_case_count,
+        "total_case_count": total_case_count,
+        "sample_seed": sample_seed,
+        "records": records,
+    }
+    (output / "paired_results.json").write_text(
+        json.dumps(payload, indent=2) + "\n", encoding="utf-8"
+    )
+    if records:
+        with (output / "paired_results.csv").open(
+            "w", encoding="utf-8", newline=""
+        ) as stream:
+            writer = csv.DictWriter(stream, fieldnames=list(records[0]))
+            writer.writeheader()
+            writer.writerows(records)
+
+
+def _percentile(sorted_values: list[float], probability: float) -> float:
+    """Return a linearly interpolated percentile from sorted values."""
+    if not sorted_values:
+        raise ValueError("cannot compute a percentile of an empty sequence")
+    position = probability * (len(sorted_values) - 1)
+    lower = int(position)
+    upper = min(lower + 1, len(sorted_values) - 1)
+    fraction = position - lower
+    return (
+        sorted_values[lower] * (1.0 - fraction)
+        + sorted_values[upper] * fraction
     )

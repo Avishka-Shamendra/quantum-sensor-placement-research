@@ -16,7 +16,6 @@ from objective import (  # noqa: E402
     DeltaTable,
     StateModel,
     pgm_error_probability,
-    pgm_error_upper_bound,
     validate_problem,
 )
 
@@ -27,7 +26,6 @@ class OptimalResult:
 
     allocation: tuple[int, ...]
     error_probability: float
-    error_upper_bound: float
     state_model: StateModel
 
 
@@ -62,8 +60,7 @@ def optimal_global_discrimination(
     Returns:
         An :class:`OptimalResult`. ``allocation[m]`` is the number of sensors
         assigned to location ``m`` and ``error_probability`` is the minimized
-        actual Pretty Good Measurement (PGM) error. ``error_upper_bound`` is
-        also returned as a secondary reporting metric.
+        actual Pretty Good Measurement (PGM) error.
 
     Raises:
         ValueError: If a dimension, budget, phase, pair key, or state model is
@@ -94,14 +91,6 @@ def optimal_global_discrimination(
     return OptimalResult(
         allocation=best_allocation,
         error_probability=best_error,
-        error_upper_bound=pgm_error_upper_bound(
-            K,
-            M,
-            best_allocation,
-            delta_ijm,
-            checked_model,
-            pairs,
-        ),
         state_model=checked_model,
     )
 

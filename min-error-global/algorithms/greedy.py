@@ -15,7 +15,6 @@ from objective import (  # noqa: E402
     DeltaTable,
     StateModel,
     pgm_error_probability,
-    pgm_error_upper_bound,
     validate_problem,
 )
 
@@ -26,7 +25,6 @@ class GreedyResult:
 
     allocation: tuple[int, ...]
     error_probability: float
-    error_upper_bound: float
     state_model: StateModel
 
 
@@ -60,7 +58,7 @@ def greedy_global_discrimination(
     Returns:
         A :class:`GreedyResult`. ``allocation[m]`` is the final number of
         sensors assigned to location ``m`` and ``error_probability`` is its
-        actual PGM error. ``error_upper_bound`` is reported secondarily.
+        actual PGM error.
 
     Raises:
         ValueError: If a dimension, budget, phase, pair key, or state model is
@@ -100,13 +98,5 @@ def greedy_global_discrimination(
     return GreedyResult(
         allocation=final_allocation,
         error_probability=final_error,
-        error_upper_bound=pgm_error_upper_bound(
-            K,
-            M,
-            final_allocation,
-            delta_ijm,
-            checked_model,
-            pairs,
-        ),
         state_model=checked_model,
     )

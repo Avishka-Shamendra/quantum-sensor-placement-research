@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import argparse
 
-from generate_inputs import generate_factorial_dataset
+from generate_inputs import (
+    GLOBAL_BENCHMARK_PHASE_SCALE,
+    generate_factorial_dataset,
+)
 
 
 MODELS = ["gaussian", "sinusoidal", "quadratic"]
@@ -38,7 +41,7 @@ def generate_benchmarks(names: list[str], overwrite: bool = False) -> list[str]:
             k_values=K_VALUES,
             m_values=M_VALUES,
             replicates=REPLICATES_PER_CELL,
-            phase_scale=1.0,
+            phase_scale=GLOBAL_BENCHMARK_PHASE_SCALE,
             seed=int(design["seed"]),
             description=(
                 f"Independent extended {name.upper()} benchmark for "

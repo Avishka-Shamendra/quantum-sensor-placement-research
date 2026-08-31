@@ -7,7 +7,7 @@ import json
 import re
 import sys
 from itertools import combinations, product
-from math import isfinite
+from math import isfinite, pi
 from numbers import Real
 from pathlib import Path
 from random import Random
@@ -19,6 +19,7 @@ HERE = Path(__file__).resolve().parent
 INPUT_ROOT = HERE / "inputs"
 ZERO_ERROR_ROOT = HERE.parent / "min-sensor-zero-error"
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+GLOBAL_BENCHMARK_PHASE_SCALE = pi
 
 # Reuse exactly the paper field families and parameter ranges.
 if str(ZERO_ERROR_ROOT) not in sys.path:
@@ -39,47 +40,39 @@ def generate_delta_case(
     M: int,
     seed: int,
     phase_scale: float,
-    max_attempts: int = 10_000,
 ) -> tuple[list[DeltaRow], dict[str, object]]:
-    """Generate one case with finite, unwrapped pairwise phase differences."""
+    """Generate one unfiltered case with unwrapped pairwise differences."""
     if model not in FIELD_MODELS:
         raise ValueError(f"unknown field model: {model}")
 
-    for attempt in range(1, max_attempts + 1):
-        rng = Random(seed + attempt - 1)
-        locations = sensing_locations(dimension, M, rng)
-        fields, parameters = FIELD_MODELS[model](K, locations, rng)
-        rows = [
-            (
-                i,
-                j,
-                m,
-                phase_scale * (fields[i][m] - fields[j][m]),
-            )
-            for i, j in combinations(range(K), 2)
-            for m in range(M)
-        ]
-        if not all(delta != 0.0 and isfinite(delta) for *_, delta in rows):
-            continue
-        return rows, {
-            "field_model": model,
-            "spatial_dimension": dimension,
-            "K": K,
-            "M": M,
-            "phase_scale_c": phase_scale,
-            "generation_seed": seed,
-            "generation_attempt": attempt,
-            "sensor_locations": [
-                location[0] if dimension == 1 else list(location)
-                for location in locations
-            ],
-            "field_parameters": parameters,
-        }
-
-    raise RuntimeError(
-        f"could not construct a valid {dimension}D {model} case "
-        f"after {max_attempts} attempts"
-    )
+    rng = Random(seed)
+    locations = sensing_locations(dimension, M, rng)
+    fields, parameters = FIELD_MODELS[model](K, locations, rng)
+    rows = [
+        (
+            i,
+            j,
+            m,
+            phase_scale * (fields[i][m] - fields[j][m]),
+        )
+        for i, j in combinations(range(K), 2)
+        for m in range(M)
+    ]
+    if not all(isfinite(delta) for *_, delta in rows):
+        raise RuntimeError("field model produced a nonfinite phase difference")
+    return rows, {
+        "field_model": model,
+        "spatial_dimension": dimension,
+        "K": K,
+        "M": M,
+        "phase_scale_c": phase_scale,
+        "generation_seed": seed,
+        "sensor_locations": [
+            location[0] if dimension == 1 else list(location)
+            for location in locations
+        ],
+        "field_parameters": parameters,
+    }
 
 
 def generate_factorial_dataset(
@@ -145,6 +138,11 @@ def generate_factorial_dataset(
             "definition": "delta_ijm = c*(f_i(x_m)-f_j(x_m))",
             "phase_wrapping": "none",
             "reverse_difference": "delta_jim = -delta_ijm",
+            "theoretical_field_difference_interval": [-3.0, 3.0],
+            "theoretical_delta_interval": [
+                -3.0 * phase_scale,
+                3.0 * phase_scale,
+            ],
         },
         "design": {
             "type": "complete factorial",
