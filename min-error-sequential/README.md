@@ -100,6 +100,18 @@ This notebook reads the existing result tables and does not rerun the
 algorithms. Its default `full` mode creates 1D Compact, 2D Compact, 1D
 Extended, and 2D Extended panels.
 
+To evaluate whether the current `0.5/0.5` outside-pair surrogate tracks the
+actual quantum measurement probabilities, open:
+
+```bash
+jupyter lab min-error-sequential/compare_actual_vs_surrogate_error.ipynb
+```
+
+This notebook reads the saved compact paired-comparison records, recomputes
+Exhaustive, Greedy, and Tree-aware final errors using the physical pairwise
+probe and symmetric Helstrom POVM, and writes actual-vs-surrogate tables and figures
+under `min-error-sequential/results/actual_error_evaluation/`.
+
 To study how beam width affects the tree-aware heuristic, open:
 
 ```bash
