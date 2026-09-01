@@ -1,0 +1,255 @@
+PROBLEM 3 GLOBAL-DISCRIMINATION DATASET SUMMARY
+================================================
+
+Purpose
+-------
+These datasets evaluate fixed-budget sensor allocation for minimum-error global
+discrimination. Problem 3 uses independently generated data; it does not copy
+or share the CSV inputs used by Problems 1 or 2.
+
+
+COMMON FIELD GENERATION USED BY PROBLEMS 1, 2, AND 3
+----------------------------------------------------
+All three problems use the same field functions, field-parameter ranges, and
+sensor-location distribution from min-sensor-zero-error/field_models.py.
+Problem 3 imports these definitions directly. No field formula or field-
+parameter range was changed for Problem 3.
+
+For each problem instance:
+
+  K = number of candidate fields/hypotheses.
+  M = number of candidate sensor locations.
+  Each of the M locations is sampled independently and uniformly.
+  1D sensing region: [0, 1].
+  2D sensing region: [0, 1]^2.
+  Each of the K fields receives an independently sampled parameter set.
+
+1. Gaussian field family
+
+   1D formula:
+     f_k(alpha) = A_k exp(-(alpha-mu_k)^2 / (2 w_k^2))
+
+   2D formula:
+     f_k(alpha,beta) = A_k exp(-((alpha-mu_k1)^2
+                       + (beta-mu_k2)^2) / (2 w_k^2))
+
+   Parameter distributions:
+     A_k                     continuous uniform on [0.5, 1.5]
+     mu_k                    continuous uniform on [0, 1] in 1D
+     mu_k1, mu_k2            continuous uniform on [0, 1] in 2D
+     w_k                     continuous uniform on [0.1, 0.3]
+
+   The 2D Gaussian is isotropic and uses the same sampled width in both
+   coordinate directions.
+
+2. Sinusoidal field family
+
+   1D formula:
+     f_k(alpha) = A_k sin(2 pi q_k alpha + gamma_k)
+
+   2D formula:
+     f_k(alpha,beta) = A_k sin(2 pi q_k
+                       (alpha cos(theta_k) + beta sin(theta_k)) + gamma_k)
+
+   Parameter distributions:
+     A_k                     continuous uniform on [0.5, 1.5]
+     q_k                     discrete uniform on {1, 2, 3}
+     gamma_k                 continuous uniform on [-pi, pi]
+     theta_k                 continuous uniform on [0, pi) in 2D only
+
+3. Quadratic field family
+
+   1D formula:
+     f_k(alpha) = b_k + a_k (alpha-mu_k)^2
+
+   2D formula:
+     f_k(alpha,beta) = b_k + (a_k/2)
+                       ((alpha-mu_k1)^2 + (beta-mu_k2)^2)
+
+   Parameter distributions:
+     b_k                     continuous uniform on [-0.5, 0.5]
+     a_k                     continuous uniform on [-1, 1]
+     mu_k                    continuous uniform on [0, 1] in 1D
+     mu_k1, mu_k2            continuous uniform on [0, 1] in 2D
+
+   The division by 2 in the 2D formula is the existing dimension
+   normalization; it was not introduced or changed for Problem 3.
+
+
+PROBLEM 3 PAIRWISE INPUT VALUE
+------------------------------
+For every canonical field pair i < j and location m, Problem 3 stores
+
+  delta_ijm = c (f_i(x_m) - f_j(x_m)), with c = pi.
+
+Important properties:
+
+  Stored CSV columns: i, j, m, delta_ijm.
+  Only i < j is stored.
+  The reverse value is delta_jim = -delta_ijm.
+  delta_ijm is raw and unwrapped: no principal-phase wrapping is applied.
+  delta_ijm is not clipped.
+  Zero or weak differences are retained; cases are not rejected or regenerated.
+  The only rejected output is a non-finite numerical value.
+  Each case contains binomial(K,2) * M delta rows.
+
+The common conservative field-difference interval recorded in the manifests is
+[-3, 3]. Therefore the corresponding theoretical Problem 3 delta interval is
+[-3*pi, 3*pi], approximately [-9.4248, 9.4248]. The generated samples normally
+do not reach those exact continuous-distribution endpoints.
+
+Observed delta_ijm ranges in the currently generated datasets:
+
+  compact 1D:   [-8.9343058787,  9.0103366708]
+  compact 2D:   [-9.3604060092,  8.8954365819]
+  extended 1D:  [-9.0446919019,  9.0475022090]
+  extended 2D:  [-9.1916486061,  9.2610272776]
+
+
+PROBLEM 3 COMPACT BENCHMARK DESIGN
+----------------------------------
+Datasets:
+
+  compact_benchmark_1d   seed 20260901
+  compact_benchmark_2d   seed 20260902
+
+Complete-factorial parameters:
+
+  Spatial dimensions:          1D and 2D, generated independently
+  Field families:              Gaussian, Sinusoidal, Quadratic (3)
+  K values:                    3, 4, 5 (3 values)
+  M values:                    3, 4 (2 values)
+  Replicates per family/K/M:   140
+  Factorial cells/dimension:   3 * 3 * 2 = 18
+  Cases per family/dimension:  3 * 2 * 140 = 840
+  Cases per dimension:         3 * 3 * 2 * 140 = 2,520
+  Total compact cases:         2 * 2,520 = 5,040
+  Delta CSV rows/dimension:    55,860
+  Total compact delta rows:    111,720
+
+This compact design supports exact exhaustive allocation optimization.
+
+
+PROBLEM 3 EXTENDED BENCHMARK DESIGN
+-----------------------------------
+Datasets:
+
+  benchmark_1d   seed 20260903
+  benchmark_2d   seed 20260904
+
+Complete-factorial parameters:
+
+  Spatial dimensions:          1D and 2D, generated independently
+  Field families:              Gaussian, Sinusoidal, Quadratic (3)
+  K values:                    3, 4, 5, 6, 7 (5 values)
+  M values:                    3, 4, 5, 6, 7, 8 (6 values)
+  Replicates per family/K/M:   30
+  Factorial cells/dimension:   3 * 5 * 6 = 90
+  Cases per family/dimension:  5 * 6 * 30 = 900
+  Cases per dimension:         3 * 5 * 6 * 30 = 2,700
+  Total extended cases:        2 * 2,700 = 5,400
+  Delta CSV rows/dimension:    163,350
+  Total extended delta rows:   326,700
+
+The extended design is used for the scalable allocation methods. Exact
+exhaustive optimization is kept on the compact design because its number of
+weak-composition allocations grows rapidly with M and sensor budget N.
+
+Across all four Problem 3 datasets, 10,440 problem instances and 438,420
+delta_ijm rows are generated.
+
+
+PROBLEM 3 EVALUATION PARAMETERS
+-------------------------------
+Sensor budget:
+
+  N = 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 (10 values).
+
+Input-state models:
+
+  Product
+  Local GHZ
+  Global GHZ
+
+Allocation methods:
+
+  Compact benchmark: Optimal, Greedy, Near-uniform, Random.
+  Extended benchmark: Greedy, Near-uniform, Random.
+
+The evaluated objective is the actual equal-prior PGM error probability
+calculated from the output-state Gram matrix. It is not the old analytical
+upper bound.
+
+Full compact evaluation size:
+
+  5,040 cases * 10 budgets * 3 state models = 151,200 paired evaluation points.
+  Four methods produce 604,800 method evaluations in total.
+
+Full extended evaluation size:
+
+  5,400 cases * 10 budgets * 3 state models = 162,000 evaluation points.
+  Three methods produce 486,000 method evaluations in total.
+
+Notebook test mode selects 100 cases from each dimension, or 200 total cases.
+That gives 6,000 case/budget/state points in either notebook.
+
+
+CHANGES RELATIVE TO PROBLEMS 1 AND 2
+------------------------------------
+Field functions and parameter ranges:
+
+  No changes. Problems 1, 2, and 3 use the same Gaussian, Sinusoidal, and
+  Quadratic formulas and the same parameter distributions listed above.
+
+Sensor-location generation:
+
+  No changes. All use independent uniform locations in [0,1] or [0,1]^2.
+
+Compact factorial grid:
+
+  Problem 3 compact matches Problem 2 compact:
+  K = 3..5, M = 3..4, and 140 replicates per family/K/M cell.
+  Problem 3 uses different seeds and regenerates independent cases.
+
+Extended factorial grid:
+
+  Problem 3 extended matches Problem 2 extended:
+  K = 3..7, M = 3..8, and 30 replicates per family/K/M cell.
+  Problem 3 uses different seeds and regenerates independent cases.
+
+  Problem 1 extended used the larger ranges K = 3..10 and M = 3..10 with
+  30 replicates per cell. That is 5,760 cases per dimension and 11,520 total.
+  Problem 3 reduces these extended ranges to K = 3..7 and M = 3..8.
+
+Phase scale and stored pairwise quantity:
+
+  Problems 1 and 2 use c = 1.0 and the wrapped phase
+    r_ijm = Arg(exp(i c (f_i(x_m)-f_j(x_m)))) in (-pi, pi].
+
+  Problem 3 changes c to pi and stores the raw, unwrapped value
+    delta_ijm = c (f_i(x_m)-f_j(x_m)).
+
+Case filtering:
+
+  Problem 1 retries generation until every field pair has at least one
+  nonzero phase difference.
+
+  Problem 2 retries until all stored pair/location phase values are nonzero.
+
+  Problem 3 performs no such forcing or resampling. Natural zero, small, and
+  repeated differences remain in the data.
+
+Problem-specific derived data:
+
+  Problem 2 derives sequential-discrimination quantities such as pairwise
+  minimum discrimination requirements and budget-dependent sampled errors.
+  Those quantities and N_min are not used in Problem 3.
+
+  Problem 3 instead uses fixed absolute budgets N = 3..12 and constructs the
+  Gram matrix needed to calculate the actual global PGM error.
+
+Reproducibility and independence:
+
+  Even where Problem 2 and Problem 3 have identical K/M/replicate grids, their
+  seeds, c values, pairwise representations, and filtering rules differ.
+  Therefore their numerical problem instances are not shared.

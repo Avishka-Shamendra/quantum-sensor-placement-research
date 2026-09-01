@@ -9,7 +9,7 @@ from collections import defaultdict
 from math import isfinite
 from pathlib import Path
 from random import Random
-from statistics import fmean
+from statistics import fmean, median
 from time import perf_counter
 from zlib import crc32
 
@@ -538,6 +538,396 @@ def diagnostic_gap_summary(
     return rows
 
 
+def global_results_summary(
+    records: list[dict[str, object]],
+    *,
+    compact: bool,
+    exact_tolerance: float = EXACT_ERROR_TOLERANCE,
+) -> dict[str, object]:
+    """Build the requested compact or extended numerical result summary."""
+    if not records:
+        raise ValueError("records must not be empty")
+    if not isfinite(exact_tolerance) or exact_tolerance < 0.0:
+        raise ValueError("exact_tolerance must be finite and nonnegative")
+
+    comparison_groups = _group_records(
+        records, ("spatial_dimension", "state_model")
+    )
+    comparisons: list[dict[str, object]] = []
+    ordered_comparison_keys = [
+        (dimension, state_model)
+        for dimension in sorted(
+            {int(key[0]) for key in comparison_groups}
+        )
+        for state_model in STATE_MODELS
+        if (dimension, state_model) in comparison_groups
+    ]
+    for dimension, state_model in ordered_comparison_keys:
+        group = comparison_groups[dimension, state_model]
+        row: dict[str, object] = {
+            "spatial_dimension": int(dimension),
+            "state_model": str(state_model),
+            "runs": len(group),
+            "greedy_vs_near_uniform_reduction_percent": _mean_percentage(
+                group, "near_uniform_pgm_error", "greedy_pgm_error"
+            ),
+            "greedy_vs_random_reduction_percent": _mean_percentage(
+                group, "random_pgm_error", "greedy_pgm_error"
+            ),
+        }
+        if compact:
+            absolute_gaps = [
+                max(
+                    0.0,
+                    float(record["greedy_pgm_error"])
+                    - float(record["optimal_pgm_error"]),
+                )
+                for record in group
+            ]
+            relative_gaps = [
+                gap / float(record["optimal_pgm_error"]) * 100.0
+                for record, gap in zip(group, absolute_gaps)
+                if float(record["optimal_pgm_error"]) > 0.0
+            ]
+            row.update(
+                {
+                    "greedy_mean_absolute_gap": fmean(absolute_gaps),
+                    "greedy_max_absolute_gap": max(absolute_gaps),
+                    "greedy_mean_relative_gap_percent": (
+                        fmean(relative_gaps) if relative_gaps else float("nan")
+                    ),
+                    "greedy_max_relative_gap_percent": (
+                        max(relative_gaps) if relative_gaps else float("nan")
+                    ),
+                    "greedy_optimal_percent": 100.0
+                    * sum(gap <= exact_tolerance for gap in absolute_gaps)
+                    / len(absolute_gaps),
+                    "relative_gap_runs": len(relative_gaps),
+                }
+            )
+        comparisons.append(row)
+
+    method_keys = METHOD_KEYS if compact else SCALABLE_METHOD_KEYS
+    budget_groups = _group_records(
+        records, ("spatial_dimension", "state_model", "sensor_budget")
+    )
+    budget_behavior: list[dict[str, object]] = []
+    for (dimension, state_model, budget), group in sorted(budget_groups.items()):
+        row = {
+            "spatial_dimension": int(dimension),
+            "state_model": str(state_model),
+            "sensor_budget": int(budget),
+            "runs": len(group),
+        }
+        for method in method_keys:
+            row[f"{method}_mean_pgm_error"] = fmean(
+                float(record[f"{method}_pgm_error"]) for record in group
+            )
+        budget_behavior.append(row)
+
+    family_groups = _group_records(
+        records, ("spatial_dimension", "state_model", "field_model")
+    )
+    field_family: list[dict[str, object]] = []
+    present_families = {str(key[2]) for key in family_groups}
+    ordered_families = [
+        family for family in FIELD_FAMILY_ORDER if family in present_families
+    ]
+    ordered_families.extend(
+        sorted(present_families - set(FIELD_FAMILY_ORDER))
+    )
+    ordered_family_keys = [
+        (dimension, state_model, family)
+        for dimension in sorted({int(key[0]) for key in family_groups})
+        for state_model in STATE_MODELS
+        for family in ordered_families
+        if (dimension, state_model, family) in family_groups
+    ]
+    for dimension, state_model, family in ordered_family_keys:
+        group = family_groups[dimension, state_model, family]
+        row = {
+            "spatial_dimension": int(dimension),
+            "state_model": str(state_model),
+            "field_model": str(family),
+            "runs": len(group),
+        }
+        for method in SCALABLE_METHOD_KEYS:
+            row[f"{method}_mean_pgm_error"] = fmean(
+                float(record[f"{method}_pgm_error"]) for record in group
+            )
+        if compact:
+            gaps = [
+                max(
+                    0.0,
+                    float(record["greedy_pgm_error"])
+                    - float(record["optimal_pgm_error"]),
+                )
+                for record in group
+            ]
+            row["greedy_mean_optimal_gap"] = fmean(gaps)
+            row["greedy_max_optimal_gap"] = max(gaps)
+        field_family.append(row)
+
+    runtime: list[dict[str, object]] = []
+    if compact:
+        runtime_groups = _group_records(records, ("spatial_dimension", "K"))
+        for (dimension, K), group in sorted(runtime_groups.items()):
+            paired_speedups = [
+                float(record["optimal_seconds"])
+                / max(float(record["greedy_seconds"]), 1e-12)
+                for record in group
+            ]
+            runtime.append(
+                {
+                    "spatial_dimension": int(dimension),
+                    "K": int(K),
+                    "runs": len(group),
+                    "optimal_median_seconds": median(
+                        float(record["optimal_seconds"]) for record in group
+                    ),
+                    "greedy_median_seconds": median(
+                        float(record["greedy_seconds"]) for record in group
+                    ),
+                    "median_speedup": median(paired_speedups),
+                }
+            )
+
+    return {
+        "compact": compact,
+        "exact_tolerance": exact_tolerance,
+        "comparisons": comparisons,
+        "budget_behavior": budget_behavior,
+        "field_family": field_family,
+        "runtime": runtime,
+    }
+
+
+def format_global_results_summary(
+    records: list[dict[str, object]],
+    *,
+    compact: bool,
+    exact_tolerance: float = EXACT_ERROR_TOLERANCE,
+) -> str:
+    """Format the requested results as plain text for notebook output."""
+    summary = global_results_summary(
+        records,
+        compact=compact,
+        exact_tolerance=exact_tolerance,
+    )
+    comparisons = list(summary["comparisons"])
+    budget_rows = list(summary["budget_behavior"])
+    family_rows = list(summary["field_family"])
+
+    lines = [
+        "GLOBAL DISCRIMINATION RESULTS SUMMARY",
+        "=====================================",
+        "",
+        (
+            "Percentage ratios omit only runs whose denominator is exactly "
+            "zero."
+        ),
+    ]
+    if compact:
+        lines.extend(
+            [
+                f"Greedy is counted as optimal when its absolute gap is <= "
+                f"{exact_tolerance:.1e}.",
+                "",
+                "A. COMPACT DATA SETS",
+                "--------------------",
+            ]
+        )
+    else:
+        lines.extend(["", "B. EXTENDED DATA SETS", "---------------------"])
+
+    for comparison in comparisons:
+        dimension = int(comparison["spatial_dimension"])
+        state_model = str(comparison["state_model"])
+        lines.extend(
+            [
+                "",
+                f"{dimension}D | {STATE_MODEL_LABELS[state_model]}",
+                f"Runs: {int(comparison['runs']):,}",
+            ]
+        )
+        if compact:
+            lines.extend(
+                [
+                    "",
+                    "1. Greedy vs Optimal",
+                    _format_text_table(
+                        ("Metric", "Value"),
+                        [
+                            (
+                                "Mean absolute gap",
+                                _format_number(
+                                    comparison["greedy_mean_absolute_gap"]
+                                ),
+                            ),
+                            (
+                                "Maximum absolute gap",
+                                _format_number(
+                                    comparison["greedy_max_absolute_gap"]
+                                ),
+                            ),
+                            (
+                                "Mean relative gap (%)",
+                                _format_percent(
+                                    comparison[
+                                        "greedy_mean_relative_gap_percent"
+                                    ]
+                                ),
+                            ),
+                            (
+                                "Maximum relative gap (%)",
+                                _format_percent(
+                                    comparison[
+                                        "greedy_max_relative_gap_percent"
+                                    ]
+                                ),
+                            ),
+                            (
+                                "Runs where Greedy is optimal (%)",
+                                _format_percent(
+                                    comparison["greedy_optimal_percent"]
+                                ),
+                            ),
+                        ],
+                    ),
+                    "",
+                    "2. Greedy vs Near-Uniform",
+                    "Mean PGM error reduction (%): "
+                    + _format_percent(
+                        comparison[
+                            "greedy_vs_near_uniform_reduction_percent"
+                        ]
+                    ),
+                    "",
+                    "3. Greedy vs Random",
+                    "Mean PGM error reduction (%): "
+                    + _format_percent(
+                        comparison["greedy_vs_random_reduction_percent"]
+                    ),
+                    "",
+                    "4. Sensor-budget behavior",
+                ]
+            )
+        else:
+            lines.extend(
+                [
+                    "",
+                    "1. Greedy vs Near-Uniform",
+                    "Mean PGM error reduction (%): "
+                    + _format_percent(
+                        comparison[
+                            "greedy_vs_near_uniform_reduction_percent"
+                        ]
+                    ),
+                    "",
+                    "2. Greedy vs Random",
+                    "Mean PGM error reduction (%): "
+                    + _format_percent(
+                        comparison["greedy_vs_random_reduction_percent"]
+                    ),
+                    "",
+                    "3. Sensor-budget behavior",
+                ]
+            )
+
+        selected_budget_rows = [
+            row
+            for row in budget_rows
+            if int(row["spatial_dimension"]) == dimension
+            and row["state_model"] == state_model
+        ]
+        budget_methods = METHOD_KEYS if compact else SCALABLE_METHOD_KEYS
+        lines.append(
+            _format_text_table(
+                ("N", *(METHOD_LABELS[method] for method in budget_methods)),
+                [
+                    (
+                        str(int(row["sensor_budget"])),
+                        *(
+                            _format_number(row[f"{method}_mean_pgm_error"])
+                            for method in budget_methods
+                        ),
+                    )
+                    for row in selected_budget_rows
+                ],
+            )
+        )
+
+    lines.extend(
+        [
+            "",
+            "C. FIELD-FAMILY RESULTS",
+            "-----------------------",
+        ]
+    )
+    family_headers = [
+        "Dimension",
+        "State model",
+        "Field family",
+        "Greedy mean",
+        "Near-uniform mean",
+        "Random mean",
+    ]
+    if compact:
+        family_headers.extend(("Mean G-O gap", "Max G-O gap"))
+    formatted_families: list[tuple[str, ...]] = []
+    for row in family_rows:
+        values = [
+            f"{int(row['spatial_dimension'])}D",
+            STATE_MODEL_LABELS[str(row["state_model"])],
+            FIELD_FAMILY_LABELS.get(
+                str(row["field_model"]), str(row["field_model"]).title()
+            ),
+            _format_number(row["greedy_mean_pgm_error"]),
+            _format_number(row["near_uniform_mean_pgm_error"]),
+            _format_number(row["random_mean_pgm_error"]),
+        ]
+        if compact:
+            values.extend(
+                (
+                    _format_number(row["greedy_mean_optimal_gap"]),
+                    _format_number(row["greedy_max_optimal_gap"]),
+                )
+            )
+        formatted_families.append(tuple(values))
+    lines.append(_format_text_table(tuple(family_headers), formatted_families))
+
+    if compact:
+        lines.extend(
+            [
+                "",
+                "D. RUNTIME",
+                "----------",
+                _format_text_table(
+                    (
+                        "Dimension",
+                        "K",
+                        "Optimal median (s)",
+                        "Greedy median (s)",
+                        "Median speedup",
+                    ),
+                    [
+                        (
+                            f"{int(row['spatial_dimension'])}D",
+                            str(int(row["K"])),
+                            _format_number(row["optimal_median_seconds"]),
+                            _format_number(row["greedy_median_seconds"]),
+                            _format_number(row["median_speedup"]),
+                        )
+                        for row in summary["runtime"]
+                    ],
+                ),
+                "Median speedup is the median paired value of "
+                "Optimal runtime / Greedy runtime.",
+            ]
+        )
+    return "\n".join(lines)
+
+
 def phase_range_summary(records: list[dict[str, object]]) -> dict[str, object]:
     """Return observed signed and absolute ranges of delta and N*delta."""
     unique_cases = {
@@ -1044,6 +1434,70 @@ def _validate_probability(value: float) -> None:
     """Reject nonfinite values and values outside the probability interval."""
     if not isfinite(value) or not 0.0 <= value <= 1.0:
         raise RuntimeError("algorithm returned an invalid PGM-error probability")
+
+
+def _group_records(
+    records: list[dict[str, object]],
+    keys: tuple[str, ...],
+) -> dict[tuple[object, ...], list[dict[str, object]]]:
+    """Group result records by a fixed sequence of record keys."""
+    groups: dict[tuple[object, ...], list[dict[str, object]]] = defaultdict(list)
+    for record in records:
+        groups[tuple(record[key] for key in keys)].append(record)
+    return groups
+
+
+def _mean_percentage(
+    records: list[dict[str, object]],
+    baseline_key: str,
+    comparison_key: str,
+) -> float:
+    """Return mean percentage reduction, omitting zero baselines."""
+    values = [
+        (
+            float(record[baseline_key]) - float(record[comparison_key])
+        )
+        / float(record[baseline_key])
+        * 100.0
+        for record in records
+        if float(record[baseline_key]) > 0.0
+    ]
+    return fmean(values) if values else float("nan")
+
+
+def _format_number(value: object) -> str:
+    """Format one numerical summary value compactly and consistently."""
+    return f"{float(value):.8g}"
+
+
+def _format_percent(value: object) -> str:
+    """Format an already percentage-scaled value."""
+    return f"{float(value):.6f}%"
+
+
+def _format_text_table(
+    headers: tuple[str, ...],
+    rows: list[tuple[str, ...]],
+) -> str:
+    """Format a small plain-text table with aligned columns."""
+    normalized = [tuple(str(value) for value in row) for row in rows]
+    widths = [
+        max(
+            len(header),
+            *(len(row[index]) for row in normalized),
+        )
+        if normalized
+        else len(header)
+        for index, header in enumerate(headers)
+    ]
+
+    def format_row(row: tuple[str, ...]) -> str:
+        return "  ".join(
+            value.ljust(width) for value, width in zip(row, widths)
+        ).rstrip()
+
+    separator = tuple("-" * width for width in widths)
+    return "\n".join((format_row(headers), format_row(separator), *map(format_row, normalized)))
 
 
 def _stratified_case_sample(

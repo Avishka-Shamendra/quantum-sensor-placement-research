@@ -17,6 +17,8 @@ from comparison_analysis import (  # noqa: E402
     STATE_MODELS,
     diagnostic_gap_summary,
     error_curve_summary,
+    format_global_results_summary,
+    global_results_summary,
     make_combined_comparison_plots,
     make_extended_comparison_plots,
     phase_range_summary,
@@ -39,6 +41,8 @@ def _diagnostic_records() -> list[dict[str, object]]:
                         "gaussian" if case == "case_1" else "quadratic"
                     ),
                     "spatial_dimension": dimension,
+                    "K": 3,
+                    "M": 3,
                     "sensor_budget": 3,
                     "state_model": state_model,
                     "delta_min": -2.0,
@@ -111,6 +115,53 @@ class ComparisonAnalysisTests(unittest.TestCase):
         self.assertEqual(row["delta_min"], -2.0)
         self.assertEqual(row["delta_max"], 3.0)
         self.assertEqual(row["n_delta_abs_max"], 9.0)
+
+    def test_compact_numerical_summary_contains_requested_statistics(self) -> None:
+        summary = global_results_summary(_diagnostic_records(), compact=True)
+        self.assertEqual(
+            [row["state_model"] for row in summary["comparisons"][:3]],
+            ["product", "local_ghz", "global_ghz"],
+        )
+        product_1d = next(
+            row
+            for row in summary["comparisons"]
+            if row["spatial_dimension"] == 1
+            and row["state_model"] == "product"
+        )
+
+        self.assertAlmostEqual(product_1d["greedy_mean_absolute_gap"], 0.05)
+        self.assertAlmostEqual(product_1d["greedy_max_absolute_gap"], 0.1)
+        self.assertAlmostEqual(
+            product_1d["greedy_mean_relative_gap_percent"], 25.0
+        )
+        self.assertAlmostEqual(product_1d["greedy_optimal_percent"], 50.0)
+        runtime = next(
+            row
+            for row in summary["runtime"]
+            if row["spatial_dimension"] == 1 and row["K"] == 3
+        )
+        self.assertAlmostEqual(runtime["median_speedup"], 10.0)
+
+        output = format_global_results_summary(
+            _diagnostic_records(), compact=True
+        )
+        self.assertIn("A. COMPACT DATA SETS", output)
+        self.assertIn("C. FIELD-FAMILY RESULTS", output)
+        self.assertIn("D. RUNTIME", output)
+
+    def test_extended_numerical_summary_excludes_exact_only_statistics(self) -> None:
+        summary = global_results_summary(_diagnostic_records(), compact=False)
+        self.assertEqual(summary["runtime"], [])
+        self.assertNotIn(
+            "greedy_mean_absolute_gap", summary["comparisons"][0]
+        )
+
+        output = format_global_results_summary(
+            _diagnostic_records(), compact=False
+        )
+        self.assertIn("B. EXTENDED DATA SETS", output)
+        self.assertIn("C. FIELD-FAMILY RESULTS", output)
+        self.assertNotIn("D. RUNTIME", output)
 
     def test_extended_summary_and_plots_exclude_optimal_reference(self) -> None:
         records = _diagnostic_records()
