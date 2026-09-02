@@ -12,6 +12,13 @@ from pathlib import Path
 from statistics import fmean, median
 
 
+FIELD_FAMILY_COLORS = {
+    "gaussian": "#1f77b4",
+    "sinusoidal": "#7b3294",
+    "quadratic": "#ff7f0e",
+}
+
+
 # Calculate a percentile using linear interpolation between sample values.
 def _percentile(values: list[float], probability: float) -> float:
     ordered = sorted(values)
@@ -357,11 +364,6 @@ def _draw_family_bars(
         "sinusoidal": "Sinusoidal",
         "quadratic": "Quadratic",
     }
-    colors = {
-        "gaussian": "#1f77b4",
-        "sinusoidal": "#7f7f7f",
-        "quadratic": "#bdbdbd",
-    }
     by_model = _group_rows(rows, "field_model")
     k_values = sorted({int(row["K"]) for row in rows})
     base_positions = list(range(len(k_values)))
@@ -402,7 +404,7 @@ def _draw_family_bars(
             positions,
             means,
             width=bar_width,
-            color=colors[model],
+            color=FIELD_FAMILY_COLORS[model],
             label=labels[model],
             yerr=[lower_errors, upper_errors],
             capsize=2.2,
@@ -432,11 +434,6 @@ def _draw_guarantee_comparison(
         "sinusoidal": "Sinusoidal: observed maximum",
         "quadratic": "Quadratic: observed maximum",
     }
-    colors = {
-        "gaussian": "#1f77b4",
-        "sinusoidal": "#7f7f7f",
-        "quadratic": "#bdbdbd",
-    }
     markers = {
         "gaussian": "o",
         "sinusoidal": "s",
@@ -458,7 +455,7 @@ def _draw_guarantee_comparison(
             k_values,
             maximum_allowance_used,
             marker=markers[model],
-            color=colors[model],
+            color=FIELD_FAMILY_COLORS[model],
             s=42,
             label=labels[model],
             zorder=3,
@@ -503,7 +500,7 @@ def _heatmap_figure(
             )
         )
     colorbar = figure.colorbar(images[0], ax=axes, pad=0.02, fraction=0.035)
-    colorbar.set_label("Mean additional sensors used by greedy (%)")
+    colorbar.set_label("Mean additional sensors used by Greedy (%)")
     _save_figure(figure, output_directory, "benchmark_quality_heatmaps")
     return figure
 
