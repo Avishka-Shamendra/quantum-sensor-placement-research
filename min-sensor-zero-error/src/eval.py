@@ -2,7 +2,7 @@
 
 Run from the repository root:
 
-    python3 min-sensor-zero-error/eval.py benchmark_1d
+    python3 min-sensor-zero-error/scripts/evaluate_benchmarks.py --require-existing
 
 There are no algorithm modes: every case is evaluated with both the exact
 dynamic program and the greedy gain-based approximation.
@@ -27,7 +27,7 @@ from optimal import optimal_perfect_pairwise_sensor_placement
 from phase_data import Thresholds, compute_nijm, load_phase_csv
 
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parents[1]
 INPUT_ROOT = HERE / "inputs"
 RESULTS_ROOT = HERE / "results" / "algorithm_comparison"
 MAX_EXACT_FIELDS = 10

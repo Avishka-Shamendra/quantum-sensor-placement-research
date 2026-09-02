@@ -20,7 +20,7 @@ be reported separately.
 The three families are Gaussian, sinusoidal, and quadratic. They represent a
 localized field, a periodic field, and a smooth nonperiodic trend. They are a
 transparent synthetic test distribution, not a standard measured benchmark.
-The complete formulas and sampling ranges are defined in `field_models.py`.
+The complete formulas and sampling ranges are defined in `src/field_models.py`.
 
 For each realization, new field parameters and new sensing locations are
 sampled. The 1D locations are independent uniform samples from `[0, 1]`; the
@@ -81,14 +81,14 @@ application.
 
 ## Reproducibility
 
-The fixed benchmark definitions and seeds are in `generate_benchmarks.py`.
+The fixed benchmark definitions and seeds are in `scripts/generate_benchmarks.py`.
 Every realized location and field parameter is recorded in the corresponding
 manifest. Raw case files and solver outputs are deterministic, ignored
 intermediates that can be recreated with:
 
 ```bash
-python min-sensor-zero-error/generate_benchmarks.py all
-python min-sensor-zero-error/evaluate_benchmarks.py --require-existing
+python min-sensor-zero-error/scripts/generate_benchmarks.py all
+python min-sensor-zero-error/scripts/evaluate_benchmarks.py --require-existing
 ```
 
 For manuscript runtime measurements, repeat each solve on an idle machine and

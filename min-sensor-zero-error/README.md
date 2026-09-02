@@ -12,18 +12,17 @@ From the repository root:
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r min-sensor-zero-error/requirements.txt
-jupyter lab min-sensor-zero-error/compare_algorithms.ipynb
+jupyter lab min-sensor-zero-error/01_zero_error_algorithm_comparison.ipynb
 ```
 
-Run all notebook cells. Missing benchmark inputs are generated from fixed
-seeds, both algorithms are run on every case, and the combined tables and
-figures are written below
+Run all notebook cells. Existing benchmark inputs are reused by default, both
+algorithms are run on every case, and the combined tables and figures are written below
 `min-sensor-zero-error/results/algorithm_comparison/`.
 
 The same workflow can be run without Jupyter:
 
 ```bash
-python min-sensor-zero-error/evaluate_benchmarks.py
+python min-sensor-zero-error/scripts/evaluate_benchmarks.py
 ```
 
 ## Benchmark design
@@ -50,13 +49,13 @@ Every new realization receives new field parameters and new locations.
 Generate the inputs without running the algorithms:
 
 ```bash
-python min-sensor-zero-error/generate_benchmarks.py all
+python min-sensor-zero-error/scripts/generate_benchmarks.py all
 ```
 
 Use `--overwrite` only when intentionally regenerating an existing benchmark.
 The raw CSV files are deterministic intermediates and are ignored by Git; the
 fixed designs, parameter distributions, and seeds are committed in
-`generate_benchmarks.py` and `field_models.py`.
+`scripts/generate_benchmarks.py` and `src/field_models.py`.
 
 ## Field families
 
@@ -144,23 +143,28 @@ For final runtime measurements, use repeated solves on an otherwise idle
 machine:
 
 ```bash
-python min-sensor-zero-error/evaluate_benchmarks.py --repeats 5
+python min-sensor-zero-error/scripts/evaluate_benchmarks.py --repeats 5
 ```
 
 ## Code layout
 
 ```text
 min-sensor-zero-error/
-├── optimal.py                 # Exact Dynamic Programming
-├── greedy.py                  # Greedy Gain-Based Approximation
-├── phase_data.py              # phase validation and threshold conversion
-├── field_models.py            # agreed 1D and 2D field distributions
-├── generate_inputs.py         # reusable dataset writer
-├── generate_benchmarks.py     # fixed benchmark definitions
-├── eval.py                    # evaluates both algorithms on one dataset
-├── paper_analysis.py          # statistics and publication figures
-├── evaluate_benchmarks.py     # complete command-line workflow
-├── compare_algorithms.ipynb   # documented interactive workflow
+├── 01_zero_error_algorithm_comparison.ipynb
+├── src/
+│   ├── optimal.py             # Exact Dynamic Programming
+│   ├── greedy.py              # Greedy Gain-Based Approximation
+│   ├── phase_data.py          # phase validation and threshold conversion
+│   ├── field_models.py        # agreed 1D and 2D field distributions
+│   ├── eval.py                # evaluates both algorithms on one dataset
+│   └── paper_analysis.py      # statistics, tables, and publication figures
+├── scripts/
+│   ├── generate_inputs.py     # reusable dataset writer
+│   ├── generate_benchmarks.py # fixed benchmark definitions
+│   ├── evaluate_dataset.py    # one-dataset command-line evaluation
+│   └── evaluate_benchmarks.py # complete command-line workflow
+├── docs/
+│   └── evaluation_strategy.md
 ├── inputs/                    # generated benchmark inputs
 └── results/                   # comparison tables and figures
 ```
@@ -173,10 +177,10 @@ modules and acts as the documented experiment runner.
 For a quick custom test rather than the full benchmarks:
 
 ```bash
-python min-sensor-zero-error/generate_inputs.py custom_2d \
+python min-sensor-zero-error/scripts/generate_inputs.py custom_2d \
   --dimension 2 --cases 20 --k-min 3 --k-max 6 \
   --m-min 3 --m-max 6 --c 1 --seed 20260728
-python min-sensor-zero-error/eval.py custom_2d
+python min-sensor-zero-error/scripts/evaluate_dataset.py custom_2d
 ```
 
 Exact evaluation is limited to `K <= 10` because the reference dynamic

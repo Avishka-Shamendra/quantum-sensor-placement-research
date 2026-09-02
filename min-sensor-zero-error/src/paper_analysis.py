@@ -191,7 +191,7 @@ def _configure_plot_style() -> None:
     import matplotlib.pyplot as plt
 
     plt.rcParams.update({
-        "font.family": "serif",
+        "font.family": "Times New Roman",
         "font.serif": ["Times New Roman"],
         "font.size": 12,
         "axes.labelsize": 12,
@@ -217,6 +217,88 @@ def _cell_mean_excess(rows: list[dict[str, object]]) -> dict[tuple[int, int], fl
             float(row["relative_excess_percent"])
         )
     return {cell: fmean(values) for cell, values in cells.items()}
+
+
+def heatmap_table(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Return the values plotted in the K-by-M quality heatmaps."""
+    table: list[dict[str, object]] = []
+    for dimension, dimension_rows in sorted(_group_rows(rows, "spatial_dimension").items()):
+        cell_means = _cell_mean_excess(dimension_rows)
+        for K, M in sorted(cell_means):
+            table.append(
+                {
+                    "dimension": f"{dimension}D",
+                    "K": K,
+                    "M": M,
+                    "mean_additional_sensors_percent": cell_means[(K, M)],
+                }
+            )
+    return table
+
+
+def family_excess_table(
+    rows: list[dict[str, object]],
+    *,
+    bootstrap_iterations: int = 2_000,
+) -> list[dict[str, object]]:
+    """Return the values plotted in the field-family excess bar chart."""
+    table: list[dict[str, object]] = []
+    for dimension, dimension_rows in sorted(_group_rows(rows, "spatial_dimension").items()):
+        panel_title = (
+            "(a) One-dimensional benchmark"
+            if int(dimension) == 1
+            else "(b) Two-dimensional benchmark"
+        )
+        by_model = _group_rows(dimension_rows, "field_model")
+        for model in ("gaussian", "sinusoidal", "quadratic"):
+            by_k = _group_rows(by_model[model], "K")
+            for K, group in sorted(by_k.items()):
+                mean_excess = fmean(
+                    float(row["relative_excess_percent"]) for row in group
+                )
+                seed = 20261300 + zlib.crc32(
+                    f"family-bars:{model}:{K}:{panel_title}".encode()
+                )
+                low, high = _stratified_bootstrap_mean_interval(
+                    group,
+                    value_key="relative_excess_percent",
+                    stratum_keys=("M",),
+                    iterations=bootstrap_iterations,
+                    seed=seed,
+                )
+                table.append(
+                    {
+                        "dimension": f"{dimension}D",
+                        "field_family": model,
+                        "K": int(K),
+                        "mean_additional_sensors_percent": mean_excess,
+                        "ci95_low": low,
+                        "ci95_high": high,
+                    }
+                )
+    return table
+
+
+def guarantee_table(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Return the values plotted in the approximation-guarantee figure."""
+    table: list[dict[str, object]] = []
+    for dimension, dimension_rows in sorted(_group_rows(rows, "spatial_dimension").items()):
+        by_model = _group_rows(dimension_rows, "field_model")
+        for model in ("gaussian", "sinusoidal", "quadratic"):
+            by_k = _group_rows(by_model[model], "K")
+            for K, group in sorted(by_k.items()):
+                table.append(
+                    {
+                        "dimension": f"{dimension}D",
+                        "field_family": model,
+                        "K": int(K),
+                        "maximum_worst_case_allowance_used_percent": max(
+                            100 * float(row["theorem_excess_fraction_used"])
+                            for row in group
+                        ),
+                    }
+                )
+    return table
 
 
 def _draw_quality_heatmap(
@@ -276,9 +358,9 @@ def _draw_family_bars(
         "quadratic": "Quadratic",
     }
     colors = {
-        "gaussian": "#4C78A8",
-        "sinusoidal": "#F28E2B",
-        "quadratic": "#59A14F",
+        "gaussian": "#1f77b4",
+        "sinusoidal": "#7f7f7f",
+        "quadratic": "#bdbdbd",
     }
     by_model = _group_rows(rows, "field_model")
     k_values = sorted({int(row["K"]) for row in rows})
@@ -331,7 +413,7 @@ def _draw_family_bars(
 
     axis.set_xticks(base_positions, [str(K) for K in k_values])
     axis.set_xlabel(r"Number of candidate fields, $K$")
-    axis.set_ylabel("Mean additional sensors used by greedy (%)")
+    axis.set_ylabel("Mean additional sensors used by Greedy (%)")
     axis.set_title(panel_title, loc="left")
     axis.set_axisbelow(True)
     axis.grid(axis="y", alpha=0.25)
@@ -351,9 +433,9 @@ def _draw_guarantee_comparison(
         "quadratic": "Quadratic: observed maximum",
     }
     colors = {
-        "gaussian": "#4C78A8",
-        "sinusoidal": "#F28E2B",
-        "quadratic": "#59A14F",
+        "gaussian": "#1f77b4",
+        "sinusoidal": "#7f7f7f",
+        "quadratic": "#bdbdbd",
     }
     markers = {
         "gaussian": "o",

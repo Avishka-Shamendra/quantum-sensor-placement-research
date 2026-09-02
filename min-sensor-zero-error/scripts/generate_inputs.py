@@ -2,8 +2,8 @@
 
 Examples, run from the repository root:
 
-    python3 min-sensor-zero-error/generate_inputs.py custom_1d
-    python3 min-sensor-zero-error/generate_inputs.py custom_2d --dimension 2 --cases 40
+    python3 min-sensor-zero-error/scripts/generate_inputs.py custom_1d
+    python3 min-sensor-zero-error/scripts/generate_inputs.py custom_2d --dimension 2 --cases 40
 
 Dataset names describe experiments, not field models. By default, cases cycle
 through every available model and the requested K/M grid. The model used for a
@@ -21,6 +21,11 @@ from math import isfinite
 from pathlib import Path
 from random import Random
 
+HERE = Path(__file__).resolve().parents[1]
+SOURCE_ROOT = HERE / "src"
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
+
 from field_models import (
     FIELD_FORMULAS,
     FIELD_MODELS,
@@ -30,7 +35,6 @@ from field_models import (
 )
 
 
-HERE = Path(__file__).resolve().parent
 INPUT_ROOT = HERE / "inputs"
 DEFAULT_SEED = 20260728
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")

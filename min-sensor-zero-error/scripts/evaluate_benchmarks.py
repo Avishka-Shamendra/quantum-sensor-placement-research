@@ -3,6 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parents[1]
+SOURCE_ROOT = HERE / "src"
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
 
 from eval import INPUT_ROOT, RESULTS_ROOT, evaluate_dataset
 from generate_benchmarks import BENCHMARKS, generate_benchmarks
