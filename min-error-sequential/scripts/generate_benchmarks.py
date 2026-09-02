@@ -1,39 +1,47 @@
-"""Generate the compact one- and two-dimensional benchmark datasets."""
+"""Generate the one- and two-dimensional benchmark datasets."""
 
 from __future__ import annotations
 
 import argparse
+import sys
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parents[1]
+SOURCE_ROOT = HERE / "src"
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
 
 from generate_inputs import generate_factorial_dataset
 
 
+# Fixed benchmark parameters used for both spatial dimensions.
 MODELS = ["gaussian", "sinusoidal", "quadratic"]
-K_VALUES = [3, 4, 5]
-M_VALUES = [3, 4]
-REPLICATES_PER_CELL = 140
+# K stops at 7 because decision-tree construction grows sharply at K=8.
+K_VALUES = list(range(3, 8))
+M_VALUES = list(range(3, 9))
+REPLICATES_PER_CELL = 30
 
-# This cap limits exhaustive-search runtime. It is not a problem constraint.
+# This cap limits algorithm runtime. It is not a constraint of the
+# sensor-allocation problem and can be changed for other experiments.
 EXHAUSTIVE_SEARCH_BUDGET_CAP = 12
 
 # Separate seeds make the 1D and 2D datasets reproducible and independent.
 BENCHMARKS: dict[str, dict[str, object]] = {
     "1d": {
-        "dataset": "compact_benchmark_1d",
+        "dataset": "benchmark_1d",
         "dimension": 1,
         "seed": 20260812,
     },
     "2d": {
-        "dataset": "compact_benchmark_2d",
+        "dataset": "benchmark_2d",
         "dimension": 2,
         "seed": 20260813,
     },
 }
 
 
-def generate_compact_benchmarks(
-    names: list[str], overwrite: bool = False
-) -> list[str]:
-    """Generate selected compact benchmarks and return their directory names."""
+def generate_benchmarks(names: list[str], overwrite: bool = False) -> list[str]:
+    """Generate selected benchmarks and return their directory names."""
     generated: list[str] = []
     for name in names:
         design = BENCHMARKS[name]
@@ -52,8 +60,8 @@ def generate_compact_benchmarks(
             samples_per_location=3,
             seed=int(design["seed"]),
             description=(
-                f"Compact {name.upper()} benchmark for exact minimum-error "
-                "sequential discrimination."
+                f"Expanded {name.upper()} benchmark for minimum-error "
+                "sequential discrimination heuristic studies."
             ),
             overwrite=overwrite,
         )
@@ -79,14 +87,10 @@ def _parse_arguments() -> argparse.Namespace:
 
 
 def main() -> int:
-    """Generate the requested compact benchmarks."""
+    """Generate the requested benchmarks."""
     arguments = _parse_arguments()
-    names = (
-        list(BENCHMARKS)
-        if arguments.benchmark == "all"
-        else [arguments.benchmark]
-    )
-    generate_compact_benchmarks(names, overwrite=arguments.overwrite)
+    names = list(BENCHMARKS) if arguments.benchmark == "all" else [arguments.benchmark]
+    generate_benchmarks(names, overwrite=arguments.overwrite)
     return 0
 
 

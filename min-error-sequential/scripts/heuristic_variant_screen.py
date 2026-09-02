@@ -4,10 +4,16 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from statistics import fmean
 from time import perf_counter
+
+HERE = Path(__file__).resolve().parents[1]
+SOURCE_ROOT = HERE / "src"
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
 
 from actual_error_analysis import actual_tree_error
 from exhaustive_search import exhaustive_search
@@ -22,8 +28,6 @@ from heuristic import (
 )
 from input_data import PairErrorData, load_sparse_input
 
-
-HERE = Path(__file__).resolve().parent
 INPUT_ROOT = HERE / "inputs"
 
 

@@ -12,11 +12,10 @@ import matplotlib.pyplot as plt
 from plot_style import configure_plot_style
 
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parents[1]
 DEFAULT_RESULTS_ROOT = HERE / "results"
 SENSOR_BUDGET_LABEL = (
-    r"$N/N_{\min}$ "
-    "(Sensor Budget / Required Min Sensors for Perfect Discrimination)"
+    r"Budget ratio $\rho=N/N_{\min}^{opt}$"
 )
 ALGORITHM_STYLES = {
     "Optimal": ("#1f77b4", "-"),
@@ -75,7 +74,7 @@ def make_compact_extended_plot(
         axis.grid(alpha=0.25)
 
     figure.supxlabel(SENSOR_BUDGET_LABEL)
-    figure.supylabel("Mean final error")
+    figure.supylabel("Mean surrogate final error")
     handles, labels = axes[0, 0].get_legend_handles_labels()
     figure.legend(
         handles,

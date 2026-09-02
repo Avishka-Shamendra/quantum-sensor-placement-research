@@ -11,13 +11,16 @@ from math import ceil, isfinite
 from pathlib import Path
 from random import Random
 
-from input_data import SparseRow, pair_error_probability, write_sparse_input
-
-
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parents[1]
+SOURCE_ROOT = HERE / "src"
 INPUT_ROOT = HERE / "inputs"
 ZERO_ERROR_ROOT = HERE.parent / "min-sensor-zero-error"
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
+
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
+
+from input_data import SparseRow, pair_error_probability, write_sparse_input
 
 # Reuse the field generators and zero-error solver without modifying that project.
 if str(ZERO_ERROR_ROOT) not in sys.path:

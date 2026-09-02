@@ -26,7 +26,7 @@ from input_data import PhaseGaps, principal_phase
 from plot_style import configure_plot_style
 
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parents[1]
 DEFAULT_ACTUAL_RESULTS_ROOT = HERE / "results" / "actual_error_evaluation"
 
 METHODS = {
@@ -43,11 +43,11 @@ EXPANDED_METHODS = {
     "random": "Random",
 }
 METHOD_COLORS = {
-    "Exhaustive": "#1f77b4",
-    "Greedy": "#ff7f0e",
-    "Heuristic": "#d62728",
-    "Uniform": "#2ca02c",
-    "Random": "#9467bd",
+    "Exhaustive": "#000000",
+    "Greedy": "#7f7f7f",
+    "Heuristic": "#1f77b4",
+    "Uniform": "#bdbdbd",
+    "Random": "#4d4d4d",
 }
 
 configure_plot_style()
@@ -142,6 +142,7 @@ def evaluate_actual_records(
     methods: Mapping[str, str] = METHODS,
 ) -> list[dict[str, object]]:
     """Attach actual errors and evaluation gaps to paired comparison records."""
+    active_methods = _available_input_methods(records, methods)
     dataset_directory = Path(input_root) / dataset
     input_cache: dict[str, tuple[int, int, PhaseGaps, object]] = {}
     evaluated: list[dict[str, object]] = []
@@ -159,7 +160,7 @@ def evaluate_actual_records(
         _, _, phase_gaps, pair_error_table = input_data
 
         row = dict(record)
-        for prefix in methods:
+        for prefix in active_methods:
             allocation = [int(value) for value in row[f"{prefix}_allocation"]]
             tree = _record_tree(
                 row,
@@ -202,6 +203,10 @@ def evaluate_actual_records(
             if "greedy_error" in row and "optimal_error" in row
             else None
         )
+        if "greedy_actual_error" not in row:
+            evaluated.append(row)
+            continue
+
         greedy_actual_error = float(row["greedy_actual_error"])
         heuristic_prefix = (
             "tree_aware" if "tree_aware_actual_error" in row else "heuristic"
@@ -324,6 +329,7 @@ def save_actual_results(
     methods: Mapping[str, str] = METHODS,
 ) -> None:
     """Save actual-error records and compact CSV summaries."""
+    active_methods = _available_actual_methods(records, methods)
     tables_directory = _dataset_results_directory(
         results_root, dataset, run_scope
     ) / "tables"
@@ -352,10 +358,10 @@ def save_actual_results(
         "sensor_budget",
         "budget_level",
         "budget_fraction_of_N_min",
-        *(f"{prefix}_error" for prefix in methods),
-        *(f"{prefix}_actual_error" for prefix in methods),
-        *(f"{prefix}_actual_eval_gap" for prefix in methods),
-        *(f"{prefix}_surrogate_recompute_delta" for prefix in methods),
+        *(f"{prefix}_error" for prefix in active_methods),
+        *(f"{prefix}_actual_error" for prefix in active_methods),
+        *(f"{prefix}_actual_eval_gap" for prefix in active_methods),
+        *(f"{prefix}_surrogate_recompute_delta" for prefix in active_methods),
     ]
     optional_columns = [
         "greedy_surrogate_gap_vs_optimal",
@@ -387,7 +393,7 @@ def actual_error_summary(
 ) -> list[dict[str, float | int | str]]:
     """Return actual-vs-surrogate validation rows for each method."""
     rows: list[dict[str, float | int | str]] = []
-    for method_key, method_name in methods.items():
+    for method_key, method_name in _available_actual_methods(records, methods).items():
         eval_gaps = [
             float(record[f"{method_key}_actual_eval_gap"]) for record in records
         ]
@@ -442,8 +448,6 @@ def actual_method_comparison_summary(
         "optimal_mean_actual_error": float(np.mean(optimal_actual_errors)),
         "greedy_mean_actual_error": mean_greedy_actual,
         "tree_aware_mean_actual_error": mean_heuristic_actual,
-        "uniform_mean_actual_error": float(np.mean(uniform_actual_errors)),
-        "random_mean_actual_error": float(np.mean(random_actual_errors)),
         "tree_aware_actual_reduction_vs_greedy": mean_reduction,
         "tree_aware_actual_reduction_vs_greedy_percent": (
             100.0 * mean_reduction / mean_greedy_actual
@@ -514,8 +518,9 @@ def surrogate_quality_summary(
         int(records[0]["spatial_dimension"]): records
         for records in records_by_dataset.values()
     }
+    active_methods = _common_actual_methods(list(dimension_records.values()), methods)
     rows: list[dict[str, float | str]] = []
-    for method_key, method_name in methods.items():
+    for method_key, method_name in active_methods.items():
         row: dict[str, float | str] = {"method": method_name}
         for dimension in (1, 2):
             records = dimension_records[dimension]
@@ -533,12 +538,12 @@ def surrogate_quality_summary(
         surrogate = [
             float(record[f"{method_key}_error"])
             for record in records
-            for method_key in methods
+            for method_key in _available_actual_methods(records, active_methods)
         ]
         actual = [
             float(record[f"{method_key}_actual_error"])
             for record in records
-            for method_key in methods
+            for method_key in _available_actual_methods(records, active_methods)
         ]
         pooled_row[f"{dimension}d_pearson"] = _pearson_correlation(surrogate, actual)
         pooled_row[f"{dimension}d_spearman"] = _spearman_correlation(
@@ -558,7 +563,7 @@ def bias_mae_summary(
     rows: list[dict[str, float | str]] = []
     for records in _records_by_dimension(records_by_dataset).values():
         dimension = int(records[0]["spatial_dimension"])
-        for method_key, method_name in methods.items():
+        for method_key, method_name in _available_actual_methods(records, methods).items():
             residuals = [
                 float(record[f"{method_key}_actual_error"])
                 - float(record[f"{method_key}_error"])
@@ -584,6 +589,7 @@ def within_budget_correlation_summary(
     rows: list[dict[str, float | int | str]] = []
     for records in _records_by_dimension(records_by_dataset).values():
         dimension = int(records[0]["spatial_dimension"])
+        active_methods = _available_actual_methods(records, methods)
         for budget_level in sorted({int(record["budget_level"]) for record in records}):
             selected = [
                 record
@@ -593,12 +599,12 @@ def within_budget_correlation_summary(
             surrogate = [
                 float(record[f"{method_key}_error"])
                 for record in selected
-                for method_key in methods
+                for method_key in active_methods
             ]
             actual = [
                 float(record[f"{method_key}_actual_error"])
                 for record in selected
-                for method_key in methods
+                for method_key in active_methods
             ]
             rows.append(
                 {
@@ -629,12 +635,13 @@ def method_ranking_agreement_summary(
     rows: list[dict[str, float | int | str]] = []
     for records in _records_by_dimension(records_by_dataset).values():
         dimension = int(records[0]["spatial_dimension"])
+        active_methods = _available_actual_methods(records, methods)
         rows.append(
             _ranking_agreement_row(
                 f"{dimension}D",
                 "All",
                 records,
-                methods,
+                active_methods,
                 tie_tolerance,
             )
         )
@@ -649,7 +656,7 @@ def method_ranking_agreement_summary(
                     f"{dimension}D",
                     str(budget_level),
                     selected,
-                    methods,
+                    active_methods,
                     tie_tolerance,
                 )
             )
@@ -665,9 +672,10 @@ def residual_by_k_summary(
     rows: list[dict[str, float | int | str]] = []
     for records in _records_by_dimension(records_by_dataset).values():
         dimension = int(records[0]["spatial_dimension"])
+        active_methods = _available_actual_methods(records, methods)
         for K in sorted({int(record["K"]) for record in records}):
             selected = [record for record in records if int(record["K"]) == K]
-            for method_key, method_name in methods.items():
+            for method_key, method_name in active_methods.items():
                 residuals = [
                     float(record[f"{method_key}_actual_error"])
                     - float(record[f"{method_key}_error"])
@@ -699,15 +707,16 @@ def make_combined_actual_error_plots(
         records_by_dataset.values(),
         key=lambda rows: int(rows[0]["spatial_dimension"]),
     )
+    active_methods = _common_actual_methods(dimension_records, methods)
     figures = [
         (
             "Figure 1: Surrogate validation",
-            _plot_combined_actual_vs_surrogate(dimension_records, methods),
+            _plot_combined_actual_vs_surrogate(dimension_records, active_methods),
             "figure_1_surrogate_validation",
         ),
         (
             "Figure 2: Algorithm performance using actual error",
-            _plot_combined_actual_error_performance(dimension_records, methods),
+            _plot_combined_actual_error_performance(dimension_records, active_methods),
             "figure_2_actual_error_performance",
         ),
     ]
@@ -817,6 +826,52 @@ def _records_by_dimension(
     return {
         int(records[0]["spatial_dimension"]): records
         for records in records_by_dataset.values()
+    }
+
+
+def _available_input_methods(
+    records: Sequence[Mapping[str, object]],
+    methods: Mapping[str, str],
+) -> dict[str, str]:
+    """Return methods with saved surrogate errors and allocations."""
+    if not records:
+        return {}
+    sample = records[0]
+    return {
+        prefix: name
+        for prefix, name in methods.items()
+        if f"{prefix}_error" in sample and f"{prefix}_allocation" in sample
+    }
+
+
+def _available_actual_methods(
+    records: Sequence[Mapping[str, object]],
+    methods: Mapping[str, str],
+) -> dict[str, str]:
+    """Return methods with saved surrogate and actual error columns."""
+    if not records:
+        return {}
+    sample = records[0]
+    return {
+        prefix: name
+        for prefix, name in methods.items()
+        if f"{prefix}_error" in sample and f"{prefix}_actual_error" in sample
+    }
+
+
+def _common_actual_methods(
+    grouped_records: Sequence[Sequence[Mapping[str, object]]],
+    methods: Mapping[str, str],
+) -> dict[str, str]:
+    """Return actual-error methods present in every nonempty record group."""
+    available: set[str] | None = None
+    for records in grouped_records:
+        keys = set(_available_actual_methods(records, methods))
+        available = keys if available is None else available & keys
+    return {
+        prefix: name
+        for prefix, name in methods.items()
+        if available is not None and prefix in available
     }
 
 
@@ -1110,9 +1165,9 @@ def _plot_combined_actual_vs_surrogate(
         axis.plot([0, limit], [0, limit], color="black", linestyle="--", linewidth=1)
         axis.set_title(f"({chr(96 + dimension)}) {dimension}D")
         axis.grid(alpha=0.25)
-    axes[0].set_ylabel("Actual final error")
+    axes[0].set_ylabel("Actual end-to-end tree error")
     for axis in axes:
-        axis.set_xlabel("Surrogate final error")
+        axis.set_xlabel("Surrogate tree error")
         axis.set_xlim(0, limit * 1.03)
         axis.set_ylim(0, limit * 1.03)
     axes[-1].legend()

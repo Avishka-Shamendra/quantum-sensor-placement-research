@@ -6,8 +6,14 @@ import argparse
 import csv
 import json
 import re
+import sys
 from pathlib import Path
 from time import perf_counter
+
+HERE = Path(__file__).resolve().parents[1]
+SOURCE_ROOT = HERE / "src"
+if str(SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(SOURCE_ROOT))
 
 from exhaustive_search import (
     DecisionLeaf,
@@ -16,7 +22,6 @@ from exhaustive_search import (
     ExhaustiveSearchResult,
     exhaustive_search,
 )
-HERE = Path(__file__).resolve().parent
 from input_data import load_sparse_input, validate_reverse_phases
 
 INPUT_ROOT = HERE / "inputs"

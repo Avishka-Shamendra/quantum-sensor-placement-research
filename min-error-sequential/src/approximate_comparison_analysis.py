@@ -22,21 +22,20 @@ from random_baseline import random_baseline
 from uniform import uniform
 
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parents[1]
 from input_data import load_sparse_input, validate_reverse_phases
 
 INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 ALGORITHM_STYLES = {
-    "Greedy": ("greedy", "#ff7f0e", "-"),
-    "Heuristic": ("heuristic", "#d62728", "-"),
-    "Uniform": ("uniform", "#2ca02c", "-"),
-    "Random": ("random", "#9467bd", "-"),
+    "Greedy": ("greedy", "#7f7f7f", "-"),
+    "Heuristic": ("heuristic", "#1f77b4", "-"),
+    "Uniform": ("uniform", "#bdbdbd", "-"),
+    "Random": ("random", "#4d4d4d", "-"),
 }
 SENSOR_BUDGET_LABEL = (
-    r"$N/N_{\min}$ "
-    "(Sensor Budget / Required Min Sensors for Perfect Discrimination)"
+    r"Budget ratio $\rho=N/N_{\min}^{opt}$"
 )
 
 configure_plot_style()
@@ -536,17 +535,17 @@ def make_combined_approximate_plots(
     figures_directory.mkdir(parents=True, exist_ok=True)
     figure_specs = [
         (
-            "Mean error curves",
+            "Mean surrogate-error curves",
             _plot_mean_error_curves(dimension_records),
             "mean_error_curves",
         ),
         (
-            "Overall mean error curves",
+            "Overall mean surrogate-error curves",
             _plot_overall_mean_error_curves(dimension_records),
             "overall_mean_error_curves",
         ),
         (
-            "Error distribution by field family",
+            "Surrogate-error distribution by field family",
             _plot_error_by_family(dimension_records),
             "error_distribution_by_field_family",
         ),
@@ -614,7 +613,7 @@ def _plot_mean_error_curves(
             axis.set_title(f"{dimension}D, K={K}")
             axis.grid(alpha=0.25)
             if column == 0:
-                axis.set_ylabel("Mean final error")
+                axis.set_ylabel("Mean surrogate final error")
     axes[0, 1].legend()
     figure.supxlabel(SENSOR_BUDGET_LABEL)
     return figure
@@ -658,7 +657,7 @@ def _plot_overall_mean_error_curves(
             )
         axis.set_title(f"{dimension}D")
         axis.grid(alpha=0.25)
-    axes[0].set_ylabel("Mean final error")
+    axes[0].set_ylabel("Mean surrogate final error")
     axes[1].legend()
     figure.supxlabel(SENSOR_BUDGET_LABEL)
     return figure
@@ -709,7 +708,7 @@ def _plot_error_by_family(
             xticklabels=families,
         )
         axis.grid(axis="y", alpha=0.25)
-    axes[0].set_ylabel("Final error")
+    axes[0].set_ylabel("Surrogate final error")
     handles, labels = axes[1].get_legend_handles_labels()
     figure.legend(
         handles,

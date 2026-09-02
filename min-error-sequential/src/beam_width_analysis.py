@@ -16,13 +16,13 @@ from heuristic import heuristic
 from plot_style import configure_plot_style
 
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parents[1]
 from input_data import load_sparse_input, validate_reverse_phases
 
 INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "heuristic_beam_width"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
-BEAM_WIDTH_COLORS = ("#4C78A8", "#F28E2B", "#59A14F", "#E15759", "#B279A2")
+BEAM_WIDTH_COLORS = ("#1f77b4", "#4d4d4d", "#7f7f7f", "#bdbdbd", "#000000")
 LINE_STYLES = ("-", "--", "-.", ":")
 
 configure_plot_style()
@@ -212,6 +212,23 @@ def save_beam_width_results(
             writer.writerow({column: record[column] for column in columns})
 
 
+def load_beam_width_results(
+    dataset: str,
+    results_root: str | Path = DEFAULT_RESULTS_ROOT,
+    *,
+    run_scope: str = "test",
+) -> list[dict[str, object]]:
+    """Load saved beam-width records without rerunning the study."""
+    results_path = (
+        Path(results_root)
+        / f"{dataset}_results_{run_scope}"
+        / "tables"
+        / "results.json"
+    )
+    payload = json.loads(results_path.read_text(encoding="utf-8"))
+    return list(payload["results"])
+
+
 def make_beam_width_plot(
     records_by_dataset: dict[str, list[dict[str, object]]],
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
@@ -273,11 +290,9 @@ def make_beam_width_plot(
         )
         axis.grid(alpha=0.25)
 
-    axes[0].set_ylabel("Mean final error")
+    axes[0].set_ylabel("Mean surrogate final error")
     axes[1].legend()
-    figure.supxlabel(
-        r"$N/N_{\min}$ (Sensor Budget / Required Min Sensors for Perfect Discrimination)"
-    )
+    figure.supxlabel(r"Budget ratio $\rho=N/N_{\min}^{opt}$")
     figures_directory = (
         Path(results_root)
         / f"results_summary_heuristic_beam_width_{run_scope}"

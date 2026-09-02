@@ -1,12 +1,18 @@
 # Minimum-Error Sequential Discrimination
 
-This directory contains the exact exhaustive-search pipeline for the
-fixed-budget sequential discrimination problem, two heuristics, and uniform
-and random baselines.
+This directory contains the fixed-budget sequential discrimination pipeline:
+exact exhaustive search for compact cases, Greedy and Tree-aware heuristic
+methods, and Uniform and Random baselines.
 
-The algorithm entry points are:
+Reusable algorithm and analysis modules live in `src/`. Add that directory to
+`PYTHONPATH` before importing the algorithms outside the notebooks:
 
 ```python
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path("min-error-sequential/src").resolve()))
+
 from exhaustive_search import exhaustive_search
 from greedy import greedy
 from heuristic import heuristic
@@ -20,8 +26,8 @@ uniform_result = uniform(K, M, N, pijmn)
 random_result = random_baseline(K, M, N, pijmn)
 ```
 
-The tree-aware heuristic accepts optional `beam_width`, `max_iterations`,
-`improvement_threshold`, `initialization`, `random_seed`, and
+The Tree-aware heuristic accepts optional `beam_width`, `max_iterations`,
+`improvement_threshold`, `initialization`, `random_seed`,
 `include_greedy_start`, and `move_shortlist_size` keyword arguments. By
 default, it starts from the greedy allocation, ranks all one-sensor transfers
 using the current tree's pair weights, rebuilds the beam-search tree only for
@@ -33,7 +39,7 @@ allocation as an additional start for those modes.
 The uniform baseline uses every sensor. It assigns `N // M` sensors to every
 location and randomly selects distinct locations to receive the remainder.
 Its optional `random_seed` argument makes this near-uniform allocation
-reproducible. The heuristic uses the same rule for its default starting point.
+reproducible.
 
 The Random baseline places every sensor at a uniformly sampled location and
 selects a random valid field pair at each decision-tree node. It still uses the
@@ -44,39 +50,47 @@ Generate the expanded one- and two-dimensional input datasets from the repositor
 root:
 
 ```bash
-python min-error-sequential/generate_benchmarks.py all
+python min-error-sequential/scripts/generate_benchmarks.py all
 ```
 
 Generate the compact one- and two-dimensional input datasets:
 
 ```bash
-python min-error-sequential/generate_compact_benchmarks.py all
+python min-error-sequential/scripts/generate_compact_benchmarks.py all
 ```
 
 Run the exact algorithm on the compact datasets:
 
 ```bash
-python min-error-sequential/evaluate_benchmarks.py compact_benchmark_1d
-python min-error-sequential/evaluate_benchmarks.py compact_benchmark_2d
+python min-error-sequential/scripts/evaluate_benchmarks.py compact_benchmark_1d
+python min-error-sequential/scripts/evaluate_benchmarks.py compact_benchmark_2d
 ```
 
-For an interactive pilot with inline plots, open and run:
+## Notebooks
+
+The submission-facing notebooks are kept directly in this folder:
+
+- `01_compact_exact_comparison.ipynb`: compares Exhaustive, Greedy,
+  Tree-aware heuristic, Uniform, and Random on the compact Problem 2 data using
+  surrogate final error.
+- `02_actual_error_validation.ipynb`: reloads saved allocations and decision
+  trees and reevaluates them with actual Helstrom branch probabilities.
+- `03_scalable_algorithm_comparison.ipynb`: compares the scalable methods on the
+  expanded data using surrogate final error.
+- `04_heuristic_diagnostics.ipynb`: studies beam-width sensitivity for the
+  Tree-aware heuristic.
+
+To install notebook dependencies:
 
 ```bash
 python -m pip install -r min-error-sequential/requirements.txt
-jupyter lab min-error-sequential/evaluate_optimal.ipynb
 ```
-
-The notebook evaluates one realization from every field-family, `K`, and `M`
-cell by default. Set `RUN_ALL_REPLICATES = True` in its settings cell to run
-all 2,520 cases per dataset. Notebook tables and figures are written under
-`min-error-sequential/results/optimal_evaluation/`.
 
 To compare all five algorithms against the exact optimum on the compact datasets,
 open:
 
 ```bash
-jupyter lab min-error-sequential/compare_algorithms_compact.ipynb
+jupyter lab min-error-sequential/01_compact_exact_comparison.ipynb
 ```
 
 Its test mode uses 180 cases per dataset. Results are written under
@@ -85,40 +99,30 @@ Its test mode uses 180 cases per dataset. Results are written under
 To compare Greedy, Heuristic, Uniform, and Random on the expanded datasets, open:
 
 ```bash
-jupyter lab min-error-sequential/compare_algorithms.ipynb
+jupyter lab min-error-sequential/03_scalable_algorithm_comparison.ipynb
 ```
 
 Its test mode uses 100 balanced cases per dataset, while full mode uses all
 2,700 cases.
 Results are written under `min-error-sequential/results/algorithm_comparison/`.
 
-To combine the saved compact and extended overall mean-error curves in one
-four-panel figure, open:
-
-```bash
-jupyter lab min-error-sequential/compare_compact_extended.ipynb
-```
-
-This notebook reads the existing result tables and does not rerun the
-algorithms. Its default `full` mode creates 1D Compact, 2D Compact, 1D
-Extended, and 2D Extended panels.
-
 To evaluate whether the current `0.5/0.5` outside-pair surrogate tracks the
 actual quantum measurement probabilities, open:
 
 ```bash
-jupyter lab min-error-sequential/compare_actual_vs_surrogate_error.ipynb
+jupyter lab min-error-sequential/02_actual_error_validation.ipynb
 ```
 
 This notebook reads the saved compact paired-comparison records, recomputes
-Exhaustive, Greedy, and Tree-aware final errors using the physical pairwise
-probe and symmetric Helstrom POVM, and writes actual-vs-surrogate tables and figures
-under `min-error-sequential/results/actual_error_evaluation/`.
+Exhaustive, Greedy, Tree-aware, Uniform, and Random final errors using the
+physical pairwise probe and symmetric Helstrom POVM, and writes
+actual-vs-surrogate tables and figures under
+`min-error-sequential/results/actual_error_evaluation/`.
 
 To study how beam width affects the tree-aware heuristic, open:
 
 ```bash
-jupyter lab min-error-sequential/compare_heuristic_beam_width.ipynb
+jupyter lab min-error-sequential/04_heuristic_diagnostics.ipynb
 ```
 
 The default study compares beam widths 1, 3, and 5 on `benchmark_1d` and
@@ -168,7 +172,7 @@ remain available for exact-optimal comparisons. The cap is defined by
 `EXHAUSTIVE_SEARCH_BUDGET_CAP` in the relevant benchmark generator; custom
 datasets can change it with `--budget-cap` or remove it with `--no-budget-cap`.
 
-The beam-width notebook uses five allocation iterations. Representative 2D,
+The beam-width notebook uses three allocation iterations by default. Representative 2D,
 `M=8`, `N=12` timings showed that `K=8` was several times slower than `K=7`,
 so `K=8` is excluded from the full factorial run. A timing sample across one
 replicate of every retained cell projected about 11 hours for both complete
@@ -181,7 +185,7 @@ at stored locations, so this fallback value is not written to the CSV files.
 For a custom or larger design, run:
 
 ```bash
-python min-error-sequential/generate_inputs.py my_dataset \
+python min-error-sequential/scripts/generate_inputs.py my_dataset \
   --dimension 2 --k-values 3 4 5 --m-values 3 4 5 \
   --replicates 3 --budget-cap 16 --samples-per-location 5
 ```

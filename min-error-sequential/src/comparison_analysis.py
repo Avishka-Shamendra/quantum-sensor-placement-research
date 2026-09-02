@@ -21,7 +21,7 @@ from random_baseline import random_baseline
 from uniform import uniform
 
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parents[1]
 from input_data import load_sparse_input, validate_reverse_phases
 
 INPUT_ROOT = HERE / "inputs"
@@ -29,11 +29,11 @@ DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison_compact"
 
 # Use the same algorithm colors in every comparison figure.
 ALGORITHM_COLORS = {
-    "Optimal": "#1f77b4",
-    "Greedy": "#ff7f0e",
-    "Heuristic": "#d62728",
-    "Uniform": "#2ca02c",
-    "Random": "#9467bd",
+    "Optimal": "#000000",
+    "Greedy": "#7f7f7f",
+    "Heuristic": "#1f77b4",
+    "Uniform": "#bdbdbd",
+    "Random": "#4d4d4d",
 }
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 
@@ -446,17 +446,17 @@ def make_comparison_plots(
     dimension = int(records[0]["spatial_dimension"])
     figures = [
         (
-            "Mean error curves",
+            "Mean surrogate-error curves",
             _plot_mean_error_curves(records, dimension),
             "mean_error_curves",
         ),
         (
-            "Heuristic error versus optimal error",
+            "Heuristic surrogate error versus Exhaustive surrogate error",
             _plot_error_scatter(records, dimension),
             "greedy_vs_optimal_scatter",
         ),
         (
-            "Additive error gap",
+            "Additive surrogate-error gap",
             _plot_error_gap(records, dimension),
             "additive_error_gap",
         ),
@@ -471,7 +471,7 @@ def make_comparison_plots(
             "runtime_speedup",
         ),
         (
-            "Error gap by field family",
+            "Surrogate-error gap by field family",
             _plot_gap_by_family(records, dimension),
             "error_gap_by_field_family",
         ),
@@ -508,12 +508,12 @@ def make_combined_comparison_plots(
     # Keep the detailed curves, an overall summary, and the two distribution plots.
     figures = [
         (
-            "Mean error curves",
+            "Mean surrogate-error curves",
             _plot_combined_mean_error_curves(dimension_records),
             "mean_error_curves",
         ),
         (
-            "Overall mean error curves",
+            "Overall mean surrogate-error curves",
             _plot_overall_mean_error_curves(dimension_records),
             "overall_mean_error_curves",
         ),
@@ -523,7 +523,7 @@ def make_combined_comparison_plots(
             "runtime_speedup",
         ),
         (
-            "Error gap by field family",
+            "Surrogate-error gap by field family",
             _plot_combined_gap_by_family(dimension_records),
             "error_gap_by_field_family",
         ),
@@ -598,7 +598,7 @@ def paired_summary(records: list[dict[str, object]]) -> dict[str, float | int]:
 def overall_error_curve_summary(
     records: list[dict[str, object]],
 ) -> list[dict[str, float | int | str]]:
-    """Summarize overall Optimal, Greedy, and Heuristic error curves."""
+    """Summarize overall surrogate-error curves."""
     dimension = f"{int(records[0]['spatial_dimension'])}D"
     rows: list[dict[str, float | int | str]] = []
     levels = sorted({int(record["budget_level"]) for record in records})
@@ -711,7 +711,7 @@ def runtime_by_k_summary(
 def field_family_summary(
     records: list[dict[str, object]],
 ) -> list[dict[str, float | int | str]]:
-    """Summarize the mean error gap for each field family."""
+    """Summarize the mean surrogate-error gap for each field family."""
     dimension = f"{int(records[0]['spatial_dimension'])}D"
     present = {str(record["field_model"]) for record in records}
     families = [family for family in FIELD_FAMILY_ORDER if family in present]
@@ -862,10 +862,10 @@ def _plot_mean_error_curves(
             )
         axis.set_title(f"K={K}")
         axis.grid(alpha=0.25)
-    axes[0].set_ylabel("Mean final error")
+    axes[0].set_ylabel("Mean surrogate final error")
     axes[-1].legend()
     figure.supxlabel(
-        r"$N/N_{\min}$ (Sensor Budget / Required Min Sensors for Perfect Discrimination)"
+        r"Budget ratio $\rho=N/N_{\min}^{opt}$"
     )
     figure.tight_layout()
     return figure
@@ -904,7 +904,7 @@ def _plot_error_scatter(
 def _plot_error_gap(
     records: list[dict[str, object]], dimension: int
 ) -> plt.Figure:
-    """Plot the mean greedy-minus-optimal error gap by budget level."""
+    """Plot the mean greedy-minus-optimal surrogate-error gap by budget level."""
     figure, axis = plt.subplots(figsize=(7.2, 4.6))
     for K in sorted({int(record["K"]) for record in records}):
         selected = [record for record in records if record["K"] == K]
@@ -924,7 +924,7 @@ def _plot_error_gap(
     axis.axhline(0, color="black", linewidth=1)
     axis.set(
         xlabel="Budget level (smallest to largest)",
-        ylabel=r"Mean error gap $P_{greedy}-P_{optimal}$",
+        ylabel=r"Mean surrogate-error gap $P_{greedy}-P_{optimal}$",
         xticks=sorted({int(record["budget_level"]) for record in records}),
         ylim=(0, None),
     )
@@ -1002,7 +1002,7 @@ def _plot_runtime_speedup(
 def _plot_gap_by_family(
     records: list[dict[str, object]], dimension: int
 ) -> plt.Figure:
-    """Compare additive error gaps across field families."""
+    """Compare additive surrogate-error gaps across field families."""
     present_families = {str(record["field_model"]) for record in records}
     families = [
         family for family in FIELD_FAMILY_ORDER if family in present_families
@@ -1020,7 +1020,7 @@ def _plot_gap_by_family(
     axis.boxplot(values, tick_labels=families, showmeans=True)
     axis.set(
         xlabel="Field family",
-        ylabel=r"Error gap $P_{greedy}-P_{optimal}$",
+        ylabel=r"Surrogate-error gap $P_{greedy}-P_{optimal}$",
         ylim=(0, None),
     )
     axis.grid(axis="y", alpha=0.25)
@@ -1085,10 +1085,10 @@ def _plot_combined_mean_error_curves(
             axis.set_title(f"{dimension}D, K={K}")
             axis.grid(alpha=0.25)
             if column == 0:
-                axis.set_ylabel("Mean final error")
+                axis.set_ylabel("Mean surrogate final error")
     axes[0, 1].legend()
     figure.supxlabel(
-        r"$N/N_{\min}$ (Sensor Budget / Required Min Sensors for Perfect Discrimination)"
+        r"Budget ratio $\rho=N/N_{\min}^{opt}$"
     )
     return figure
 
@@ -1137,10 +1137,10 @@ def _plot_overall_mean_error_curves(
             )
         axis.set_title(f"{dimension}D")
         axis.grid(alpha=0.25)
-    axes[0].set_ylabel("Mean final error")
+    axes[0].set_ylabel("Mean surrogate final error")
     axes[1].legend()
     figure.supxlabel(
-        r"$N/N_{\min}$ (Sensor Budget / Required Min Sensors for Perfect Discrimination)"
+        r"Budget ratio $\rho=N/N_{\min}^{opt}$"
     )
     return figure
 
@@ -1193,7 +1193,7 @@ def _plot_combined_error_scatter(
             ylim=(0, limit * 1.03),
         )
         axis.grid(alpha=0.25)
-    axes[0].set_ylabel("Heuristic error")
+    axes[0].set_ylabel("Heuristic surrogate final error")
     axes[1].legend()
     return figure
 
@@ -1201,7 +1201,7 @@ def _plot_combined_error_scatter(
 def _plot_combined_error_gap(
     dimension_records: list[list[dict[str, object]]],
 ) -> plt.Figure:
-    """Plot both heuristic error gaps with dimensions in columns and K in rows."""
+    """Plot heuristic surrogate-error gaps with dimensions in columns and K in rows."""
     K_values = sorted(
         {int(record["K"]) for records in dimension_records for record in records}
     )
@@ -1258,7 +1258,7 @@ def _plot_combined_error_gap(
                 ylim=(0, maximum_gap * 1.08),
             )
             if column == 0:
-                axis.set_ylabel(r"Mean error gap $P_{method}-P_{optimal}$")
+                axis.set_ylabel(r"Mean surrogate-error gap $P_{method}-P_{optimal}$")
             axis.grid(alpha=0.25)
     axes[0, 1].legend()
     figure.supxlabel("Budget level (smallest to largest)")
@@ -1375,7 +1375,7 @@ def _plot_combined_runtime_speedup(
 def _plot_combined_gap_by_family(
     dimension_records: list[list[dict[str, object]]],
 ) -> plt.Figure:
-    """Compare field-family error gaps in side-by-side panels."""
+    """Compare field-family surrogate-error gaps in side-by-side panels."""
     figure, axes = plt.subplots(
         1, 2, figsize=(13.2, 4.8), sharey=True, constrained_layout=True
     )
@@ -1422,7 +1422,7 @@ def _plot_combined_gap_by_family(
             xticklabels=families,
         )
         axis.grid(axis="y", alpha=0.25)
-    axes[0].set_ylabel(r"Error gap $P_{method}-P_{optimal}$")
+    axes[0].set_ylabel(r"Surrogate-error gap $P_{method}-P_{optimal}$")
     handles, labels = axes[1].get_legend_handles_labels()
     figure.legend(
         handles,

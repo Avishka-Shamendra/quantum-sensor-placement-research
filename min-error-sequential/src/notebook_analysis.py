@@ -13,18 +13,73 @@ from time import perf_counter
 import matplotlib.pyplot as plt
 import numpy as np
 
-from evaluate_benchmarks import tree_to_dict, validate_result
-from exhaustive_search import exhaustive_search
+from exhaustive_search import (
+    DecisionLeaf,
+    DecisionNode,
+    DecisionTree,
+    ExhaustiveSearchResult,
+    exhaustive_search,
+)
 from plot_style import configure_plot_style
 
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parents[1]
 from input_data import load_sparse_input, validate_reverse_phases
 
 INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "optimal_evaluation"
 
 configure_plot_style()
+
+
+def tree_to_dict(tree: DecisionTree) -> dict[str, object]:
+    """Convert a decision tree to data that can be saved as JSON."""
+    if isinstance(tree, DecisionLeaf):
+        return {"declared_field": tree.declared_field}
+    return {
+        "pair": list(tree.pair),
+        "location": tree.location,
+        "pair_error": tree.pair_error,
+        "discard_i": tree_to_dict(tree.discard_i),
+        "discard_j": tree_to_dict(tree.discard_j),
+    }
+
+
+def validate_result(
+    result: ExhaustiveSearchResult,
+    K: int,
+    M: int,
+    budget: int,
+) -> None:
+    """Check the allocation, pair locations, tree, and final error."""
+    if len(result.allocation) != M or sum(result.allocation) != budget:
+        raise RuntimeError("exhaustive search returned an invalid allocation")
+    expected_pairs = {(i, j) for i in range(K) for j in range(i + 1, K)}
+    if set(result.pair_locations) != expected_pairs:
+        raise RuntimeError("exhaustive search returned invalid pair locations")
+    if any(not 0 <= location < M for location in result.pair_locations.values()):
+        raise RuntimeError("exhaustive search returned an out-of-range location")
+    if not 0.0 <= result.minimum_error <= 1.0:
+        raise RuntimeError("exhaustive search returned an invalid error probability")
+    _validate_tree(result.decision_tree, set(range(K)), M)
+
+
+def _validate_tree(tree: DecisionTree, remaining: set[int], M: int) -> None:
+    """Check that each tree branch removes one tested field."""
+    if isinstance(tree, DecisionLeaf):
+        if remaining != {tree.declared_field}:
+            raise RuntimeError("decision-tree leaf declares the wrong field")
+        return
+
+    if not isinstance(tree, DecisionNode):
+        raise RuntimeError("decision tree contains an unknown node type")
+    i, j = tree.pair
+    if i not in remaining or j not in remaining or i >= j:
+        raise RuntimeError("decision-tree node tests an invalid pair")
+    if not 0 <= tree.location < M or not 0.0 <= tree.pair_error <= 0.5:
+        raise RuntimeError("decision-tree node has invalid test data")
+    _validate_tree(tree.discard_i, remaining - {i}, M)
+    _validate_tree(tree.discard_j, remaining - {j}, M)
 
 
 def run_dataset(
