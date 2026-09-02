@@ -29,11 +29,11 @@ DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison_compact"
 
 # Use the same algorithm colors in every comparison figure.
 ALGORITHM_COLORS = {
-    "Optimal": "#000000",
-    "Greedy": "#7f7f7f",
-    "Heuristic": "#1f77b4",
-    "Uniform": "#bdbdbd",
-    "Random": "#4d4d4d",
+    "Optimal": "#1f77b4",
+    "Greedy": "#ff7f0e",
+    "Heuristic": "#7b3294",
+    "Uniform": "#d62728",
+    "Random": "#6b7280",
 }
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 
@@ -50,8 +50,11 @@ def run_paired_dataset(
     tree_aware_parameters: dict[str, object] | None = None,
     uniform_parameters: dict[str, object] | None = None,
     random_parameters: dict[str, object] | None = None,
+    progress_every: int = 25,
 ) -> list[dict[str, object]]:
     """Run all algorithms on the same cases and budgets."""
+    if progress_every < 1:
+        raise ValueError("progress_every must be positive")
     optimal_parameters = dict(optimal_parameters or {})
     greedy_parameters = dict(greedy_parameters or {})
     tree_aware_parameters = dict(tree_aware_parameters or {})
@@ -309,10 +312,16 @@ def run_paired_dataset(
                 }
             )
 
-        print(
-            f"{dataset}: completed case {case_number}/{len(cases)} "
-            f"({case['field_model']}, K={K}, M={M})"
-        )
+        if (
+            case_number == 1
+            or case_number % progress_every == 0
+            or case_number == len(cases)
+        ):
+            print(
+                f"{dataset}: completed case {case_number}/{len(cases)} "
+                f"({case['field_model']}, K={K}, M={M})",
+                flush=True,
+            )
 
     run_scope = "full" if replicates_per_cell is None else "test"
     algorithm_parameters = {
@@ -1160,7 +1169,7 @@ def _plot_combined_error_scatter(
     )
     for axis, records in zip(axes, dimension_records):
         dimension = int(records[0]["spatial_dimension"])
-        K_colors = {3: "#1f77b4", 4: "#ff7f0e", 5: "#2ca02c"}
+        K_colors = {3: "#1f77b4", 4: "#7b3294", 5: "#ff7f0e"}
         for K in sorted({int(record["K"]) for record in records}):
             selected = [record for record in records if record["K"] == K]
             axis.scatter(

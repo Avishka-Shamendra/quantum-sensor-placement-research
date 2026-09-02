@@ -43,11 +43,11 @@ EXPANDED_METHODS = {
     "random": "Random",
 }
 METHOD_COLORS = {
-    "Exhaustive": "#000000",
-    "Greedy": "#7f7f7f",
-    "Heuristic": "#1f77b4",
-    "Uniform": "#bdbdbd",
-    "Random": "#4d4d4d",
+    "Exhaustive": "#1f77b4",
+    "Greedy": "#ff7f0e",
+    "Heuristic": "#7b3294",
+    "Uniform": "#d62728",
+    "Random": "#6b7280",
 }
 
 configure_plot_style()

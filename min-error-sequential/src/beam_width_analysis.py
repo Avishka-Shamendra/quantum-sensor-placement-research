@@ -22,7 +22,7 @@ from input_data import load_sparse_input, validate_reverse_phases
 INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "heuristic_beam_width"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
-BEAM_WIDTH_COLORS = ("#1f77b4", "#4d4d4d", "#7f7f7f", "#bdbdbd", "#000000")
+BEAM_WIDTH_COLORS = ("#1f77b4", "#7b3294", "#d62728", "#ff7f0e", "#6b7280")
 LINE_STYLES = ("-", "--", "-.", ":")
 
 configure_plot_style()

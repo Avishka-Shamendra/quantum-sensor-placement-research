@@ -20,9 +20,9 @@ SENSOR_BUDGET_LABEL = (
 ALGORITHM_STYLES = {
     "Optimal": ("#1f77b4", "-"),
     "Greedy": ("#ff7f0e", "-"),
-    "Heuristic": ("#d62728", "-"),
-    "Uniform": ("#2ca02c", "-"),
-    "Random": ("#9467bd", "-"),
+    "Heuristic": ("#7b3294", "-"),
+    "Uniform": ("#d62728", "-"),
+    "Random": ("#6b7280", "-"),
 }
 
 

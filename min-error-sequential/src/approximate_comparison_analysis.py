@@ -29,10 +29,10 @@ INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 ALGORITHM_STYLES = {
-    "Greedy": ("greedy", "#7f7f7f", "-"),
-    "Heuristic": ("heuristic", "#1f77b4", "-"),
-    "Uniform": ("uniform", "#bdbdbd", "-"),
-    "Random": ("random", "#4d4d4d", "-"),
+    "Greedy": ("greedy", "#ff7f0e", "-"),
+    "Heuristic": ("heuristic", "#7b3294", "-"),
+    "Uniform": ("uniform", "#d62728", "-"),
+    "Random": ("random", "#6b7280", "-"),
 }
 SENSOR_BUDGET_LABEL = (
     r"Budget ratio $\rho=N/N_{\min}^{opt}$"
