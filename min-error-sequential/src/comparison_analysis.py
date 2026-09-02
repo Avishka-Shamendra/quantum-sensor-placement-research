@@ -31,9 +31,9 @@ DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison_compact"
 ALGORITHM_COLORS = {
     "Optimal": "#1f77b4",
     "Greedy": "#ff7f0e",
-    "Heuristic": "#7b3294",
-    "Uniform": "#d62728",
-    "Random": "#6b7280",
+    "Heuristic": "#d62728",
+    "Uniform": "#7b3294",
+    "Random": "#006400",
 }
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 

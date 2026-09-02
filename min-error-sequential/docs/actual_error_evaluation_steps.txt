@@ -1,0 +1,296 @@
+Actual End-to-End Error Evaluation: Steps and Inputs
+====================================================
+
+Code path
+---------
+
+Main implementation:
+    min-error-sequential/src/actual_error_analysis.py
+
+Used by:
+    min-error-sequential/02_actual_error_validation.ipynb
+
+Purpose:
+    Reevaluate already-computed allocations and decision trees using the actual
+    Helstrom branch probabilities at every node of the sequential tree.
+
+Important:
+    This is not a new optimization. The code does not change allocations, pair
+    locations, or trees. It only evaluates the physical end-to-end error of the
+    fixed solutions that were already saved by the comparison notebooks.
+
+
+Inputs for one saved run
+------------------------
+
+Each saved run corresponds to one generated problem case, one sensor budget, and
+one method. The actual-error evaluator uses two sources of information.
+
+1. Saved comparison result record
+
+   Loaded from:
+
+       min-error-sequential/results/algorithm_comparison_compact
+       min-error-sequential/results/algorithm_comparison
+
+   The run_scope switch selects either the saved test records or saved full
+   records:
+
+       run_scope = "test"
+       run_scope = "full"
+
+   For each method, the saved record provides:
+
+       final allocation
+       final pair locations
+       final decision tree, when saved
+       surrogate final error
+
+   Compact records include Exhaustive, Greedy, Tree-aware heuristic, Uniform,
+   and Random. Expanded/scalable records include Greedy, Tree-aware heuristic,
+   Uniform, and Random.
+
+2. Original generated input case
+
+   For each record, the evaluator reloads the original CSV case file from:
+
+       min-error-sequential/inputs/<dataset>/<case>.csv
+
+   This gives:
+
+       K:
+           Number of possible fields.
+
+       M:
+           Number of sensor locations.
+
+       phase_gaps:
+           The phase differences r_ijm for every pair and location.
+
+       pair_error_table:
+           The original two-field error table. This is used only when a saved
+           tree must be rebuilt for older/scalable records.
+
+The code caches input cases by case name so repeated budgets for the same case
+do not reload the CSV repeatedly.
+
+
+Tree source
+-----------
+
+If a saved record contains a decision tree, the actual-error evaluator uses that
+tree directly.
+
+If a saved record does not contain a decision tree, the code reconstructs the
+deterministic tree from the saved allocation and pair locations using the same
+method-specific tree builder. After rebuilding, it checks that the rebuilt
+surrogate error matches the saved surrogate error. This prevents silently
+evaluating the wrong tree.
+
+Random-baseline trees are rebuilt using the same deterministic case/budget seed
+logic that was used when the random baseline was originally saved.
+
+
+Actual node probability calculation
+-----------------------------------
+
+At a tree node, the saved decision tree specifies:
+
+    pair = (i,j)
+    location = m
+    pair_error = surrogate two-field error at that node
+
+For actual-error evaluation, pair_error is not used as a shortcut for third-field
+behavior. Instead, the code calculates the physical Helstrom measurement
+probabilities for the true field k.
+
+For each possible true field k, and for each node testing pair (i,j):
+
+1. Read the phase gap for the tested pair and location.
+
+       gap = abs(r_ijm)
+
+   Reverse phases are handled by principal-phase wrapping.
+
+2. Use the final allocation to determine the number of sensors available at the
+   tested location.
+
+       available sensors = allocation[m]
+
+3. Choose the number of sensors used by this two-field test.
+
+       q = ceil(pi / gap)
+       test_sensor_count = min(allocation[m], q)
+
+   If the gap is zero or the available sensor count is zero, the two outcomes
+   are assigned probability 0.5 and 0.5.
+
+4. Construct the optimal two-field probe components.
+
+   If the available sensor phase separation is below the perfect-discrimination
+   threshold:
+
+       test_sensor_count * gap < pi
+
+   the probe has two equal-amplitude components.
+
+   If the threshold is reached, the code uses the finite-sensor construction
+   based on q = ceil(pi/gap), with different component formulas for even and odd
+   q. These formulas are implemented in _probe_components(...).
+
+5. Reconstruct the phase of every field at the tested location.
+
+   The code fixes field 0 as the phase reference:
+
+       phi_0 = 0
+       phi_l = principal_phase(-r_0lm)
+
+6. Build the output state for field i, field j, and the true field k.
+
+   Each probe component receives the field-dependent phase factor:
+
+       exp(-0.5j * phi_k * (n_plus - n_minus))
+
+   This gives three state vectors:
+
+       |psi_i>
+       |psi_j>
+       |psi_k>
+
+7. Build the Helstrom measurement for distinguishing i from j.
+
+   The code forms:
+
+       rho_i = |psi_i><psi_i|
+       rho_j = |psi_j><psi_j|
+       Delta = rho_i - rho_j
+
+   Then it diagonalizes Delta. The measurement outcome favoring i is the
+   projector onto the positive eigenspace of Delta, with half of any zero
+   eigenspace assigned to each outcome.
+
+8. Evaluate the branch probabilities under the true field k.
+
+       Pr(outcome favors i | true k) = <psi_k|Pi_i|psi_k>
+       Pr(outcome favors j | true k) = 1 - Pr(outcome favors i | true k)
+
+   In the tree convention:
+
+       outcome favors i  -> discard field j
+       outcome favors j  -> discard field i
+
+   Therefore:
+
+       probability of branch discard_j = Pr(outcome favors i | true k)
+       probability of branch discard_i = Pr(outcome favors j | true k)
+
+
+End-to-end tree error
+---------------------
+
+The actual tree error is computed by recursive probability propagation.
+
+For one true field k:
+
+1. Start at the root with probability 1.
+
+2. At each internal node, compute the actual Helstrom branch probabilities for
+   the node's tested pair, selected location, sensor count, and true field k.
+
+3. Split the current path probability according to those two actual branch
+   probabilities.
+
+4. Continue until a leaf is reached.
+
+5. A leaf contributes success probability 1 if it declares k, and 0 otherwise.
+
+This gives:
+
+       P_success | true field k
+
+The evaluator repeats this for every possible true field k = 0, ..., K-1 and
+uses a uniform prior over fields:
+
+       P_success = (1/K) sum_k P_success | k
+       P_error   = 1 - P_success
+
+This is the reported actual end-to-end tree error.
+
+
+Surrogate error used for comparison
+-----------------------------------
+
+The notebook also recomputes the surrogate tree error for the same fixed tree.
+This uses the optimization-time branch rule:
+
+    if true field is i:
+        Pr(outcome favors i) = 1 - pair_error
+
+    if true field is j:
+        Pr(outcome favors i) = pair_error
+
+    if true field is neither i nor j:
+        Pr(outcome favors i) = 0.5
+        Pr(outcome favors j) = 0.5
+
+The quantity plotted on the x-axis in the surrogate-validation scatter plot is
+the saved surrogate final error. The quantity on the y-axis is the actual
+end-to-end error computed by the physical branch probabilities above.
+
+
+Output columns
+--------------
+
+For each method prefix, the evaluator adds:
+
+    <method>_actual_error:
+        Actual end-to-end tree error.
+
+    <method>_actual_eval_gap:
+        actual_error - surrogate_error.
+
+    <method>_surrogate_recomputed_error:
+        Surrogate tree error recomputed from the fixed tree.
+
+    <method>_surrogate_recompute_delta:
+        recomputed_surrogate_error - saved_surrogate_error.
+
+For compact records with an Exhaustive solution, it also adds actual-error gaps
+to the surrogate-exhaustive solution and actual-error reduction of Tree-aware
+relative to Greedy.
+
+
+Progress and saved files
+------------------------
+
+The notebook controls progress printing with:
+
+    PROGRESS_EVERY = 100 if COMPACT_RUN_SCOPE == "full" else 25
+
+During evaluation, the output looks like:
+
+    compact_benchmark_1d: evaluated 100/9996 records
+
+Results are saved under:
+
+    min-error-sequential/results/actual_error_evaluation
+
+with separate directories for test/full compact records and optional expanded
+full records.
+
+
+Important reporting wording
+---------------------------
+
+This evaluation should be described as:
+
+    An actual physical reevaluation of fixed allocations and fixed sequential
+    decision trees. At each tree node, the branch probabilities are computed
+    from the Helstrom measurement for the tested pair, evaluated under each
+    possible true field. The final error is obtained by propagating those
+    true-field-conditioned probabilities to the leaves and averaging over a
+    uniform prior on the K fields.
+
+Do not call the Exhaustive curve in the actual-error plot "actual-error optimal."
+It is the surrogate-exhaustive solution reevaluated using actual physical branch
+probabilities.
