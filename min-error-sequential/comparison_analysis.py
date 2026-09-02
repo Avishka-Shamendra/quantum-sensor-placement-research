@@ -15,7 +15,7 @@ import numpy as np
 
 from exhaustive_search import exhaustive_search
 from greedy import greedy
-from heuristic import heuristic as tree_aware_heuristic
+import heuristic as heuristic_module
 from plot_style import configure_plot_style
 from random_baseline import random_baseline
 from uniform import uniform
@@ -96,7 +96,7 @@ def run_paired_dataset(
             greedy_seconds = perf_counter() - started
 
             started = perf_counter()
-            tree_aware_result = tree_aware_heuristic(
+            tree_aware_result = heuristic_module.heuristic(
                 K, M, budget, pair_errors, **tree_aware_parameters
             )
             tree_aware_seconds = perf_counter() - started

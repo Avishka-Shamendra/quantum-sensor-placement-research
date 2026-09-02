@@ -8,12 +8,15 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from math import ceil, cos, isfinite, pi, sin, sqrt
 from pathlib import Path
+from zlib import crc32
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 import greedy as greedy_module
 import heuristic as heuristic_module
+import random_baseline as random_module
+import uniform as uniform_module
 from approximate_comparison_analysis import (
     DEFAULT_RESULTS_ROOT as DEFAULT_EXPANDED_RESULTS_ROOT,
 )
@@ -30,15 +33,21 @@ METHODS = {
     "optimal": "Exhaustive",
     "greedy": "Greedy",
     "tree_aware": "Heuristic",
+    "uniform": "Uniform",
+    "random": "Random",
 }
 EXPANDED_METHODS = {
     "greedy": "Greedy",
     "heuristic": "Heuristic",
+    "uniform": "Uniform",
+    "random": "Random",
 }
 METHOD_COLORS = {
     "Exhaustive": "#1f77b4",
     "Greedy": "#ff7f0e",
     "Heuristic": "#d62728",
+    "Uniform": "#2ca02c",
+    "Random": "#9467bd",
 }
 
 configure_plot_style()
@@ -155,6 +164,7 @@ def evaluate_actual_records(
             tree = _record_tree(
                 row,
                 prefix,
+                dataset,
                 int(row["K"]),
                 int(row["M"]),
                 allocation,
@@ -427,11 +437,13 @@ def actual_method_comparison_summary(
     mean_greedy_actual = float(np.mean(greedy_actual_errors))
     mean_heuristic_actual = float(np.mean(heuristic_actual_errors))
     mean_reduction = mean_greedy_actual - mean_heuristic_actual
-    return {
+    row: dict[str, float | int] = {
         "runs": len(records),
         "optimal_mean_actual_error": float(np.mean(optimal_actual_errors)),
         "greedy_mean_actual_error": mean_greedy_actual,
         "tree_aware_mean_actual_error": mean_heuristic_actual,
+        "uniform_mean_actual_error": float(np.mean(uniform_actual_errors)),
+        "random_mean_actual_error": float(np.mean(random_actual_errors)),
         "tree_aware_actual_reduction_vs_greedy": mean_reduction,
         "tree_aware_actual_reduction_vs_greedy_percent": (
             100.0 * mean_reduction / mean_greedy_actual
@@ -442,6 +454,17 @@ def actual_method_comparison_summary(
             np.mean(heuristic_actual_errors) - np.mean(optimal_actual_errors)
         ),
     }
+    if records and "uniform_actual_error" in records[0]:
+        row["uniform_mean_actual_error"] = float(
+            np.mean(
+                [float(record["uniform_actual_error"]) for record in records]
+            )
+        )
+    if records and "random_actual_error" in records[0]:
+        row["random_mean_actual_error"] = float(
+            np.mean([float(record["random_actual_error"]) for record in records])
+        )
+    return row
 
 
 def expanded_actual_method_comparison_summary(
@@ -457,7 +480,7 @@ def expanded_actual_method_comparison_summary(
     mean_greedy_actual = float(np.mean(greedy_actual_errors))
     mean_heuristic_actual = float(np.mean(heuristic_actual_errors))
     mean_reduction = mean_greedy_actual - mean_heuristic_actual
-    return {
+    row: dict[str, float | int] = {
         "runs": len(records),
         "greedy_mean_actual_error": mean_greedy_actual,
         "heuristic_mean_actual_error": mean_heuristic_actual,
@@ -468,6 +491,17 @@ def expanded_actual_method_comparison_summary(
             else 0.0
         ),
     }
+    if records and "uniform_actual_error" in records[0]:
+        row["uniform_mean_actual_error"] = float(
+            np.mean(
+                [float(record["uniform_actual_error"]) for record in records]
+            )
+        )
+    if records and "random_actual_error" in records[0]:
+        row["random_mean_actual_error"] = float(
+            np.mean([float(record["random_actual_error"]) for record in records])
+        )
+    return row
 
 
 def surrogate_quality_summary(
@@ -688,6 +722,7 @@ def make_combined_actual_error_plots(
 def _record_tree(
     record: Mapping[str, object],
     prefix: str,
+    dataset: str,
     K: int,
     M: int,
     allocation: Sequence[int],
@@ -719,6 +754,25 @@ def _record_tree(
             beam_width=3,
         )
         rebuilt_error = heuristic_module._tree_error(tree, K)
+    elif prefix == "uniform":
+        tree = uniform_module._build_tree(
+            tuple(range(K)),
+            _record_pair_locations(record, prefix),
+            pair_errors,
+        )
+        rebuilt_error = uniform_module._tree_error(tree, K)
+    elif prefix == "random":
+        result = random_module.random_baseline(
+            K,
+            M,
+            int(record["sensor_budget"]),
+            pair_error_table,
+            random_seed=_record_random_seed(dataset, record),
+        )
+        if tuple(result.allocation) != tuple(allocation):
+            raise RuntimeError("rebuilt random allocation does not match saved record")
+        tree = result.decision_tree
+        rebuilt_error = result.error_probability
     else:
         raise ValueError(f"Cannot rebuild a saved tree for method {prefix!r}")
 
@@ -729,6 +783,17 @@ def _record_tree(
             f"match saved error {saved_error:.12g}"
         )
     return tree
+
+
+def _record_random_seed(
+    dataset: str,
+    record: Mapping[str, object],
+) -> int:
+    """Recreate the default case/budget random seed used by saved runs."""
+    seed_text = (
+        f"0|{dataset}|{record['case']}.csv|{int(record['sensor_budget'])}"
+    )
+    return crc32(seed_text.encode("utf-8"))
 
 
 def _record_pair_locations(

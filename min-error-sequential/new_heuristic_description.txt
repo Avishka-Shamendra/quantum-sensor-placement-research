@@ -1,0 +1,256 @@
+New heuristic: greedy-initialized shortlisted tree-aware local search
+====================================================================
+
+Goal
+----
+
+We need a heuristic for Problem 2 that is still optimized in the surrogate
+error space, but whose final allocations and decision trees also perform well
+when reevaluated using the actual Helstrom branch probabilities.
+
+The heuristic is not allowed to re-optimize using actual error. Actual error is
+only used later for validation.
+
+
+Main idea
+---------
+
+The heuristic searches over sensor allocations. It uses the current decision
+tree to cheaply rank possible one-sensor transfers, then rebuilds the
+sequential decision tree only for a small shortlist of the best-ranked moves.
+
+So the heuristic is tree-aware because it does not judge a sensor allocation
+only by pairwise errors. It judges a sensor allocation by the full decision
+tree that would be used with that allocation.
+
+
+Algorithm steps
+---------------
+
+Input:
+
+- K: number of candidate fields
+- M: number of sensor locations
+- N: total sensor budget
+- P_ijmn: pairwise surrogate error table
+- B: beam width for decision-tree construction, default B = 3
+- T: maximum local-search iterations, default T = 3
+- L: move shortlist size, default L = 1
+
+Step 1: Build the starting allocation
+
+By default, start from the allocation returned by the existing greedy
+algorithm.
+
+The greedy allocation is used only as a starting point. The new heuristic still
+performs its own tree-aware local search afterward.
+
+Optional variants can start from a near-uniform or random allocation, or use
+near-uniform/random plus the greedy allocation as a small multi-start set.
+
+
+Step 2: Evaluate the starting allocation
+
+For the starting allocation:
+
+1. For every field pair (i, j), find the best sensing location m allowed by the
+   allocation.
+
+2. This gives one effective pairwise error P_ij for each pair.
+
+3. Build an adaptive sequential decision tree using beam search with beam width B.
+
+4. Compute the final surrogate tree error of that beam-search tree.
+
+Step 3: Rank every one-sensor transfer cheaply
+
+At the current allocation, compute pair weights from the current decision tree.
+These weights measure how important each field pair is to the current tree.
+
+Then enumerate every possible move:
+
+move one sensor from source location a to destination location b,
+where a != b and allocation[a] > 0.
+
+There are at most M(M - 1) such moves.
+
+For each move, recompute the pairwise errors and score it using the cheap
+weighted proxy objective:
+
+      J = sum over pairs w_ij P_ij
+
+This step does not rebuild the decision tree for every move.
+
+
+Step 4: Fully evaluate only the shortlist
+
+Keep only the top L moves according to the proxy objective J.
+
+For each shortlisted one-sensor transfer:
+
+1. Apply the move to get a candidate allocation.
+
+2. Recompute the best pairwise sensing location and pairwise error for every
+   field pair (i, j).
+
+3. Rebuild the adaptive decision tree using beam search.
+
+4. Compute the final surrogate tree error.
+
+
+Step 5: Accept the best shortlisted move
+
+Among the shortlisted moves, choose the move with the lowest final surrogate
+tree error after beam-search tree rebuilding.
+
+Accept it only if it improves the current surrogate tree error by at least the
+improvement threshold.
+
+If no move improves the full tree error enough, stop.
+
+
+Step 6: Repeat
+
+Repeat Steps 3 to 5 until either:
+
+1. no improving one-sensor transfer exists, or
+2. the maximum number of iterations T is reached.
+
+
+Output
+------
+
+The heuristic returns:
+
+- final sensor allocation
+- best pairwise sensing locations for that allocation
+- final beam-search decision tree
+- final surrogate tree error
+- number of local-search iterations
+- number of accepted moves
+
+
+Difference from the previous heuristic
+--------------------------------------
+
+Previous heuristic:
+
+1. Build a tree for the current allocation.
+2. Compute pair weights from that tree.
+3. Form a fixed weighted pairwise proxy objective:
+
+       J = sum over pairs w_ij P_ij
+
+4. Use this proxy objective to filter candidate sensor moves.
+5. Randomly shuffle the candidate moves.
+6. Rebuild the tree only for the filtered moves.
+7. Accept the first move that improves the full tree error.
+
+Problem with previous heuristic:
+
+A sensor move can look bad under the fixed pair-weight proxy J, but still be
+good after the decision tree is rebuilt. The old heuristic could miss those
+moves because it did not test every move under the full tree objective.
+
+
+New heuristic:
+
+1. Uses the pair-weight proxy only to rank moves cheaply.
+2. Does not randomly accept the first improving move.
+3. Tests every possible one-sensor transfer under the cheap proxy.
+4. Rebuilds the beam-search decision tree only for the top L moves.
+5. Scores shortlisted moves by the final surrogate tree error.
+6. Accepts the best shortlisted full-tree improvement.
+
+
+Short difference
+----------------
+
+Old heuristic:
+
+Use a pair-weight proxy to guess which moves might help, then accept the first
+move that improves the rebuilt tree.
+
+New heuristic:
+
+Rank every one-sensor move by a tree-weighted proxy, rebuild the beam-search
+tree only for the best-ranked shortlist, then accept the best shortlisted move
+according to the final surrogate tree error.
+
+
+Why this is more formal
+-----------------------
+
+The new heuristic is a deterministic shortlisted coordinate-descent/local-search
+method on the sensor allocation vector, initialized from greedy.
+
+The neighborhood is the set of all one-sensor transfers between locations.
+
+The ranking objective is the current tree-weighted pairwise proxy. The final
+accept/reject objective is the full surrogate tree error after beam-search tree
+construction.
+
+Therefore it keeps the expensive tree-level evaluation in the acceptance step,
+but avoids rebuilding a decision tree for every possible sensor transfer.
+
+
+Complexity
+----------
+
+Let:
+
+- K = number of fields
+- M = number of sensor locations
+- N = sensor budget
+- B = beam width
+- T = maximum number of local-search iterations
+- L = move shortlist size
+- P = K(K - 1) / 2 = number of field pairs
+
+One allocation evaluation requires:
+
+1. Recomputing pairwise best locations and errors:
+
+       O(P M)
+
+   assuming the stored error table can be queried directly for each location.
+   If scanning over sensor counts is needed, this can become O(P M N).
+
+2. Building the decision tree with beam search:
+
+       C_beam(K, B)
+
+So one allocation evaluation costs approximately:
+
+       O(P M + C_beam(K, B))
+
+Each local-search iteration cheaply ranks up to M(M - 1) one-sensor transfers,
+then rebuilds the beam-search tree for only L shortlisted moves.
+
+Therefore the total local-search cost is approximately:
+
+       O(T (M^2 P M + L C_beam(K, B)))
+
+plus the cost of building the greedy starting allocation.
+
+This is more expensive than greedy, but much cheaper than exhaustive allocation
+search, which checks every allocation:
+
+       number of allocations = binomial(N + M - 1, M - 1)
+
+and solves a decision-tree problem for each allocation.
+
+
+Important note
+--------------
+
+The new heuristic still optimizes surrogate error, not actual error.
+
+Actual Helstrom error is only used after the allocation and tree are fixed.
+That means the comparison remains fair:
+
+1. Exhaustive, greedy, and heuristic all produce allocations and trees using
+   the surrogate model.
+
+2. Then all final trees are reevaluated using actual Helstrom branch
+   probabilities.

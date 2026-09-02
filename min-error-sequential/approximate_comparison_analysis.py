@@ -16,7 +16,7 @@ import numpy as np
 from matplotlib.ticker import MaxNLocator
 
 from greedy import greedy
-from heuristic import heuristic
+import heuristic as heuristic_module
 from plot_style import configure_plot_style
 from random_baseline import random_baseline
 from uniform import uniform
@@ -97,7 +97,7 @@ def run_approximate_dataset(
             greedy_seconds = perf_counter() - started
 
             started = perf_counter()
-            heuristic_result = heuristic(
+            heuristic_result = heuristic_module.heuristic(
                 K, M, budget, pair_errors, **heuristic_parameters
             )
             heuristic_seconds = perf_counter() - started

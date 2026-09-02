@@ -20,12 +20,15 @@ uniform_result = uniform(K, M, N, pijmn)
 random_result = random_baseline(K, M, N, pijmn)
 ```
 
-The tree-aware alternating heuristic accepts optional `beam_width`,
-`max_iterations`, `improvement_threshold`, `initialization`, and `random_seed`
-keyword arguments. Its default `near_uniform` initialization randomly places
-the remainder while using every sensor. Set `initialization="random"` for a
-fully random starting allocation. The seed also makes the random order of
-improving sensor moves reproducible.
+The tree-aware heuristic accepts optional `beam_width`, `max_iterations`,
+`improvement_threshold`, `initialization`, `random_seed`, and
+`include_greedy_start`, and `move_shortlist_size` keyword arguments. By
+default, it starts from the greedy allocation, ranks all one-sensor transfers
+using the current tree's pair weights, rebuilds the beam-search tree only for
+the top-ranked shortlist, and accepts the best full-tree improvement. Set
+`initialization="near_uniform"` or `initialization="random"` to use a
+non-greedy starting allocation; `include_greedy_start=True` can add the greedy
+allocation as an additional start for those modes.
 
 The uniform baseline uses every sensor. It assigns `N // M` sensors to every
 location and randomly selects distinct locations to receive the remainder.
