@@ -11,6 +11,7 @@ SOURCE_ROOT = HERE / "src"
 if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
+from field_models import DEFAULT_MIN_BEST_PAIR_PHASE_GAP
 from generate_inputs import generate_factorial_dataset
 
 
@@ -27,6 +28,7 @@ BENCHMARKS: dict[str, dict[str, object]] = {
         "c_values": [1.0],
         "replicates": 30,
         "seed": 20260901,
+        "min_best_pair_phase_gap": DEFAULT_MIN_BEST_PAIR_PHASE_GAP,
         "description": (
             "One-dimensional synthetic benchmark on [0, 1] for comparing "
             "optimal and greedy zero-error sensor allocation."
@@ -41,6 +43,7 @@ BENCHMARKS: dict[str, dict[str, object]] = {
         "c_values": [1.0],
         "replicates": 30,
         "seed": 20261017,
+        "min_best_pair_phase_gap": DEFAULT_MIN_BEST_PAIR_PHASE_GAP,
         "description": (
             "Two-dimensional synthetic benchmark on [0, 1]^2 for comparing "
             "optimal and greedy zero-error sensor allocation."
@@ -65,6 +68,7 @@ def generate_benchmarks(names: list[str], overwrite: bool = False) -> list[str]:
             seed=int(design["seed"]),
             description=str(design["description"]),
             overwrite=overwrite,
+            min_best_pair_phase_gap=float(design["min_best_pair_phase_gap"]),
         )
         case_count = (
             len(design["models"])

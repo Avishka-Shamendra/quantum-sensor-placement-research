@@ -13,9 +13,9 @@ from statistics import fmean, median
 
 
 FIELD_FAMILY_COLORS = {
-    "gaussian": "#1f77b4",
-    "sinusoidal": "#7b3294",
-    "quadratic": "#ff7f0e",
+    "gaussian": "#0072B2",
+    "sinusoidal": "#009E73",
+    "quadratic": "#E69F00",
 }
 
 
@@ -405,6 +405,8 @@ def _draw_family_bars(
             means,
             width=bar_width,
             color=FIELD_FAMILY_COLORS[model],
+            edgecolor="none",
+            linewidth=0.0,
             label=labels[model],
             yerr=[lower_errors, upper_errors],
             capsize=2.2,

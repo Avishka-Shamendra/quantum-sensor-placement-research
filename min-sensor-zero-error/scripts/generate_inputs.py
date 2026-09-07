@@ -27,6 +27,7 @@ if str(SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(SOURCE_ROOT))
 
 from field_models import (
+    DEFAULT_MIN_BEST_PAIR_PHASE_GAP,
     FIELD_FORMULAS,
     FIELD_MODELS,
     FIELD_PARAMETER_RANGES,
@@ -80,6 +81,15 @@ def _parse_arguments() -> argparse.Namespace:
     parser.add_argument("--m-min", type=_positive_int, default=3)
     parser.add_argument("--m-max", type=_positive_int, default=8)
     parser.add_argument("--c", type=_positive_float, default=1.0)
+    parser.add_argument(
+        "--min-best-pair-phase-gap",
+        type=_positive_float,
+        default=DEFAULT_MIN_BEST_PAIR_PHASE_GAP,
+        help=(
+            "Reject a generated case unless every field pair has at least one "
+            "location with |r_ijm| at or above this value (default: 1e-2)."
+        ),
+    )
     parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     parser.add_argument(
         "--models",
@@ -170,6 +180,7 @@ def generate_factorial_dataset(
     seed: int,
     description: str,
     overwrite: bool = False,
+    min_best_pair_phase_gap: float = DEFAULT_MIN_BEST_PAIR_PHASE_GAP,
 ) -> Path:
     """Generate a complete model x K x M x c factorial experiment."""
     if not DATASET_NAME.fullmatch(dataset):
@@ -199,6 +210,13 @@ def generate_factorial_dataset(
         raise ValueError("Every c must be a positive finite number")
     if isinstance(replicates, bool) or not isinstance(replicates, int) or replicates < 1:
         raise ValueError("replicates must be a positive integer")
+    if (
+        isinstance(min_best_pair_phase_gap, bool)
+        or not isinstance(min_best_pair_phase_gap, (int, float))
+        or not isfinite(min_best_pair_phase_gap)
+        or min_best_pair_phase_gap <= 0
+    ):
+        raise ValueError("min_best_pair_phase_gap must be a positive finite number")
 
     selected_k = sorted(set(k_values))
     selected_m = sorted(set(m_values))
@@ -226,6 +244,7 @@ def generate_factorial_dataset(
                             M,
                             seed=case_seed,
                             c=c,
+                            min_best_pair_phase_gap=min_best_pair_phase_gap,
                         )
                         filename = f"case_{case_number:05d}.csv"
                         _write_case(target / filename, rows)
@@ -245,6 +264,10 @@ def generate_factorial_dataset(
             "reverse_pair": "r_jim = principal_phase(-r_ijm)",
             "stored_pairs": "i < j only",
             "sensor_threshold": "N_ijm = ceil(pi / abs(r_ijm)); undefined when r_ijm = 0",
+            "nondegeneracy_filter": (
+                "Each generated case must satisfy max_m abs(r_ijm) >= "
+                "min_best_pair_phase_gap for every pair (i, j)."
+            ),
         },
         "design": {
             "type": "complete factorial",
@@ -262,6 +285,7 @@ def generate_factorial_dataset(
             * replicates,
             "case_count": case_number,
             "paired_across_c": len(selected_c) > 1,
+            "min_best_pair_phase_gap": float(min_best_pair_phase_gap),
         },
         "seed": seed,
         "models": {
@@ -309,6 +333,7 @@ def main() -> int:
             M,
             seed=case_seed,
             c=arguments.c,
+            min_best_pair_phase_gap=arguments.min_best_pair_phase_gap,
         )
         filename = f"case_{number:03d}.csv"
         _write_case(target / filename, rows)
@@ -325,6 +350,11 @@ def main() -> int:
             "stored_pairs": "i < j only",
             "sensor_threshold": "N_ijm = ceil(pi / abs(r_ijm)); undefined when r_ijm = 0",
             "phase_scale_c": arguments.c,
+            "nondegeneracy_filter": (
+                "Each generated case must satisfy max_m abs(r_ijm) >= "
+                "min_best_pair_phase_gap for every pair (i, j)."
+            ),
+            "min_best_pair_phase_gap": arguments.min_best_pair_phase_gap,
         },
         "sampling": "deterministic; model, K, and M marginal counts differ by at most one",
         "spatial_dimension": arguments.dimension,

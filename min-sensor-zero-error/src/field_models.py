@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from itertools import combinations
-from math import cos, exp, isfinite, pi, sin
+from math import ceil, cos, exp, isfinite, pi, sin
 from numbers import Real
 from random import Random
 
@@ -26,6 +26,7 @@ FieldParameters = list[dict[str, object]]
 FieldGeneration = tuple[FieldValues, FieldParameters]
 CsvRow = tuple[int, int, int, float]
 FieldFactory = Callable[[int, Sequence[Location], Random], FieldGeneration]
+DEFAULT_MIN_BEST_PAIR_PHASE_GAP = 1e-2
 
 
 def sensing_locations(dimension: int, M: int, rng: Random) -> list[Location]:
@@ -271,6 +272,15 @@ def phase_gap_rows(fields: FieldValues, c: Real) -> list[CsvRow]:
     return rows
 
 
+def best_pair_phase_gaps(rows: Sequence[CsvRow]) -> dict[tuple[int, int], float]:
+    """Return max_m |r_ijm| for every field pair in a case."""
+    best_gaps: dict[tuple[int, int], float] = {}
+    for i, j, _, phase_gap in rows:
+        pair = (i, j)
+        best_gaps[pair] = max(best_gaps.get(pair, 0.0), abs(float(phase_gap)))
+    return best_gaps
+
+
 # Convert sampled locations to a JSON-ready representation.
 def _location_metadata(locations: Sequence[Location]) -> list[object]:
     if len(locations[0]) == 1:
@@ -286,6 +296,7 @@ def generate_case(
     seed: int,
     c: Real = 1.0,
     max_attempts: int = 10_000,
+    min_best_pair_phase_gap: Real = DEFAULT_MIN_BEST_PAIR_PHASE_GAP,
 ) -> tuple[list[CsvRow], dict[str, object]]:
     """Generate one valid, reproducible spatial-field case."""
     if model not in FIELD_MODELS:
@@ -297,19 +308,28 @@ def generate_case(
         raise ValueError("seed must be an integer.")
     if isinstance(max_attempts, bool) or not isinstance(max_attempts, int) or max_attempts < 1:
         raise ValueError("max_attempts must be a positive integer.")
+    if (
+        isinstance(min_best_pair_phase_gap, bool)
+        or not isinstance(min_best_pair_phase_gap, Real)
+        or not isfinite(min_best_pair_phase_gap)
+        or min_best_pair_phase_gap < 0.0
+    ):
+        raise ValueError("min_best_pair_phase_gap must be finite and nonnegative.")
+    minimum_best_gap = float(min_best_pair_phase_gap)
 
     required_pairs = set(combinations(range(K), 2))
 
-    # Retry with deterministic seeds until every field pair is distinguishable.
+    # Retry with deterministic seeds until every pair has one usable location
+    # with a nondegenerate phase gap. This avoids pathological N_ijm values.
     for attempt in range(1, max_attempts + 1):
         rng = Random(seed + attempt - 1)
         locations = sensing_locations(dimension, M, rng)
         fields, parameters = FIELD_MODELS[model](K, locations, rng)
         rows = phase_gap_rows(fields, c)
-        distinguishable_pairs = {
-            (i, j) for i, j, _, phase_gap in rows if phase_gap != 0.0
-        }
-        if distinguishable_pairs != required_pairs:
+        pair_best_gaps = best_pair_phase_gaps(rows)
+        if set(pair_best_gaps) != required_pairs:
+            continue
+        if any(pair_best_gaps[pair] < minimum_best_gap for pair in required_pairs):
             continue
         return rows, {
             "field_model": model,
@@ -317,6 +337,10 @@ def generate_case(
             "K": K,
             "M": M,
             "phase_scale_c": float(c),
+            "min_best_pair_phase_gap": minimum_best_gap,
+            "maximum_best_pair_sensor_threshold": (
+                None if minimum_best_gap == 0.0 else ceil(pi / minimum_best_gap)
+            ),
             "generation_seed": seed,
             "generation_attempt": attempt,
             "sensor_locations": _location_metadata(locations),
