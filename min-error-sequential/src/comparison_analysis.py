@@ -32,7 +32,7 @@ HERE = Path(__file__).resolve().parents[1]
 from input_data import load_sparse_input, validate_reverse_phases
 
 INPUT_ROOT = HERE / "inputs"
-DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison_compact"
+DEFAULT_RESULTS_ROOT = HERE / "results" / "cmp_compact"
 
 # Use the same paper-ready algorithm styles in every comparison figure.
 ALGORITHM_COLORS = {
@@ -367,7 +367,7 @@ def save_paired_results(
     algorithm_parameters: dict[str, dict[str, object]] | None = None,
 ) -> None:
     """Save detailed and compact paired comparison results."""
-    tables_directory = _dataset_results_directory(
+    tables_directory = _dataset_directory(
         results_root, dataset, run_scope
     ) / "tables"
     tables_directory.mkdir(parents=True, exist_ok=True)
@@ -454,7 +454,7 @@ def load_paired_results(
     if run_scope not in {"test", "full"}:
         raise ValueError("run_scope must be 'test' or 'full'")
     results_path = (
-        _dataset_results_directory(results_root, dataset, run_scope)
+        _dataset_directory(results_root, dataset, run_scope)
         / "tables"
         / "results.json"
     )
@@ -470,7 +470,7 @@ def make_comparison_plots(
     run_scope: str = "test",
 ) -> list[tuple[str, plt.Figure]]:
     """Create and save six candidate comparison plots."""
-    figures_directory = _dataset_results_directory(
+    figures_directory = _dataset_directory(
         results_root, dataset, run_scope
     ) / "figures"
     figures_directory.mkdir(parents=True, exist_ok=True)
@@ -525,8 +525,8 @@ def make_combined_comparison_plots(
     """Create plots with 1D and 2D results shown side by side."""
     if run_scope not in {"test", "full"}:
         raise ValueError("run_scope must be 'test' or 'full'")
-    dataset_names = "_".join(records_by_dataset)
-    summary_name = f"results_summary_{dataset_names}_{run_scope}"
+    dataset_names = "_".join(_result_dataset_name(dataset) for dataset in records_by_dataset)
+    summary_name = f"summary_{dataset_names}_{run_scope}"
     figures_directory = Path(results_root) / summary_name / "figures"
     figures_directory.mkdir(parents=True, exist_ok=True)
     dimension_records = sorted(
@@ -568,7 +568,7 @@ def make_combined_comparison_plots(
     return result
 
 
-def _dataset_results_directory(
+def _dataset_directory(
     results_root: str | Path,
     dataset: str,
     run_scope: str,
@@ -576,7 +576,18 @@ def _dataset_results_directory(
     """Build the dataset-specific directory for a test or full run."""
     if run_scope not in {"test", "full"}:
         raise ValueError("run_scope must be 'test' or 'full'")
-    return Path(results_root) / f"{dataset}_results_{run_scope}"
+    return Path(results_root) / f"{_result_dataset_name(dataset)}_{run_scope}"
+
+
+def _result_dataset_name(dataset: str) -> str:
+    """Return the short label used in result paths."""
+    if dataset.startswith("compact_benchmark_"):
+        return dataset.replace("compact_benchmark_", "compact_", 1)
+    if dataset.startswith("lite_benchmark_"):
+        return dataset.replace("lite_benchmark_", "lite_extended_", 1)
+    if dataset.startswith("benchmark_"):
+        return dataset.replace("benchmark_", "extended_", 1)
+    return dataset
 
 
 def paired_summary(records: list[dict[str, object]]) -> dict[str, float | int]:

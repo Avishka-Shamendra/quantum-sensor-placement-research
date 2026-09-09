@@ -25,7 +25,7 @@ from exhaustive_search import (
 from input_data import load_sparse_input, validate_reverse_phases
 
 INPUT_ROOT = HERE / "inputs"
-RESULTS_ROOT = HERE / "results" / "optimal_evaluation"
+RESULTS_ROOT = HERE / "results" / "exact_optimal"
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
 
@@ -151,7 +151,7 @@ def evaluate_dataset(dataset: str) -> Path:
                 f"time={elapsed:.4f}s"
             )
 
-    output_directory = RESULTS_ROOT / f"{dataset}_results_full" / "tables"
+    output_directory = RESULTS_ROOT / f"{_result_dataset_name(dataset)}_full" / "tables"
     output_directory.mkdir(parents=True, exist_ok=True)
 
     # Keep full strategies in JSON and main numerical values in CSV.
@@ -165,6 +165,17 @@ def evaluate_dataset(dataset: str) -> Path:
     )
     _write_summary_csv(output_directory / "summary.csv", records)
     return output_directory
+
+
+def _result_dataset_name(dataset: str) -> str:
+    """Return the short label used in result paths."""
+    if dataset.startswith("compact_benchmark_"):
+        return dataset.replace("compact_benchmark_", "compact_", 1)
+    if dataset.startswith("lite_benchmark_"):
+        return dataset.replace("lite_benchmark_", "lite_extended_", 1)
+    if dataset.startswith("benchmark_"):
+        return dataset.replace("benchmark_", "extended_", 1)
+    return dataset
 
 
 def _write_summary_csv(path: Path, records: list[dict[str, object]]) -> None:

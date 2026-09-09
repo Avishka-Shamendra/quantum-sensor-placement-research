@@ -8,7 +8,7 @@ Main implementation:
     min-error-sequential/src/actual_error_analysis.py
 
 Used by:
-    min-error-sequential/02_actual_error_validation.ipynb
+    min-error-sequential/03_actual_error_validation.ipynb
 
 Purpose:
     Reevaluate already-computed allocations and decision trees using the actual
@@ -30,8 +30,8 @@ one method. The actual-error evaluator uses two sources of information.
 
    Loaded from:
 
-       min-error-sequential/results/algorithm_comparison_compact
-       min-error-sequential/results/algorithm_comparison
+       min-error-sequential/results/cmp_compact
+       min-error-sequential/results/cmp_extended
 
    The run_scope switch selects either the saved test records or saved full
    records:
@@ -273,7 +273,7 @@ During evaluation, the output looks like:
 
 Results are saved under:
 
-    min-error-sequential/results/actual_error_evaluation
+    min-error-sequential/results/actual_error
 
 with separate directories for test/full compact records and optional expanded
 full records.

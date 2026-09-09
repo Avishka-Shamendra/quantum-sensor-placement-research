@@ -27,8 +27,8 @@ from plot_style import (
 
 
 HERE = Path(__file__).resolve().parents[1]
-DEFAULT_COMPARISON_RESULTS_ROOT = HERE / "results" / "algorithm_comparison_compact"
-DEFAULT_RESULTS_ROOT = HERE / "results" / "actual_optimal_validation"
+DEFAULT_COMPARISON_RESULTS_ROOT = HERE / "results" / "cmp_compact"
+DEFAULT_RESULTS_ROOT = HERE / "results" / "actual_optimal"
 DEFAULT_INPUT_ROOT = HERE / "inputs"
 COMPACT_DATASETS = ("compact_benchmark_1d", "compact_benchmark_2d")
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
@@ -536,7 +536,9 @@ def save_actual_optimal_results(
     parameters: Mapping[str, object] | None = None,
 ) -> None:
     """Save detailed actual-optimal validation records."""
-    tables_directory = Path(results_root) / f"{dataset}_{sample_scope}" / "tables"
+    tables_directory = (
+        Path(results_root) / f"{_result_dataset_name(dataset)}_{sample_scope}" / "tables"
+    )
     tables_directory.mkdir(parents=True, exist_ok=True)
     payload = {
         "dataset": dataset,
@@ -585,8 +587,24 @@ def load_actual_optimal_results(
     sample_scope: str = "replicate_1",
 ) -> list[dict[str, object]]:
     """Load saved actual-optimal validation records."""
-    path = Path(results_root) / f"{dataset}_{sample_scope}" / "tables" / "results.json"
+    path = (
+        Path(results_root)
+        / f"{_result_dataset_name(dataset)}_{sample_scope}"
+        / "tables"
+        / "results.json"
+    )
     return list(json.loads(path.read_text(encoding="utf-8"))["results"])
+
+
+def _result_dataset_name(dataset: str) -> str:
+    """Return the short label used in result paths."""
+    if dataset.startswith("compact_benchmark_"):
+        return dataset.replace("compact_benchmark_", "compact_", 1)
+    if dataset.startswith("lite_benchmark_"):
+        return dataset.replace("lite_benchmark_", "lite_extended_", 1)
+    if dataset.startswith("benchmark_"):
+        return dataset.replace("benchmark_", "extended_", 1)
+    return dataset
 
 
 def sample_scope_name(

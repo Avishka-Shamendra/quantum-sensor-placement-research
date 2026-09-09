@@ -32,7 +32,7 @@ HERE = Path(__file__).resolve().parents[1]
 from input_data import load_sparse_input, validate_reverse_phases
 
 INPUT_ROOT = HERE / "inputs"
-DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison"
+DEFAULT_RESULTS_ROOT = HERE / "results" / "cmp_extended"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 ALGORITHM_STYLES = {
     "Greedy": ("greedy", METHOD_COLORS["Greedy"], METHOD_LINESTYLES["Greedy"]),
@@ -305,7 +305,7 @@ def save_approximate_results(
 ) -> None:
     """Save complete JSON results and a compact CSV table."""
     tables_directory = (
-        Path(results_root) / f"{dataset}_results_{run_scope}" / "tables"
+        Path(results_root) / f"{_result_dataset_name(dataset)}_{run_scope}" / "tables"
     )
     tables_directory.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -364,7 +364,7 @@ def load_approximate_results(
         raise ValueError("run_scope must be 'test' or 'full'")
     results_path = (
         Path(results_root)
-        / f"{dataset}_results_{run_scope}"
+        / f"{_result_dataset_name(dataset)}_{run_scope}"
         / "tables"
         / "results.json"
     )
@@ -538,10 +538,12 @@ def make_combined_approximate_plots(
     ]:
         raise ValueError("combined plots require one 1D and one 2D dataset")
 
-    dataset_names = "_".join(records_by_dataset)
+    dataset_names = "_".join(
+        _result_dataset_name(dataset) for dataset in records_by_dataset
+    )
     figures_directory = (
         Path(results_root)
-        / f"results_summary_{dataset_names}_{run_scope}"
+        / f"summary_{dataset_names}_{run_scope}"
         / "figures"
     )
     figures_directory.mkdir(parents=True, exist_ok=True)
@@ -571,6 +573,17 @@ def make_combined_approximate_plots(
         figure.savefig(figures_directory / f"{filename}.png", dpi=300)
         figure.savefig(figures_directory / f"{filename}.pdf")
     return [(title, figure) for title, figure, _ in figure_specs]
+
+
+def _result_dataset_name(dataset: str) -> str:
+    """Return the short label used in result paths."""
+    if dataset.startswith("compact_benchmark_"):
+        return dataset.replace("compact_benchmark_", "compact_", 1)
+    if dataset.startswith("lite_benchmark_"):
+        return dataset.replace("lite_benchmark_", "lite_extended_", 1)
+    if dataset.startswith("benchmark_"):
+        return dataset.replace("benchmark_", "extended_", 1)
+    return dataset
 
 
 def _plot_mean_error_curves(

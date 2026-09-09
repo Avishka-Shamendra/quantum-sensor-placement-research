@@ -74,12 +74,17 @@ The submission-facing notebooks are kept directly in this folder:
 - `01_compact_exact_comparison.ipynb`: compares Exhaustive, Greedy,
   Tree-aware heuristic, Uniform, and Random on the compact Problem 2 data using
   surrogate final error.
-- `02_actual_error_validation.ipynb`: reloads saved allocations and decision
-  trees and reevaluates them with actual Helstrom branch probabilities.
-- `03_scalable_algorithm_comparison.ipynb`: compares the scalable methods on the
+- `02_scalable_algorithm_comparison.ipynb`: compares the scalable methods on the
   expanded data using surrogate final error.
+- `03_actual_error_validation.ipynb`: reloads saved allocations and decision
+  trees and reevaluates them with actual Helstrom branch probabilities.
 - `04_heuristic_diagnostics.ipynb`: studies beam-width sensitivity for the
   Tree-aware heuristic.
+- `05_heuristic_ablation.ipynb`: separates Greedy, Greedy plus beam-search tree
+  construction, and the full allocation-refinement heuristic.
+- `06_actual_optimal_surrogate_gap.ipynb`: checks the actual-optimality gap on a
+  small balanced compact sample.
+- `07_paper_ready_figures.ipynb`: final publication figure and table assembly.
 
 To install notebook dependencies:
 
@@ -95,30 +100,30 @@ jupyter lab min-error-sequential/01_compact_exact_comparison.ipynb
 ```
 
 Its test mode uses 180 cases per dataset. Results are written under
-`min-error-sequential/results/algorithm_comparison_compact/`.
+`min-error-sequential/results/cmp_compact/`.
 
 To compare Greedy, Heuristic, Uniform, and Random on the expanded datasets, open:
 
 ```bash
-jupyter lab min-error-sequential/03_scalable_algorithm_comparison.ipynb
+jupyter lab min-error-sequential/02_scalable_algorithm_comparison.ipynb
 ```
 
 Its test mode uses 100 balanced cases per dataset, while full mode uses all
-2,700 cases.
-Results are written under `min-error-sequential/results/algorithm_comparison/`.
+2,880 cases.
+Results are written under `min-error-sequential/results/cmp_extended/`.
 
 To evaluate whether the current `0.5/0.5` outside-pair surrogate tracks the
 actual quantum measurement probabilities, open:
 
 ```bash
-jupyter lab min-error-sequential/02_actual_error_validation.ipynb
+jupyter lab min-error-sequential/03_actual_error_validation.ipynb
 ```
 
 This notebook reads the saved compact paired-comparison records, recomputes
 Exhaustive, Greedy, Tree-aware, Uniform, and Random final errors using the
 physical pairwise probe and symmetric Helstrom POVM, and writes
 actual-vs-surrogate tables and figures under
-`min-error-sequential/results/actual_error_evaluation/`.
+`min-error-sequential/results/actual_error/`.
 
 To study how beam width affects the tree-aware heuristic, open:
 
@@ -128,7 +133,7 @@ jupyter lab min-error-sequential/04_heuristic_diagnostics.ipynb
 
 The default study compares beam widths 1, 3, and 5 on `benchmark_1d` and
 `benchmark_2d`. Its tables and side-by-side 1D/2D figure are written under
-`min-error-sequential/results/heuristic_beam_width/`.
+`min-error-sequential/results/beam_width/`.
 
 The sequential generated inputs are stored under `min-error-sequential/inputs/`.
 All numerical results, allocations, pair locations, decision trees, and
@@ -138,28 +143,39 @@ The main comparison follows the same layout as the zero-error folder:
 
 ```text
 results/
-├── algorithm_comparison_compact/
-│   ├── compact_benchmark_1d_results_<test|full>/tables/
-│   ├── compact_benchmark_2d_results_<test|full>/tables/
-│   └── results_summary_compact_benchmark_1d_compact_benchmark_2d_<test|full>/figures/
-├── algorithm_comparison/
-│   ├── benchmark_1d_results_<test|full>/tables/
-│   ├── benchmark_2d_results_<test|full>/tables/
-│   └── results_summary_benchmark_1d_benchmark_2d_<test|full>/figures/
-└── optimal_evaluation/       # exhaustive-search-only results
+├── cmp_compact/
+│   ├── compact_1d_<test|full>/tables/
+│   ├── compact_2d_<test|full>/tables/
+│   └── summary_compact_1d_compact_2d_<test|full>/figures/
+├── cmp_extended/
+│   ├── extended_1d_<test|full>/tables/
+│   ├── extended_2d_<test|full>/tables/
+│   └── summary_extended_1d_extended_2d_<test|full>/figures/
+├── actual_error/
+│   ├── compact_<1d|2d>_<test|full>/tables/
+│   ├── extended_<1d|2d>_<test|full>/tables/
+│   └── summary_<dataset-pair>_<scope>/figures/
+├── beam_width/
+│   ├── extended_<1d|2d>_<test|full>/tables/
+│   └── summary_beam_width_<test|full>/figures/
+├── actual_optimal/
+│   ├── compact_<1d|2d>_<sample-scope>/tables/
+│   └── summary_<sample-scope>/figures/
+├── exact_optimal/       # exhaustive-search-only results
+└── paper_figures/       # final submission figures
 ```
 
 The `_test` suffix identifies a notebook pilot, while `_full` identifies a run
 over every selected case. Optimal-only notebook outputs follow the same
-`<dataset>_results_<test|full>` rule.
+`<dataset>_<test|full>` rule.
 
 The compact design uses `K=3,4,5` and `M=3,4`. Each of its 18 field-family,
 `K`, and `M` cells contains 140 cases, giving 2,520 cases per dimension.
 
 The expanded design uses Gaussian, sinusoidal, and quadratic fields in 1D and
-2D, with `K` ranging from 3 through 7 and `M` ranging from 3 through 8. Every
-field-family, `K`, and `M` cell has 30 independent cases. Each dataset therefore
-contains 2,700 cases: 3 field families times 5 `K` values times 6 `M` values times 30
+2D, with `K` and `M` both ranging from 3 through 10. Every field-family, `K`,
+and `M` cell has 15 independent cases. Each dataset therefore contains 2,880
+cases: 3 field families times 8 `K` values times 8 `M` values times 15
 replicates. Each case uses up to four distinct budgets below its zero-error
 minimum.
 

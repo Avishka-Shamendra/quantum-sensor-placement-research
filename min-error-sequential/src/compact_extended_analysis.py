@@ -91,11 +91,8 @@ def make_compact_extended_plot(
 
     output_directory = (
         results_root
-        / "compact_extended_comparison"
-        / (
-            "results_summary_compact_benchmark_1d_compact_benchmark_2d_"
-            f"benchmark_1d_benchmark_2d_{run_scope}"
-        )
+        / "compact_extended"
+        / f"summary_compact_extended_{run_scope}"
         / "figures"
     )
     output_directory.mkdir(parents=True, exist_ok=True)
@@ -119,8 +116,8 @@ def _result_panels(results_root: Path, run_scope: str) -> tuple[_Panel, ...]:
         ("Uniform", "uniform_error"),
         ("Random", "random_error"),
     )
-    compact_root = results_root / "algorithm_comparison_compact"
-    extended_root = results_root / "algorithm_comparison"
+    compact_root = results_root / "cmp_compact"
+    extended_root = results_root / "cmp_extended"
     return (
         _Panel(
             "1D – Compact",
@@ -147,7 +144,18 @@ def _result_panels(results_root: Path, run_scope: str) -> tuple[_Panel, ...]:
 
 def _summary_file(root: Path, dataset: str, run_scope: str) -> Path:
     """Build the path to one saved compact CSV result table."""
-    return root / f"{dataset}_results_{run_scope}" / "tables" / "summary.csv"
+    return root / f"{_result_dataset_name(dataset)}_{run_scope}" / "tables" / "summary.csv"
+
+
+def _result_dataset_name(dataset: str) -> str:
+    """Return the short label used in result paths."""
+    if dataset.startswith("compact_benchmark_"):
+        return dataset.replace("compact_benchmark_", "compact_", 1)
+    if dataset.startswith("lite_benchmark_"):
+        return dataset.replace("lite_benchmark_", "lite_extended_", 1)
+    if dataset.startswith("benchmark_"):
+        return dataset.replace("benchmark_", "extended_", 1)
+    return dataset
 
 
 def _load_overall_curves(

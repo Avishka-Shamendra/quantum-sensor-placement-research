@@ -9,7 +9,7 @@ Main implementation:
 
 Used by:
     min-error-sequential/01_compact_exact_comparison.ipynb
-    min-error-sequential/03_scalable_algorithm_comparison.ipynb
+    min-error-sequential/02_scalable_algorithm_comparison.ipynb
     min-error-sequential/04_heuristic_diagnostics.ipynb
 
 The heuristic optimizes the same surrogate objective used by the sequential

@@ -21,7 +21,7 @@ HERE = Path(__file__).resolve().parents[1]
 from input_data import load_sparse_input, validate_reverse_phases
 
 INPUT_ROOT = HERE / "inputs"
-DEFAULT_RESULTS_ROOT = HERE / "results" / "heuristic_beam_width"
+DEFAULT_RESULTS_ROOT = HERE / "results" / "beam_width"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 LINE_STYLES = ("-", "--", "-.", ":")
 
@@ -179,7 +179,7 @@ def save_beam_width_results(
 ) -> None:
     """Save detailed beam-width results and a compact CSV table."""
     tables_directory = (
-        Path(results_root) / f"{dataset}_results_{run_scope}" / "tables"
+        Path(results_root) / f"{_result_dataset_name(dataset)}_{run_scope}" / "tables"
     )
     tables_directory.mkdir(parents=True, exist_ok=True)
     payload = {
@@ -226,7 +226,7 @@ def load_beam_width_results(
     """Load saved beam-width records without rerunning the study."""
     results_path = (
         Path(results_root)
-        / f"{dataset}_results_{run_scope}"
+        / f"{_result_dataset_name(dataset)}_{run_scope}"
         / "tables"
         / "results.json"
     )
@@ -300,7 +300,7 @@ def make_beam_width_plot(
     figure.supxlabel(r"Budget ratio $\rho=N/N_{\min}^{opt}$")
     figures_directory = (
         Path(results_root)
-        / f"results_summary_heuristic_beam_width_{run_scope}"
+        / f"summary_beam_width_{run_scope}"
         / "figures"
     )
     figures_directory.mkdir(parents=True, exist_ok=True)
@@ -336,6 +336,17 @@ def beam_width_summary(
             }
         )
     return rows
+
+
+def _result_dataset_name(dataset: str) -> str:
+    """Return the short label used in result paths."""
+    if dataset.startswith("compact_benchmark_"):
+        return dataset.replace("compact_benchmark_", "compact_", 1)
+    if dataset.startswith("lite_benchmark_"):
+        return dataset.replace("lite_benchmark_", "lite_extended_", 1)
+    if dataset.startswith("benchmark_"):
+        return dataset.replace("benchmark_", "extended_", 1)
+    return dataset
 
 
 def _validate_beam_widths(beam_widths: tuple[int, ...]) -> tuple[int, ...]:

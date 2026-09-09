@@ -33,7 +33,7 @@ from plot_style import (
 
 
 HERE = Path(__file__).resolve().parents[1]
-DEFAULT_ACTUAL_RESULTS_ROOT = HERE / "results" / "actual_error_evaluation"
+DEFAULT_ACTUAL_RESULTS_ROOT = HERE / "results" / "actual_error"
 
 METHODS = {
     "optimal": "Exhaustive",
@@ -316,7 +316,7 @@ def run_expanded_actual_error_evaluation(
             dataset,
             evaluated,
             results_root,
-            run_scope=f"expanded_{run_scope}",
+            run_scope=run_scope,
             methods=EXPANDED_METHODS,
         )
         print(f"[{dataset_number}/{len(datasets)}] Saved {dataset} tables", flush=True)
@@ -333,7 +333,7 @@ def save_actual_results(
 ) -> None:
     """Save actual-error records and compact CSV summaries."""
     active_methods = _available_actual_methods(records, methods)
-    tables_directory = _dataset_results_directory(
+    tables_directory = _dataset_directory(
         results_root, dataset, run_scope
     ) / "tables"
     tables_directory.mkdir(parents=True, exist_ok=True)
@@ -703,7 +703,10 @@ def make_combined_actual_error_plots(
     methods: Mapping[str, str] = METHODS,
 ) -> list[tuple[str, plt.Figure]]:
     """Create side-by-side 1D/2D actual-error plots."""
-    summary_name = f"results_summary_{'_'.join(records_by_dataset)}_{run_scope}"
+    summary_name = "_".join(
+        _result_dataset_name(dataset) for dataset in records_by_dataset
+    )
+    summary_name = f"summary_{summary_name}_{run_scope}"
     figures_directory = Path(results_root) / summary_name / "figures"
     figures_directory.mkdir(parents=True, exist_ok=True)
     dimension_records = sorted(
@@ -1131,14 +1134,25 @@ def _tree_child(
     return tree[name] if isinstance(tree, Mapping) else getattr(tree, name)
 
 
-def _dataset_results_directory(
+def _dataset_directory(
     results_root: str | Path,
     dataset: str,
     run_scope: str,
 ) -> Path:
     if not run_scope:
         raise ValueError("run_scope must be nonempty")
-    return Path(results_root) / f"{dataset}_results_{run_scope}"
+    return Path(results_root) / f"{_result_dataset_name(dataset)}_{run_scope}"
+
+
+def _result_dataset_name(dataset: str) -> str:
+    """Return the short label used in result paths."""
+    if dataset.startswith("compact_benchmark_"):
+        return dataset.replace("compact_benchmark_", "compact_", 1)
+    if dataset.startswith("lite_benchmark_"):
+        return dataset.replace("lite_benchmark_", "lite_extended_", 1)
+    if dataset.startswith("benchmark_"):
+        return dataset.replace("benchmark_", "extended_", 1)
+    return dataset
 
 
 def _plot_combined_actual_vs_surrogate(

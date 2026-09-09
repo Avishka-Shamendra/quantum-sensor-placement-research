@@ -27,7 +27,7 @@ HERE = Path(__file__).resolve().parents[1]
 from input_data import load_sparse_input, validate_reverse_phases
 
 INPUT_ROOT = HERE / "inputs"
-DEFAULT_RESULTS_ROOT = HERE / "results" / "optimal_evaluation"
+DEFAULT_RESULTS_ROOT = HERE / "results" / "exact_optimal"
 
 configure_plot_style()
 
@@ -161,7 +161,7 @@ def save_results(
     run_scope: str = "test",
 ) -> None:
     """Save detailed JSON and a compact CSV table for one dataset."""
-    result_directory = _dataset_results_directory(results_root, dataset, run_scope)
+    result_directory = _dataset_directory(results_root, dataset, run_scope)
     tables_directory = result_directory / "tables"
     tables_directory.mkdir(parents=True, exist_ok=True)
 
@@ -208,7 +208,7 @@ def make_candidate_plots(
     run_scope: str = "test",
 ) -> list[tuple[str, plt.Figure]]:
     """Create and save five candidate plots for one dataset."""
-    result_directory = _dataset_results_directory(results_root, dataset, run_scope)
+    result_directory = _dataset_directory(results_root, dataset, run_scope)
     figures_directory = result_directory / "figures"
     figures_directory.mkdir(parents=True, exist_ok=True)
     dimension = int(records[0]["spatial_dimension"])
@@ -250,7 +250,7 @@ def make_candidate_plots(
     return result
 
 
-def _dataset_results_directory(
+def _dataset_directory(
     results_root: str | Path,
     dataset: str,
     run_scope: str,
@@ -258,7 +258,18 @@ def _dataset_results_directory(
     """Build the dataset-specific directory for a test or full run."""
     if run_scope not in {"test", "full"}:
         raise ValueError("run_scope must be 'test' or 'full'")
-    return Path(results_root) / f"{dataset}_results_{run_scope}"
+    return Path(results_root) / f"{_result_dataset_name(dataset)}_{run_scope}"
+
+
+def _result_dataset_name(dataset: str) -> str:
+    """Return the short label used in result paths."""
+    if dataset.startswith("compact_benchmark_"):
+        return dataset.replace("compact_benchmark_", "compact_", 1)
+    if dataset.startswith("lite_benchmark_"):
+        return dataset.replace("lite_benchmark_", "lite_extended_", 1)
+    if dataset.startswith("benchmark_"):
+        return dataset.replace("benchmark_", "extended_", 1)
+    return dataset
 
 
 def run_summary(records: list[dict[str, object]]) -> dict[str, object]:
