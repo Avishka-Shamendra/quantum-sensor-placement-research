@@ -17,7 +17,13 @@ from matplotlib.ticker import MaxNLocator
 
 from greedy import greedy
 import heuristic as heuristic_module
-from plot_style import configure_plot_style
+from plot_style import (
+    METHOD_COLORS,
+    METHOD_LINESTYLES,
+    METHOD_MARKERS,
+    REFERENCE_LINE_COLOR,
+    configure_plot_style,
+)
 from random_baseline import random_baseline
 from uniform import uniform
 
@@ -29,10 +35,14 @@ INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 ALGORITHM_STYLES = {
-    "Greedy": ("greedy", "#ff7f0e", "-"),
-    "Heuristic": ("heuristic", "#d62728", "-"),
-    "Uniform": ("uniform", "#7b3294", "-"),
-    "Random": ("random", "#006400", "-"),
+    "Greedy": ("greedy", METHOD_COLORS["Greedy"], METHOD_LINESTYLES["Greedy"]),
+    "Heuristic": (
+        "heuristic",
+        METHOD_COLORS["Heuristic"],
+        METHOD_LINESTYLES["Heuristic"],
+    ),
+    "Uniform": ("uniform", METHOD_COLORS["Uniform"], METHOD_LINESTYLES["Uniform"]),
+    "Random": ("random", METHOD_COLORS["Random"], METHOD_LINESTYLES["Random"]),
 }
 SENSOR_BUDGET_LABEL = (
     r"Budget ratio $\rho=N/N_{\min}^{opt}$"
@@ -160,6 +170,7 @@ def run_approximate_dataset(
                     "heuristic_accepted_moves": heuristic_result.accepted_moves,
                     "heuristic_stopping_reason": heuristic_result.stopping_reason,
                     "heuristic_max_iterations": heuristic_result.max_iterations,
+                    "heuristic_move_sizes": list(heuristic_result.move_sizes),
                     "greedy_allocation": list(greedy_result.allocation),
                     "heuristic_allocation": list(heuristic_result.allocation),
                     "uniform_allocation": list(uniform_result.allocation),
@@ -331,6 +342,7 @@ def save_approximate_results(
         "heuristic_accepted_moves",
         "heuristic_stopping_reason",
         "heuristic_max_iterations",
+        "heuristic_move_sizes",
     ]
     with (tables_directory / "summary.csv").open(
         "w", encoding="utf-8", newline=""
@@ -605,7 +617,7 @@ def _plot_mean_error_curves(
                 axis.plot(
                     x_values,
                     means,
-                    marker="o",
+                    marker=METHOD_MARKERS[algorithm],
                     linestyle=line_style,
                     color=color,
                     label=algorithm,
@@ -650,7 +662,7 @@ def _plot_overall_mean_error_curves(
             axis.plot(
                 x_values,
                 means,
-                marker="o",
+                marker=METHOD_MARKERS[algorithm],
                 linestyle=line_style,
                 color=color,
                 label=algorithm,
@@ -758,12 +770,12 @@ def _plot_heuristic_iteration_distribution(
             weights=weights,
             color=ALGORITHM_STYLES["Heuristic"][1],
             alpha=0.65,
-            edgecolor="black",
+            edgecolor=REFERENCE_LINE_COLOR,
             linewidth=0.5,
         )
         axis.axvline(
             iteration_limit,
-            color="black",
+            color=REFERENCE_LINE_COLOR,
             linestyle="--",
             linewidth=1.5,
             label=f"Maximum iterations ({iteration_limit})",

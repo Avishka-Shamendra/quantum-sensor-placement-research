@@ -9,7 +9,12 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 
-from plot_style import configure_plot_style
+from plot_style import (
+    METHOD_COLORS,
+    METHOD_LINESTYLES,
+    METHOD_MARKERS,
+    configure_plot_style,
+)
 
 
 HERE = Path(__file__).resolve().parents[1]
@@ -18,11 +23,12 @@ SENSOR_BUDGET_LABEL = (
     r"Budget ratio $\rho=N/N_{\min}^{opt}$"
 )
 ALGORITHM_STYLES = {
-    "Optimal": ("#1f77b4", "-"),
-    "Greedy": ("#ff7f0e", "-"),
-    "Heuristic": ("#d62728", "-"),
-    "Uniform": ("#7b3294", "-"),
-    "Random": ("#006400", "-"),
+    algorithm: (
+        METHOD_COLORS[algorithm],
+        METHOD_LINESTYLES[algorithm],
+        METHOD_MARKERS[algorithm],
+    )
+    for algorithm in ("Optimal", "Greedy", "Heuristic", "Uniform", "Random")
 }
 
 
@@ -61,13 +67,13 @@ def make_compact_extended_plot(
             panel.error_columns,
         )
         for algorithm, errors in error_curves.items():
-            color, line_style = ALGORITHM_STYLES[algorithm]
+            color, line_style, marker = ALGORITHM_STYLES[algorithm]
             axis.plot(
                 budget_fractions,
                 errors,
                 color=color,
                 linestyle=line_style,
-                marker="o",
+                marker=marker,
                 label=algorithm,
             )
         axis.set_title(panel.title)

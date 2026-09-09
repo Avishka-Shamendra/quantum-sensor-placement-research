@@ -13,7 +13,8 @@ from time import perf_counter
 import matplotlib.pyplot as plt
 
 from heuristic import heuristic
-from plot_style import configure_plot_style
+from heuristic import DEFAULT_MOVE_SIZES
+from plot_style import BEAM_WIDTH_COLORS, configure_plot_style
 
 
 HERE = Path(__file__).resolve().parents[1]
@@ -22,7 +23,6 @@ from input_data import load_sparse_input, validate_reverse_phases
 INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "heuristic_beam_width"
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
-BEAM_WIDTH_COLORS = ("#1f77b4", "#7b3294", "#d62728", "#ff7f0e", "#6b7280")
 LINE_STYLES = ("-", "--", "-.", ":")
 
 configure_plot_style()
@@ -34,10 +34,11 @@ def run_beam_width_study(
     replicates_per_cell: int | None = 1,
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
     *,
-    max_iterations: int = 25,
+    max_iterations: int = 5,
     improvement_threshold: float = 1e-3,
     initialization: str = "near_uniform",
     random_seed: int | None = 0,
+    move_sizes: tuple[int, ...] = DEFAULT_MOVE_SIZES,
     progress_every: int = 25,
     k_values: tuple[int, ...] | None = None,
     m_values: tuple[int, ...] | None = None,
@@ -105,6 +106,7 @@ def run_beam_width_study(
                     improvement_threshold=improvement_threshold,
                     initialization=initialization,
                     random_seed=random_seed,
+                    move_sizes=move_sizes,
                 )
                 elapsed = perf_counter() - started
 
@@ -124,6 +126,7 @@ def run_beam_width_study(
                         "beam_width": beam_width,
                         "heuristic_error": result.error_probability,
                         "heuristic_seconds": elapsed,
+                        "heuristic_move_sizes": list(result.move_sizes),
                         "allocation": list(result.allocation),
                         "pair_locations": {
                             f"{i},{j}": location
@@ -149,6 +152,7 @@ def run_beam_width_study(
         "improvement_threshold": improvement_threshold,
         "initialization": initialization,
         "random_seed": random_seed,
+        "move_sizes": list(move_sizes),
         "progress_every": progress_every,
         "k_values": list(k_values) if k_values is not None else None,
         "m_values": list(m_values) if m_values is not None else None,
@@ -202,6 +206,7 @@ def save_beam_width_results(
         "beam_width",
         "heuristic_error",
         "heuristic_seconds",
+        "heuristic_move_sizes",
     ]
     with (tables_directory / "summary.csv").open(
         "w", encoding="utf-8", newline=""

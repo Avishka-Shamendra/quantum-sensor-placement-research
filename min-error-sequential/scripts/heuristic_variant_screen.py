@@ -19,6 +19,7 @@ from actual_error_analysis import actual_tree_error
 from exhaustive_search import exhaustive_search
 from greedy import greedy
 from heuristic import (
+    DEFAULT_MOVE_SIZES,
     DecisionTree,
     _build_tree_with_beam_search,
     _compute_pair_errors,
@@ -47,12 +48,13 @@ def best_improvement_local_search(
     N: int,
     pair_errors: PairErrorData,
     *,
-    beam_width: int = 8,
-    max_iterations: int = 50,
+    beam_width: int = 3,
+    max_iterations: int = 5,
     improvement_threshold: float = 1e-5,
     include_greedy_start: bool = True,
+    move_sizes: tuple[int, ...] = DEFAULT_MOVE_SIZES,
 ) -> CandidateResult:
-    """Coordinate descent over one-sensor moves using the full tree objective."""
+    """Coordinate descent over d-sensor moves using the full tree objective."""
     pairs = tuple((i, j) for i in range(K) for j in range(i + 1, K))
     starts = [_initial_allocation(M, N, "near_uniform", 0)]
     if include_greedy_start:
@@ -69,23 +71,29 @@ def best_improvement_local_search(
     for iteration in range(1, max_iterations + 1):
         best_move = best
         for source in range(M):
-            if best.allocation[source] == 0:
+            feasible_move_sizes = tuple(
+                move_size
+                for move_size in move_sizes
+                if move_size <= best.allocation[source]
+            )
+            if not feasible_move_sizes:
                 continue
             for destination in range(M):
                 if destination == source:
                     continue
-                candidate = list(best.allocation)
-                candidate[source] -= 1
-                candidate[destination] += 1
-                result = _evaluate_allocation(
-                    K,
-                    M,
-                    tuple(candidate),
-                    pair_errors,
-                    beam_width,
-                )
-                if result.surrogate_error < best_move.surrogate_error:
-                    best_move = result
+                for move_size in feasible_move_sizes:
+                    candidate = list(best.allocation)
+                    candidate[source] -= move_size
+                    candidate[destination] += move_size
+                    result = _evaluate_allocation(
+                        K,
+                        M,
+                        tuple(candidate),
+                        pair_errors,
+                        beam_width,
+                    )
+                    if result.surrogate_error < best_move.surrogate_error:
+                        best_move = result
 
         if (
             best_move.surrogate_error
@@ -145,6 +153,7 @@ def run_trial(
     heuristic_max_iterations: int,
     heuristic_shortlist_size: int,
     heuristic_include_greedy_start: bool,
+    move_sizes: tuple[int, ...],
     run_full_candidate: bool,
     candidate_include_greedy_start: bool,
 ) -> None:
@@ -184,6 +193,7 @@ def run_trial(
                 max_iterations=heuristic_max_iterations,
                 include_greedy_start=heuristic_include_greedy_start,
                 move_shortlist_size=heuristic_shortlist_size,
+                move_sizes=move_sizes,
             )
             current_seconds = perf_counter() - started
 
@@ -196,6 +206,7 @@ def run_trial(
                     errors,
                     beam_width=beam_width,
                     include_greedy_start=candidate_include_greedy_start,
+                    move_sizes=move_sizes,
                 )
                 candidate_seconds = perf_counter() - started
                 candidate_surrogate = candidate.surrogate_error
@@ -337,8 +348,9 @@ def main() -> None:
     parser.add_argument("--max-cases", type=int, default=None)
     parser.add_argument("--beam-width", type=int, default=3)
     parser.add_argument("--heuristic-initialization", default="greedy")
-    parser.add_argument("--heuristic-max-iterations", type=int, default=3)
+    parser.add_argument("--heuristic-max-iterations", type=int, default=5)
     parser.add_argument("--heuristic-shortlist-size", type=int, default=1)
+    parser.add_argument("--move-sizes", type=int, nargs="+", default=DEFAULT_MOVE_SIZES)
     parser.add_argument(
         "--no-heuristic-greedy-start",
         action="store_false",
@@ -367,6 +379,7 @@ def main() -> None:
         heuristic_max_iterations=args.heuristic_max_iterations,
         heuristic_shortlist_size=args.heuristic_shortlist_size,
         heuristic_include_greedy_start=args.heuristic_include_greedy_start,
+        move_sizes=tuple(args.move_sizes),
         run_full_candidate=args.run_full_candidate,
         candidate_include_greedy_start=args.candidate_include_greedy_start,
     )

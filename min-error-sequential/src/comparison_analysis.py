@@ -16,7 +16,14 @@ import numpy as np
 from exhaustive_search import exhaustive_search
 from greedy import greedy
 import heuristic as heuristic_module
-from plot_style import configure_plot_style
+from plot_style import (
+    BEAM_WIDTH_COLORS,
+    METHOD_COLORS,
+    METHOD_LINESTYLES,
+    METHOD_MARKERS,
+    REFERENCE_LINE_COLOR,
+    configure_plot_style,
+)
 from random_baseline import random_baseline
 from uniform import uniform
 
@@ -27,13 +34,18 @@ from input_data import load_sparse_input, validate_reverse_phases
 INPUT_ROOT = HERE / "inputs"
 DEFAULT_RESULTS_ROOT = HERE / "results" / "algorithm_comparison_compact"
 
-# Use the same algorithm colors in every comparison figure.
+# Use the same paper-ready algorithm styles in every comparison figure.
 ALGORITHM_COLORS = {
-    "Optimal": "#1f77b4",
-    "Greedy": "#ff7f0e",
-    "Heuristic": "#d62728",
-    "Uniform": "#7b3294",
-    "Random": "#006400",
+    algorithm: METHOD_COLORS[algorithm]
+    for algorithm in ("Optimal", "Greedy", "Heuristic", "Uniform", "Random")
+}
+ALGORITHM_LINESTYLES = {
+    algorithm: METHOD_LINESTYLES[algorithm]
+    for algorithm in ("Optimal", "Greedy", "Heuristic", "Uniform", "Random")
+}
+ALGORITHM_MARKERS = {
+    algorithm: METHOD_MARKERS[algorithm]
+    for algorithm in ("Optimal", "Greedy", "Heuristic", "Uniform", "Random")
 }
 FIELD_FAMILY_ORDER = ("gaussian", "sinusoidal", "quadratic")
 
@@ -250,6 +262,11 @@ def run_paired_dataset(
                     ),
                     "uniform_runtime_speedup": optimal_seconds / uniform_seconds,
                     "random_runtime_speedup": optimal_seconds / random_seconds,
+                    "tree_aware_iterations": tree_aware_result.iterations_run,
+                    "tree_aware_accepted_moves": tree_aware_result.accepted_moves,
+                    "tree_aware_stopping_reason": tree_aware_result.stopping_reason,
+                    "tree_aware_max_iterations": tree_aware_result.max_iterations,
+                    "tree_aware_move_sizes": list(tree_aware_result.move_sizes),
                     "optimal_allocation": list(optimal.allocation),
                     "greedy_allocation": list(greedy_result.allocation),
                     "tree_aware_allocation": list(tree_aware_result.allocation),
@@ -404,6 +421,11 @@ def save_paired_results(
         "tree_aware_runtime_speedup",
         "uniform_runtime_speedup",
         "random_runtime_speedup",
+        "tree_aware_iterations",
+        "tree_aware_accepted_moves",
+        "tree_aware_stopping_reason",
+        "tree_aware_max_iterations",
+        "tree_aware_move_sizes",
         "greedy_allocation_l1_distance",
         "tree_aware_allocation_l1_distance",
         "uniform_allocation_l1_distance",
@@ -838,11 +860,11 @@ def _plot_mean_error_curves(
         K_records = [record for record in records if record["K"] == K]
         levels = sorted({int(record["budget_level"]) for record in K_records})
         for algorithm, error_key, line_style in (
-            ("Optimal", "optimal_error", "-"),
-            ("Greedy", "greedy_error", "-"),
-            ("Heuristic", "tree_aware_error", "-"),
-            ("Uniform", "uniform_error", "-"),
-            ("Random", "random_error", "-"),
+            ("Optimal", "optimal_error", ALGORITHM_LINESTYLES["Optimal"]),
+            ("Greedy", "greedy_error", ALGORITHM_LINESTYLES["Greedy"]),
+            ("Heuristic", "tree_aware_error", ALGORITHM_LINESTYLES["Heuristic"]),
+            ("Uniform", "uniform_error", ALGORITHM_LINESTYLES["Uniform"]),
+            ("Random", "random_error", ALGORITHM_LINESTYLES["Random"]),
         ):
             x_values = []
             means = []
@@ -864,7 +886,7 @@ def _plot_mean_error_curves(
             axis.plot(
                 x_values,
                 means,
-                marker="o",
+                marker=ALGORITHM_MARKERS[algorithm],
                 linestyle=line_style,
                 color=ALGORITHM_COLORS[algorithm],
                 label=algorithm,
@@ -897,7 +919,13 @@ def _plot_error_scatter(
         max(float(record["optimal_error"]) for record in records),
         max(float(record["greedy_error"]) for record in records),
     )
-    axis.plot([0, limit], [0, limit], color="black", linestyle="--", label="Equal error")
+    axis.plot(
+        [0, limit],
+        [0, limit],
+        color=REFERENCE_LINE_COLOR,
+        linestyle="--",
+        label="Equal error",
+    )
     axis.set(
         xlabel="Optimal error",
         ylabel="Greedy error",
@@ -930,7 +958,7 @@ def _plot_error_gap(
             means.append(mean)
             errors.append(sem)
         axis.errorbar(levels, means, yerr=errors, marker="o", capsize=3, label=f"K={K}")
-    axis.axhline(0, color="black", linewidth=1)
+    axis.axhline(0, color=REFERENCE_LINE_COLOR, linewidth=1)
     axis.set(
         xlabel="Budget level (smallest to largest)",
         ylabel=r"Mean surrogate-error gap $P_{greedy}-P_{optimal}$",
@@ -997,7 +1025,7 @@ def _plot_runtime_speedup(
     ]
     figure, axis = plt.subplots(figsize=(7.2, 4.6))
     axis.boxplot(values, tick_labels=[f"K={K}" for K in K_values], showmeans=True)
-    axis.axhline(1, color="black", linestyle="--", linewidth=1)
+    axis.axhline(1, color=REFERENCE_LINE_COLOR, linestyle="--", linewidth=1)
     axis.set_yscale("log")
     axis.set(
         xlabel="Number of fields",
@@ -1060,11 +1088,11 @@ def _plot_combined_mean_error_curves(
                 {int(record["budget_level"]) for record in selected_K}
             )
             for algorithm, error_key, line_style in (
-                ("Optimal", "optimal_error", "-"),
-                ("Greedy", "greedy_error", "-"),
-                ("Heuristic", "tree_aware_error", "-"),
-                ("Uniform", "uniform_error", "-"),
-                ("Random", "random_error", "-"),
+                ("Optimal", "optimal_error", ALGORITHM_LINESTYLES["Optimal"]),
+                ("Greedy", "greedy_error", ALGORITHM_LINESTYLES["Greedy"]),
+                ("Heuristic", "tree_aware_error", ALGORITHM_LINESTYLES["Heuristic"]),
+                ("Uniform", "uniform_error", ALGORITHM_LINESTYLES["Uniform"]),
+                ("Random", "random_error", ALGORITHM_LINESTYLES["Random"]),
             ):
                 x_values = []
                 means = []
@@ -1086,7 +1114,7 @@ def _plot_combined_mean_error_curves(
                 axis.plot(
                     x_values,
                     means,
-                    marker="o",
+                    marker=ALGORITHM_MARKERS[algorithm],
                     linestyle=line_style,
                     color=ALGORITHM_COLORS[algorithm],
                     label=algorithm,
@@ -1113,11 +1141,11 @@ def _plot_overall_mean_error_curves(
         dimension = int(records[0]["spatial_dimension"])
         levels = sorted({int(record["budget_level"]) for record in records})
         for algorithm, error_key, line_style in (
-            ("Optimal", "optimal_error", "-"),
-            ("Greedy", "greedy_error", "-"),
-            ("Heuristic", "tree_aware_error", "-"),
-            ("Uniform", "uniform_error", "-"),
-            ("Random", "random_error", "-"),
+            ("Optimal", "optimal_error", ALGORITHM_LINESTYLES["Optimal"]),
+            ("Greedy", "greedy_error", ALGORITHM_LINESTYLES["Greedy"]),
+            ("Heuristic", "tree_aware_error", ALGORITHM_LINESTYLES["Heuristic"]),
+            ("Uniform", "uniform_error", ALGORITHM_LINESTYLES["Uniform"]),
+            ("Random", "random_error", ALGORITHM_LINESTYLES["Random"]),
         ):
             x_values: list[float] = []
             means: list[float] = []
@@ -1139,7 +1167,7 @@ def _plot_overall_mean_error_curves(
             axis.plot(
                 x_values,
                 means,
-                marker="o",
+                marker=ALGORITHM_MARKERS[algorithm],
                 linestyle=line_style,
                 color=ALGORITHM_COLORS[algorithm],
                 label=algorithm,
@@ -1169,15 +1197,19 @@ def _plot_combined_error_scatter(
     )
     for axis, records in zip(axes, dimension_records):
         dimension = int(records[0]["spatial_dimension"])
-        K_colors = {3: "#1f77b4", 4: "#7b3294", 5: "#ff7f0e"}
-        for K in sorted({int(record["K"]) for record in records}):
+        K_values = sorted({int(record["K"]) for record in records})
+        K_colors = {
+            K: BEAM_WIDTH_COLORS[index % len(BEAM_WIDTH_COLORS)]
+            for index, K in enumerate(K_values)
+        }
+        for K in K_values:
             selected = [record for record in records if record["K"] == K]
             axis.scatter(
                 [float(record["optimal_error"]) for record in selected],
                 [float(record["greedy_error"]) for record in selected],
                 alpha=0.75,
                 color=K_colors[K],
-                marker="o",
+                marker=ALGORITHM_MARKERS["Greedy"],
                 label=f"Greedy, K={K}",
             )
             axis.scatter(
@@ -1185,13 +1217,13 @@ def _plot_combined_error_scatter(
                 [float(record["uniform_error"]) for record in selected],
                 alpha=0.75,
                 color=K_colors[K],
-                marker="x",
+                marker=ALGORITHM_MARKERS["Uniform"],
                 label=f"Uniform, K={K}",
             )
         axis.plot(
             [0, limit],
             [0, limit],
-            color="black",
+            color=REFERENCE_LINE_COLOR,
             linestyle="--",
             label="Equal error",
         )
@@ -1236,8 +1268,8 @@ def _plot_combined_error_gap(
                 {int(record["budget_level"]) for record in selected}
             )
             for algorithm, gap_key, line_style in (
-                ("Greedy", "greedy_error_gap", "--"),
-                ("Uniform", "uniform_error_gap", ":"),
+                ("Greedy", "greedy_error_gap", ALGORITHM_LINESTYLES["Greedy"]),
+                ("Uniform", "uniform_error_gap", ALGORITHM_LINESTYLES["Uniform"]),
             ):
                 means = []
                 errors = []
@@ -1254,13 +1286,13 @@ def _plot_combined_error_gap(
                     levels,
                     means,
                     yerr=errors,
-                    marker="o",
+                    marker=ALGORITHM_MARKERS[algorithm],
                     linestyle=line_style,
                     capsize=3,
                     color=ALGORITHM_COLORS[algorithm],
                     label=algorithm,
                 )
-            axis.axhline(0, color="black", linewidth=1)
+            axis.axhline(0, color=REFERENCE_LINE_COLOR, linewidth=1)
             axis.set(
                 title=f"{dimension}D, K={K}",
                 xticks=levels,
@@ -1367,7 +1399,7 @@ def _plot_combined_runtime_speedup(
                 box.set_facecolor(ALGORITHM_COLORS[algorithm])
                 box.set_alpha(0.45)
             boxplot["boxes"][0].set_label(algorithm)
-        axis.axhline(1, color="black", linestyle="--", linewidth=1)
+        axis.axhline(1, color=REFERENCE_LINE_COLOR, linestyle="--", linewidth=1)
         axis.set_yscale("log")
         axis.set(
             xlabel="Number of fields",

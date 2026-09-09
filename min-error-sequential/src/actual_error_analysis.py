@@ -23,7 +23,13 @@ from approximate_comparison_analysis import (
 from approximate_comparison_analysis import load_approximate_results
 from comparison_analysis import DEFAULT_RESULTS_ROOT, load_paired_results
 from input_data import PhaseGaps, principal_phase
-from plot_style import configure_plot_style
+from plot_style import (
+    METHOD_COLORS as PAPER_METHOD_COLORS,
+    METHOD_LINESTYLES,
+    METHOD_MARKERS,
+    REFERENCE_LINE_COLOR,
+    configure_plot_style,
+)
 
 
 HERE = Path(__file__).resolve().parents[1]
@@ -43,11 +49,8 @@ EXPANDED_METHODS = {
     "random": "Random",
 }
 METHOD_COLORS = {
-    "Exhaustive": "#1f77b4",
-    "Greedy": "#ff7f0e",
-    "Heuristic": "#d62728",
-    "Uniform": "#7b3294",
-    "Random": "#006400",
+    method: PAPER_METHOD_COLORS[method]
+    for method in ("Exhaustive", "Greedy", "Heuristic", "Uniform", "Random")
 }
 
 configure_plot_style()
@@ -1160,9 +1163,16 @@ def _plot_combined_actual_vs_surrogate(
                 alpha=0.55,
                 s=15,
                 color=METHOD_COLORS[method_name],
+                marker=METHOD_MARKERS[method_name],
                 label=method_name,
             )
-        axis.plot([0, limit], [0, limit], color="black", linestyle="--", linewidth=1)
+        axis.plot(
+            [0, limit],
+            [0, limit],
+            color=REFERENCE_LINE_COLOR,
+            linestyle="--",
+            linewidth=1,
+        )
         axis.set_title(f"({chr(96 + dimension)}) {dimension}D")
         axis.grid(alpha=0.25)
     axes[0].set_ylabel("Actual end-to-end tree error")
@@ -1215,7 +1225,8 @@ def _plot_combined_actual_error_performance(
             axis.plot(
                 x_values,
                 means,
-                marker="o",
+                marker=METHOD_MARKERS[method_name],
+                linestyle=METHOD_LINESTYLES[method_name],
                 color=METHOD_COLORS[method_name],
                 label=method_name,
             )

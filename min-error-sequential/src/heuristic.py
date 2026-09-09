@@ -17,6 +17,7 @@ Pair = tuple[int, int]
 PairErrorTable = Mapping[Pair, Sequence[Mapping[int, float]]]
 # Stores an allocation and compact pair locations and errors in pair order.
 _SensorMove = tuple[tuple[int, ...], tuple[int, ...], tuple[float, ...]]
+DEFAULT_MOVE_SIZES = (1, 2, 3)
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,7 @@ class HeuristicResult:
     accepted_moves: int
     stopping_reason: str
     max_iterations: int
+    move_sizes: tuple[int, ...]
 
 
 @dataclass(frozen=True)
@@ -82,12 +84,13 @@ def heuristic(
     pijmn: PairErrorTable,
     *,
     beam_width: int = 3,
-    max_iterations: int = 3,
+    max_iterations: int = 5,
     improvement_threshold: float = 1e-5,
     initialization: str = "greedy",
     random_seed: int | None = 0,
     include_greedy_start: bool = True,
     move_shortlist_size: int = 1,
+    move_sizes: tuple[int, ...] = DEFAULT_MOVE_SIZES,
 ) -> HeuristicResult:
     """Optimize a beam-search tree with shortlisted allocation local search."""
     pairs = _validate_inputs(K, M, N, pijmn)
@@ -99,6 +102,7 @@ def heuristic(
         random_seed,
         include_greedy_start,
         move_shortlist_size,
+        move_sizes,
     )
 
     # Step 1: Evaluate formal starting points and keep the best tree objective.
@@ -125,7 +129,7 @@ def heuristic(
     accepted_moves = 0
     stopping_reason = "maximum_iterations"
 
-    # Step 2: Rank all one-sensor transfers cheaply, then rebuild only a shortlist.
+    # Step 2: Rank all d-sensor transfers cheaply, then rebuild only a shortlist.
     for _ in range(max_iterations):
         iterations_run += 1
         best_move = (
@@ -145,6 +149,7 @@ def heuristic(
             pair_weights,
             pair_errors,
             move_shortlist_size,
+            move_sizes,
         )
         for candidate_allocation, candidate_locations, candidate_errors in candidates:
             candidate_tree = _build_tree_with_beam_search(
@@ -186,6 +191,7 @@ def heuristic(
         accepted_moves=accepted_moves,
         stopping_reason=stopping_reason,
         max_iterations=max_iterations,
+        move_sizes=move_sizes,
     )
 
 
@@ -197,6 +203,7 @@ def _validate_settings(
     random_seed: int | None,
     include_greedy_start: bool,
     move_shortlist_size: int,
+    move_sizes: tuple[int, ...],
 ) -> None:
     """Validate the controls used by the heuristic search."""
     if isinstance(beam_width, bool) or not isinstance(beam_width, int):
@@ -230,6 +237,17 @@ def _validate_settings(
         or move_shortlist_size < 1
     ):
         raise ValueError("move_shortlist_size must be a positive integer.")
+    if not move_sizes:
+        raise ValueError("move_sizes must not be empty.")
+    if any(
+        isinstance(move_size, bool)
+        or not isinstance(move_size, int)
+        or move_size < 1
+        for move_size in move_sizes
+    ):
+        raise ValueError("move_sizes must contain positive integers.")
+    if len(set(move_sizes)) != len(move_sizes):
+        raise ValueError("move_sizes must not contain duplicate values.")
 
 
 def _initial_allocations(
@@ -299,8 +317,9 @@ def _ranked_sensor_moves(
     pair_weights: Mapping[Pair, float],
     current_pair_errors: Mapping[Pair, float],
     move_shortlist_size: int,
+    move_sizes: tuple[int, ...] = DEFAULT_MOVE_SIZES,
 ) -> list[tuple[tuple[int, ...], dict[Pair, int], dict[Pair, float]]]:
-    """Return the best proxy-ranked one-sensor moves for full tree scoring."""
+    """Return the best proxy-ranked d-sensor moves for full tree scoring."""
     current_objective = sum(
         pair_weights.get(pair, 0.0) * current_pair_errors[pair]
         for pair in pairs
@@ -315,35 +334,38 @@ def _ranked_sensor_moves(
     ] = []
 
     for source in range(M):
-        if allocation[source] == 0:
+        feasible_move_sizes = tuple(
+            move_size for move_size in move_sizes if move_size <= allocation[source]
+        )
+        if not feasible_move_sizes:
             continue
         for destination in range(M):
             if destination == source:
                 continue
-
-            candidate = list(allocation)
-            candidate[source] -= 1
-            candidate[destination] += 1
-            candidate_allocation = tuple(candidate)
-            candidate_locations, candidate_errors = _compute_pair_errors(
-                pairs,
-                M,
-                candidate_allocation,
-                pijmn,
-            )
-            objective = sum(
-                pair_weights.get(pair, 0.0) * candidate_errors[pair]
-                for pair in pairs
-            )
-            if objective < current_objective:
-                ranked.append(
-                    (
-                        objective,
-                        candidate_allocation,
-                        candidate_locations,
-                        candidate_errors,
-                    )
+            for move_size in feasible_move_sizes:
+                candidate = list(allocation)
+                candidate[source] -= move_size
+                candidate[destination] += move_size
+                candidate_allocation = tuple(candidate)
+                candidate_locations, candidate_errors = _compute_pair_errors(
+                    pairs,
+                    M,
+                    candidate_allocation,
+                    pijmn,
                 )
+                objective = sum(
+                    pair_weights.get(pair, 0.0) * candidate_errors[pair]
+                    for pair in pairs
+                )
+                if objective < current_objective:
+                    ranked.append(
+                        (
+                            objective,
+                            candidate_allocation,
+                            candidate_locations,
+                            candidate_errors,
+                        )
+                    )
 
     ranked.sort(key=lambda item: (item[0], item[1]))
     return [
@@ -679,42 +701,46 @@ def _improving_sensor_moves(
     pijmn: PairErrorTable,
     pair_weights: Mapping[Pair, float],
     current_pair_errors: Mapping[Pair, float],
+    move_sizes: tuple[int, ...] = DEFAULT_MOVE_SIZES,
 ) -> list[_SensorMove]:
-    """Return all one-sensor moves that reduce the fixed objective J."""
+    """Return all d-sensor moves that reduce the fixed objective J."""
     improving: list[_SensorMove] = []
     current_objective = sum(
         pair_weights.get(pair, 0.0) * current_pair_errors[pair]
         for pair in pairs
     )
 
-    # Step 8: Move one sensor from each nonempty source to every destination.
+    # Step 8: Move d sensors from each feasible source to every destination.
     for source in range(M):
-        if allocation[source] == 0:
+        feasible_move_sizes = tuple(
+            move_size for move_size in move_sizes if move_size <= allocation[source]
+        )
+        if not feasible_move_sizes:
             continue
         for destination in range(M):
             if destination == source:
                 continue
-
-            candidate = list(allocation)
-            candidate[source] -= 1
-            candidate[destination] += 1
-            candidate_allocation = tuple(candidate)
-            candidate_locations, candidate_errors = _compute_pair_errors(
-                pairs, M, candidate_allocation, pijmn
-            )
-            # Step 7: Hold the weights fixed and calculate J for this move.
-            objective = sum(
-                pair_weights.get(pair, 0.0) * candidate_errors[pair]
-                for pair in pairs
-            )
-            if objective < current_objective:
-                improving.append(
-                    (
-                        candidate_allocation,
-                        tuple(candidate_locations[pair] for pair in pairs),
-                        tuple(candidate_errors[pair] for pair in pairs),
-                    )
+            for move_size in feasible_move_sizes:
+                candidate = list(allocation)
+                candidate[source] -= move_size
+                candidate[destination] += move_size
+                candidate_allocation = tuple(candidate)
+                candidate_locations, candidate_errors = _compute_pair_errors(
+                    pairs, M, candidate_allocation, pijmn
                 )
+                # Step 7: Hold the weights fixed and calculate J for this move.
+                objective = sum(
+                    pair_weights.get(pair, 0.0) * candidate_errors[pair]
+                    for pair in pairs
+                )
+                if objective < current_objective:
+                    improving.append(
+                        (
+                            candidate_allocation,
+                            tuple(candidate_locations[pair] for pair in pairs),
+                            tuple(candidate_errors[pair] for pair in pairs),
+                        )
+                    )
 
     return improving
 

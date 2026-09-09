@@ -1,4 +1,4 @@
-"""Generate sparse inputs for minimum-error sequential discrimination."""
+"""Generate inputs for minimum-error sequential discrimination."""
 
 from __future__ import annotations
 
@@ -9,12 +9,12 @@ import sys
 from itertools import combinations, product
 from math import ceil, isfinite
 from pathlib import Path
-from random import Random
 
 HERE = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = HERE / "src"
 INPUT_ROOT = HERE / "inputs"
 ZERO_ERROR_ROOT = HERE.parent / "min-sensor-zero-error"
+ZERO_ERROR_SOURCE_ROOT = ZERO_ERROR_ROOT / "src"
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 
 if str(SOURCE_ROOT) not in sys.path:
@@ -23,8 +23,8 @@ if str(SOURCE_ROOT) not in sys.path:
 from input_data import SparseRow, pair_error_probability, write_sparse_input
 
 # Reuse the field generators and zero-error solver without modifying that project.
-if str(ZERO_ERROR_ROOT) not in sys.path:
-    sys.path.insert(0, str(ZERO_ERROR_ROOT))
+if str(ZERO_ERROR_SOURCE_ROOT) not in sys.path:
+    sys.path.insert(0, str(ZERO_ERROR_SOURCE_ROOT))
 
 from field_models import (  # noqa: E402
     FIELD_FORMULAS,
@@ -58,11 +58,10 @@ def select_budgets(
 def sample_sensor_counts(
     maximum_budget: int,
     samples_per_location: int,
-    rng: Random,
 ) -> set[int]:
-    """Select a small set of sensor counts for one pair and location."""
-    sample_size = min(maximum_budget, samples_per_location)
-    return set(rng.sample(range(1, maximum_budget + 1), sample_size))
+    """Return every sensor count needed up to the largest evaluated budget."""
+    del samples_per_location
+    return set(range(maximum_budget + 1))
 
 
 def build_sparse_rows(
@@ -73,29 +72,17 @@ def build_sparse_rows(
     samples_per_location: int,
     seed: int,
 ) -> list[SparseRow]:
-    """Create sparse ``P_ijmn`` rows from canonical phase gaps."""
-    rng = Random(seed)
+    """Create complete ``P_ijmn`` rows from canonical phase gaps."""
+    del seed
     phases = {(i, j, m): phase for i, j, m, phase in phase_rows}
     maximum_budget = max(budgets)
-    if maximum_budget < 1:
-        raise ValueError("at least one positive sensor budget is required")
-    positive_budgets = [budget for budget in budgets if budget > 0]
-    smallest_positive_budget = min(positive_budgets, default=0)
     rows: list[SparseRow] = []
 
     for pair in combinations(range(K), 2):
         counts_by_location = [
-            sample_sensor_counts(maximum_budget, samples_per_location, rng)
+            sample_sensor_counts(maximum_budget, samples_per_location)
             for _ in range(M)
         ]
-
-        # Give every pair at least one positive error value that can be used
-        # with the smallest positive budget.
-        if smallest_positive_budget > 0:
-            location = rng.randrange(M)
-            counts_by_location[location].add(
-                rng.randint(1, smallest_positive_budget)
-            )
 
         for m in range(M):
             phase = phases[(*pair, m)]
@@ -251,7 +238,7 @@ def generate_factorial_dataset(
                 )
 
     manifest = {
-        "schema_version": 1,
+        "schema_version": 2,
         "dataset": dataset,
         "description": description,
         "input_format": {
@@ -263,10 +250,11 @@ def generate_factorial_dataset(
                 "P_ijmn = 0.5*(1-sin(n*abs(r_ijm)/2)) for "
                 "n*abs(r_ijm) < pi; otherwise 0"
             ),
-            "missing_count_rule": (
-                "use the largest available sensor count not exceeding n; "
-                "use 0.5 if none exists"
+            "stored_sensor_counts": (
+                "Every integer n from 0 through the largest selected budget "
+                "for the case is stored for every pair and location."
             ),
+            "missing_count_rule": "new generated inputs should not have missing counts",
         },
         "design": {
             "type": (
@@ -300,7 +288,7 @@ def generate_factorial_dataset(
                 if budget_cap is not None
                 else "No computational budget cap is applied."
             ),
-            "samples_per_pair_location": samples_per_location,
+            "sensor_counts_per_pair_location": "all counts through max selected budget",
             "case_count": case_number,
         },
         "seed": seed,
@@ -400,7 +388,7 @@ def _parse_arguments() -> argparse.Namespace:
 
 
 def main() -> int:
-    """Generate a custom sparse input dataset."""
+    """Generate a custom input dataset."""
     arguments = _parse_arguments()
     target = generate_factorial_dataset(
         arguments.dataset,
@@ -415,7 +403,7 @@ def main() -> int:
         budget_cap=None if arguments.no_budget_cap else arguments.budget_cap,
         samples_per_location=arguments.samples_per_location,
         seed=arguments.seed,
-        description="Custom sparse minimum-error sequential benchmark.",
+        description="Custom minimum-error sequential benchmark.",
         overwrite=arguments.overwrite,
     )
     print(f"Generated dataset: {target}")

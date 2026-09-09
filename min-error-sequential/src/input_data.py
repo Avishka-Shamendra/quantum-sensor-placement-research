@@ -1,4 +1,4 @@
-"""Utilities for sparse sequential-discrimination input data."""
+"""Utilities for sequential-discrimination input data."""
 
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ def pair_error_probability(phase: Real, sensor_count: int) -> float:
 
 
 def write_sparse_input(csv_path: str | Path, rows: Sequence[SparseRow]) -> None:
-    """Write sparse ``r_ijm`` and ``P_ijmn`` values to a CSV file."""
+    """Write stored ``r_ijm`` and ``P_ijmn`` values to a CSV file."""
     path = Path(csv_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8", newline="") as output_file:
@@ -66,7 +66,7 @@ def write_sparse_input(csv_path: str | Path, rows: Sequence[SparseRow]) -> None:
 def load_sparse_input(
     csv_path: str | Path,
 ) -> tuple[int, int, PhaseGaps, PairErrorData]:
-    """Load and validate one sparse sequential-discrimination input file."""
+    """Load one input file and fill missing integer sensor counts exactly."""
     path = Path(csv_path)
     try:
         input_file = path.open("r", encoding="utf-8-sig", newline="")
@@ -84,6 +84,7 @@ def load_sparse_input(
 
         raw_phases: dict[Pair, dict[int, float]] = {}
         raw_errors: dict[Pair, dict[int, dict[int, float]]] = {}
+        maximum_sensor_count = 0
 
         # Read canonical pairs only; reverse phases are reconstructed when needed.
         for row_number, row in enumerate(reader, start=2):
@@ -101,6 +102,7 @@ def load_sparse_input(
                 raise ValueError(
                     f"Row {row_number} must satisfy 0 <= i < j, m >= 0, n >= 0"
                 )
+            maximum_sensor_count = max(maximum_sensor_count, sensor_count)
             if not isfinite(phase) or not -pi < phase <= pi:
                 raise ValueError(f"r_ijm on row {row_number} must lie in (-pi, pi]")
             if not isfinite(error) or not 0.0 <= error <= 0.5:
@@ -143,6 +145,14 @@ def load_sparse_input(
                 f"Pair {pair} must contain locations 0 through {M - 1}"
             )
         phase_gaps[pair] = [raw_phases[pair][m] for m in range(M)]
+        for m in range(M):
+            phase = raw_phases[pair][m]
+            location_errors = raw_errors[pair][m]
+            for sensor_count in range(maximum_sensor_count + 1):
+                location_errors.setdefault(
+                    sensor_count,
+                    pair_error_probability(phase, sensor_count),
+                )
         pair_errors[pair] = [raw_errors[pair][m] for m in range(M)]
 
     return K, M, phase_gaps, pair_errors

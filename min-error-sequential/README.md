@@ -28,11 +28,12 @@ random_result = random_baseline(K, M, N, pijmn)
 
 The Tree-aware heuristic accepts optional `beam_width`, `max_iterations`,
 `improvement_threshold`, `initialization`, `random_seed`,
-`include_greedy_start`, and `move_shortlist_size` keyword arguments. By
-default, it starts from the greedy allocation, ranks all one-sensor transfers
-using the current tree's pair weights, rebuilds the beam-search tree only for
-the top-ranked shortlist, and accepts the best full-tree improvement. Set
-`initialization="near_uniform"` or `initialization="random"` to use a
+`include_greedy_start`, `move_shortlist_size`, and `move_sizes` keyword arguments.
+By default, it starts from the greedy allocation, ranks all transfers with
+`move_sizes=(1, 2, 3)` using the current tree's pair weights, rebuilds the
+beam-search tree only for the top-ranked shortlist, and accepts the best
+full-tree improvement. Set `initialization="near_uniform"` or
+`initialization="random"` to use a
 non-greedy starting allocation; `include_greedy_start=True` can add the greedy
 allocation as an additional start for those modes.
 

@@ -16,7 +16,7 @@ Main idea
 ---------
 
 The heuristic searches over sensor allocations. It uses the current decision
-tree to cheaply rank possible one-sensor transfers, then rebuilds the
+tree to cheaply rank possible d-sensor transfers, then rebuilds the
 sequential decision tree only for a small shortlist of the best-ranked moves.
 
 So the heuristic is tree-aware because it does not judge a sensor allocation
@@ -34,8 +34,9 @@ Input:
 - N: total sensor budget
 - P_ijmn: pairwise surrogate error table
 - B: beam width for decision-tree construction, default B = 3
-- T: maximum local-search iterations, default T = 3
+- T: maximum local-search iterations, default T = 5
 - L: move shortlist size, default L = 1
+- D: transfer sizes, default D = {1, 2, 3}
 
 Step 1: Build the starting allocation
 
@@ -62,17 +63,18 @@ For the starting allocation:
 
 4. Compute the final surrogate tree error of that beam-search tree.
 
-Step 3: Rank every one-sensor transfer cheaply
+Step 3: Rank every d-sensor transfer cheaply
 
 At the current allocation, compute pair weights from the current decision tree.
 These weights measure how important each field pair is to the current tree.
 
 Then enumerate every possible move:
 
-move one sensor from source location a to destination location b,
-where a != b and allocation[a] > 0.
+move d sensors from source location a to destination location b,
+where a != b, d is in D, and allocation[a] >= d. This changes the two
+affected counts as n_a - d and n_b + d.
 
-There are at most M(M - 1) such moves.
+There are at most |D| M(M - 1) such moves.
 
 For each move, recompute the pairwise errors and score it using the cheap
 weighted proxy objective:
@@ -86,7 +88,7 @@ Step 4: Fully evaluate only the shortlist
 
 Keep only the top L moves according to the proxy objective J.
 
-For each shortlisted one-sensor transfer:
+For each shortlisted d-sensor transfer:
 
 1. Apply the move to get a candidate allocation.
 
@@ -113,7 +115,7 @@ Step 6: Repeat
 
 Repeat Steps 3 to 5 until either:
 
-1. no improving one-sensor transfer exists, or
+1. no improving shortlisted d-sensor transfer exists, or
 2. the maximum number of iterations T is reached.
 
 
@@ -157,7 +159,7 @@ New heuristic:
 
 1. Uses the pair-weight proxy only to rank moves cheaply.
 2. Does not randomly accept the first improving move.
-3. Tests every possible one-sensor transfer under the cheap proxy.
+3. Tests every possible d-sensor transfer under the cheap proxy.
 4. Rebuilds the beam-search decision tree only for the top L moves.
 5. Scores shortlisted moves by the final surrogate tree error.
 6. Accepts the best shortlisted full-tree improvement.
@@ -173,7 +175,7 @@ move that improves the rebuilt tree.
 
 New heuristic:
 
-Rank every one-sensor move by a tree-weighted proxy, rebuild the beam-search
+Rank every d-sensor move by a tree-weighted proxy, rebuild the beam-search
 tree only for the best-ranked shortlist, then accept the best shortlisted move
 according to the final surrogate tree error.
 
@@ -184,7 +186,8 @@ Why this is more formal
 The new heuristic is a deterministic shortlisted coordinate-descent/local-search
 method on the sensor allocation vector, initialized from greedy.
 
-The neighborhood is the set of all one-sensor transfers between locations.
+The neighborhood is the set of all transfers of d in {1, 2, 3} sensors between
+locations.
 
 The ranking objective is the current tree-weighted pairwise proxy. The final
 accept/reject objective is the full surrogate tree error after beam-search tree
@@ -224,7 +227,7 @@ So one allocation evaluation costs approximately:
 
        O(P M + C_beam(K, B))
 
-Each local-search iteration cheaply ranks up to M(M - 1) one-sensor transfers,
+Each local-search iteration cheaply ranks up to |D| M(M - 1) d-sensor transfers,
 then rebuilds the beam-search tree for only L shortlisted moves.
 
 Therefore the total local-search cost is approximately:

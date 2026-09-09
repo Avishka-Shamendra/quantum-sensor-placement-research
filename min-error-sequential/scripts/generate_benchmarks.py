@@ -16,10 +16,9 @@ from generate_inputs import generate_factorial_dataset
 
 # Fixed benchmark parameters used for both spatial dimensions.
 MODELS = ["gaussian", "sinusoidal", "quadratic"]
-# K stops at 7 because decision-tree construction grows sharply at K=8.
-K_VALUES = list(range(3, 8))
-M_VALUES = list(range(3, 9))
-REPLICATES_PER_CELL = 30
+K_VALUES = list(range(3, 11))
+M_VALUES = list(range(3, 11))
+REPLICATES_PER_CELL = 15
 
 # This cap limits algorithm runtime. It is not a constraint of the
 # sensor-allocation problem and can be changed for other experiments.
@@ -55,7 +54,7 @@ def generate_benchmarks(names: list[str], overwrite: bool = False) -> list[str]:
             replicates=REPLICATES_PER_CELL,
             cases_per_model=None,
             phase_scale=1.0,
-            budget_fractions=[0.25, 0.5, 0.75, 1.0],
+            budget_fractions=[0.125, 0.25, 0.375, 0.5],
             budget_cap=EXHAUSTIVE_SEARCH_BUDGET_CAP,
             samples_per_location=3,
             seed=int(design["seed"]),

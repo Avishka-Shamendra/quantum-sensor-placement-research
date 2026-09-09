@@ -86,11 +86,15 @@ Interpretation:
         Start from the allocation returned by the Greedy algorithm.
 
     move_shortlist_size = 1:
-        Rank all one-sensor transfers using a cheap proxy objective, but rebuild
+        Rank all d-sensor transfers using a cheap proxy objective, but rebuild
         the full decision tree only for the single best-ranked transfer.
 
-The beam-width diagnostics notebook tests beam_width values (1, 3, 5), with the
-same max_iterations, improvement_threshold, and greedy initialization.
+    move_sizes = (1, 2, 3):
+        Consider transfers that move d sensors from one location to another,
+        with d in {1, 2, 3}.
+
+The diagnostics notebook keeps beam_width = 3, with the same max_iterations,
+improvement_threshold, greedy initialization, and move_sizes.
 
 
 Algorithm steps
@@ -162,10 +166,12 @@ Algorithm steps
    multiple times in the tree, its weights are added. These weights estimate
    which pairwise tests matter most to the current sequential tree.
 
-7. Rank all one-sensor transfer moves using a cheap proxy objective.
+7. Rank all d-sensor transfer moves using a cheap proxy objective.
 
-   A candidate move transfers one sensor from a nonempty source location to a
-   different destination location. For each candidate allocation, the code
+   A candidate move transfers d sensors from a source location with at least d
+   sensors to a different destination location, where d is in {1, 2, 3}. The two
+   affected counts change as n_source - d and n_destination + d. For each
+   candidate allocation, the code
    recomputes the best pair location and pair error for every pair, then scores:
 
        J(candidate) = sum_over_pairs weight(pair) * candidate_pair_error(pair)
@@ -219,7 +225,7 @@ For one fixed allocation:
 
 For one local-search iteration:
 
-    Ranking one-sensor transfers examines at most M(M-1) moves. Each move
+    Ranking d-sensor transfers examines at most |D| M(M-1) moves. Each move
     recomputes pair errors, so the proxy-ranking cost is roughly:
 
         O(M^2 P M S)
@@ -228,7 +234,7 @@ For one local-search iteration:
 
         O(L * tree_build_cost)
 
-With the notebook setting L = 1 and I = 3, the expensive part is bounded tightly:
+With the notebook setting L = 1 and I = 5, the expensive part is bounded tightly:
 after the initial tree build, at most one full tree rebuild is attempted per
 iteration. That is why the current heuristic is much cheaper than a broad search
 over many rebuilt trees.
@@ -242,7 +248,7 @@ This method should be described as:
     A tree-aware local allocation heuristic initialized from Greedy. For each
     allocation it constructs a sequential decision tree by beam search under the
     surrogate 0.5/0.5 outside-pair branch model. Allocation refinement uses
-    tree-derived pair weights to rank one-sensor transfer moves, then fully
+    tree-derived pair weights to rank d-sensor transfer moves, then fully
     reevaluates only a small shortlist of moves using the rebuilt surrogate tree.
 
 Do not describe it as actual-error optimization. The actual error is only used
