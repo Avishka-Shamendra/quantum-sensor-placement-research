@@ -109,7 +109,7 @@ jupyter lab min-error-sequential/02_scalable_algorithm_comparison.ipynb
 ```
 
 Its test mode uses 100 balanced cases per dataset, while full mode uses all
-2,880 cases.
+2,700 cases.
 Results are written under `min-error-sequential/results/cmp_extended/`.
 
 To evaluate whether the current `0.5/0.5` outside-pair surrogate tracks the
@@ -173,11 +173,11 @@ The compact design uses `K=3,4,5` and `M=3,4`. Each of its 18 field-family,
 `K`, and `M` cells contains 140 cases, giving 2,520 cases per dimension.
 
 The expanded design uses Gaussian, sinusoidal, and quadratic fields in 1D and
-2D, with `K` and `M` both ranging from 3 through 10. Every field-family, `K`,
-and `M` cell has 15 independent cases. Each dataset therefore contains 2,880
-cases: 3 field families times 8 `K` values times 8 `M` values times 15
-replicates. Each case uses up to four distinct budgets below its zero-error
-minimum.
+2D, with `K` ranging from 3 through 7 and `M` ranging from 3 through 8. Every
+field-family, `K`, and `M` cell has 30 independent cases. Each dataset therefore
+contains 2,700 cases: 3 field families times 5 `K` values times 6 `M` values
+times 30 replicates. Each case uses up to four distinct budgets below its
+zero-error minimum.
 
 ## Computational constraint
 
