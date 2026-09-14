@@ -13,7 +13,7 @@ if str(SOURCE_ROOT) not in sys.path:
 
 from eval import INPUT_ROOT, RESULTS_ROOT, evaluate_dataset
 from generate_benchmarks import BENCHMARKS, generate_benchmarks
-from paper_analysis import analyze_benchmarks
+from benchmark_analysis import analyze_benchmarks
 
 
 DATASETS = [str(design["dataset"]) for design in BENCHMARKS.values()]

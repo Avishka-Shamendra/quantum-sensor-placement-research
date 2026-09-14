@@ -207,6 +207,12 @@ def evaluate_actual_optimal_records(
                 "surrogate-optimal tree under actual evaluation: "
                 f"gap={gap:.12g}, case={case_name}, K={K}, M={M}, N={budget}"
             )
+        allocation_l1_distance = sum(
+            abs(surrogate_count - actual_count)
+            for surrogate_count, actual_count in zip(
+                surrogate_allocation, actual_optimal.allocation
+            )
+        )
 
         evaluated.append(
             {
@@ -226,6 +232,10 @@ def evaluate_actual_optimal_records(
                 "actual_optimal_recomputed_actual_error": actual_optimal_recomputed_error,
                 "actual_optimality_gap": gap,
                 "actual_optimal_seconds": actual_optimal_seconds,
+                "actual_optimal_allocation_match": (
+                    surrogate_allocation == actual_optimal.allocation
+                ),
+                "actual_optimal_allocation_l1_distance": allocation_l1_distance,
                 "surrogate_optimal_allocation": list(surrogate_allocation),
                 "actual_optimal_allocation": list(actual_optimal.allocation),
             }
@@ -365,6 +375,14 @@ def summarize_actual_optimal_gaps(
     rows: list[dict[str, object]] = []
     for dataset, records in records_by_dataset.items():
         gaps = [float(record["actual_optimality_gap"]) for record in records]
+        allocation_matches = [
+            float(bool(record["actual_optimal_allocation_match"]))
+            for record in records
+        ]
+        allocation_distances = [
+            int(record["actual_optimal_allocation_l1_distance"])
+            for record in records
+        ]
         rows.append(
             {
                 "dataset": dataset,
@@ -381,6 +399,9 @@ def summarize_actual_optimal_gaps(
                 "mean_actual_optimal_seconds": fmean(
                     float(record["actual_optimal_seconds"]) for record in records
                 ),
+                "allocation_match_rate": fmean(allocation_matches),
+                "mean_allocation_l1_distance": fmean(allocation_distances),
+                "max_allocation_l1_distance": max(allocation_distances),
             }
         )
     return rows
@@ -417,6 +438,14 @@ def gap_rows_by_budget(
                     "actual_optimality_gap": fmean(
                         float(record["actual_optimality_gap"]) for record in selected
                     ),
+                    "allocation_match_rate": fmean(
+                        float(bool(record["actual_optimal_allocation_match"]))
+                        for record in selected
+                    ),
+                    "mean_allocation_l1_distance": fmean(
+                        int(record["actual_optimal_allocation_l1_distance"])
+                        for record in selected
+                    ),
                 }
             )
     return rows
@@ -444,6 +473,14 @@ def gap_rows_by_field_family(
                 if str(record["field_model"]) == field_family
             ]
             gaps = [float(record["actual_optimality_gap"]) for record in selected]
+            allocation_matches = [
+                float(bool(record["actual_optimal_allocation_match"]))
+                for record in selected
+            ]
+            allocation_distances = [
+                int(record["actual_optimal_allocation_l1_distance"])
+                for record in selected
+            ]
             rows.append(
                 {
                     "dataset": dataset,
@@ -463,6 +500,9 @@ def gap_rows_by_field_family(
                     "mean_actual_optimal_seconds": fmean(
                         float(record["actual_optimal_seconds"]) for record in selected
                     ),
+                    "allocation_match_rate": fmean(allocation_matches),
+                    "mean_allocation_l1_distance": fmean(allocation_distances),
+                    "max_allocation_l1_distance": max(allocation_distances),
                 }
             )
     return rows
@@ -568,6 +608,8 @@ def save_actual_optimal_results(
         "actual_optimal_recomputed_actual_error",
         "actual_optimality_gap",
         "actual_optimal_seconds",
+        "actual_optimal_allocation_match",
+        "actual_optimal_allocation_l1_distance",
     ]
     with (tables_directory / "summary.csv").open(
         "w",

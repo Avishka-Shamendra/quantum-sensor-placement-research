@@ -1,4 +1,4 @@
-"""Shared publication style for minimum-error figures."""
+"""Shared style for minimum-error figures."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ REFERENCE_LINE_COLOR = "#202020"
 
 
 def configure_plot_style() -> None:
-    """Use paper-ready typography and axes in every figure."""
+    """Use consistent typography and axes in every figure."""
     plt.rcParams.update(
         {
             "font.family": "Times New Roman",

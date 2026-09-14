@@ -34,7 +34,7 @@ def optimal_perfect_pairwise_sensor_placement(
         Nijm: A mapping for every unordered function pair ``(i, j)`` where
             ``0 <= i < j < F``.  Its value is a sequence of length ``M``;
             ``Nijm[(i, j)][m]`` is the positive integer threshold from the
-            paper, i.e., the minimum sensors needed to distinguish that pair
+            model, i.e., the minimum sensors needed to distinguish that pair
             at location ``m``. ``None`` represents an unusable location with
             zero phase gap for that pair.
 
@@ -91,7 +91,7 @@ def optimal_perfect_pairwise_sensor_placement(
     pair_bits = {pair: 1 << index for index, pair in enumerate(pairs)}
     all_pairs_mask = (1 << len(pairs)) - 1
 
-    # Algorithm 1 in the paper: Counts_m = {0} union {N_ijm : (i, j) in P}.
+    # Dynamic program state counts: Counts_m = {0} union {N_ijm : (i, j) in P}.
     # Counts between thresholds have identical coverage and are unnecessary.
     location_options: list[list[tuple[int, int]]] = []
     for m in range(M):

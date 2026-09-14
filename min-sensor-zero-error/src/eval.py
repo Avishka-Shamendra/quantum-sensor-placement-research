@@ -215,7 +215,7 @@ def _evaluate_case(
     # Confirm that the observed ratio respects the theoretical guarantee.
     if ratio > approximation_factor + 1e-12:
         raise RuntimeError(
-            f"Greedy result violates the paper's approximation bound in {case_path.name}"
+            f"Greedy result violates the approximation bound in {case_path.name}"
         )
 
     return {

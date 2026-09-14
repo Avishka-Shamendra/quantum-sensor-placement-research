@@ -1,6 +1,6 @@
 """Greedy heuristic for zero-error pairwise sensor placement.
 
-This is Algorithm 2 from the paper.  It repeatedly chooses the location and
+This is the greedy gain-based approximation. It repeatedly chooses the location and
 sensor-count upgrade with the highest number of newly covered function pairs
 per additional sensor.
 """
@@ -44,7 +44,7 @@ def greedy_perfect_pairwise_sensor_placement(
         ValueError: If the inputs do not satisfy the problem definition.
 
     Notes:
-        This follows the paper's strict ``gain > best_gain`` rule.  Ties are
+        This follows the strict ``gain > best_gain`` rule. Ties are
         consequently resolved by the first location and count encountered.
     """
     if isinstance(F, bool) or not isinstance(F, int) or F < 2:

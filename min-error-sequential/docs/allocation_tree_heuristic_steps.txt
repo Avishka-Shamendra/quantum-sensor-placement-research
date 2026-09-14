@@ -1,0 +1,162 @@
+Allocation + Tree Heuristic: Steps and Parameters
+=================================================
+
+Code path
+---------
+
+Main implementation:
+    min-error-sequential/src/heuristic.py
+
+Main notebooks:
+    min-error-sequential/01_compact_analysis.ipynb
+    min-error-sequential/02_extended_analysis.ipynb
+    min-error-sequential/03_actual_optimality_gap.ipynb
+    min-error-sequential/04_final_figures.ipynb
+
+
+Inputs
+------
+
+For one case the heuristic receives:
+
+    K:
+        Number of candidate fields.
+
+    M:
+        Number of sensor locations.
+
+    N:
+        Total sensor budget.
+
+    pijmn:
+        Pairwise surrogate error table. For each pair (i,j), location m, and
+        local sensor count n, this stores the two-field error P_ijmn.
+
+
+Parameters used by the main heuristic
+-------------------------------------
+
+    beam_width = 3
+        Number of partial decision trees retained during final tree
+        construction.
+
+    improvement_threshold = 0.0
+        Allocation moves are accepted whenever they strictly lower the current
+        mean pairwise allocation score. The main setting uses no positive
+        practical threshold.
+
+    initialization = "near_uniform"
+        Starting allocation is near-uniform across locations.
+
+    random_seed = 0
+        Seed used only for deterministic near-uniform remainder placement.
+
+    include_greedy_start = False
+        The heuristic does not add the Greedy allocation as an extra starting
+        point.
+
+    move_sizes = (1, 2, 3)
+        Variable Neighborhood Descent levels. Level L transfers exactly L
+        sensors from one location to another, with L in {1, 2, 3}.
+
+
+Algorithm steps
+---------------
+
+1. Validate the problem case.
+
+   The code checks K, M, N, and the pairwise error table. Every field pair,
+   location, and stored sensor-count error must be finite and in [0, 0.5].
+
+2. Build the starting allocation.
+
+   The default start is near-uniform. The total budget N is spread across M
+   locations as evenly as possible, with deterministic remainder placement from
+   random_seed = 0.
+
+3. Compute the allocation score AS.
+
+   For the current allocation, the code finds the best available location for
+   every field pair:
+
+       pair_locations[(i,j)] = argmin_m P_ijm,allocation[m]
+       pair_errors[(i,j)]   = min_m    P_ijm,allocation[m]
+
+   The allocation objective is:
+
+       AS(allocation) = mean over pairs of pair_errors[(i,j)]
+
+4. Run Variable Neighborhood Descent on the allocation.
+
+   The allocation search starts at level L = 1. For a fixed L, every feasible
+   transfer is tested:
+
+       allocation[source]      -> allocation[source] - L
+       allocation[destination] -> allocation[destination] + L
+
+   The best candidate at that level is accepted if:
+
+       AS(candidate) < AS(current)
+
+5. Advance or reset the VND level.
+
+   If a level-L move improves AS, the candidate becomes the current allocation
+   and the search resets to L = 1. If no level-L move improves AS, the search
+   advances to the next level.
+
+6. Stop the allocation search.
+
+   The allocation phase stops when no improving move exists for L = 1, 2, and
+   3. The returned allocation is the final VND allocation.
+
+7. Build the final sequential decision tree.
+
+   After the allocation phase ends, the heuristic recomputes pair_locations and
+   pair_errors for the final allocation. It then builds one final decision tree
+   using beam search with beam_width = 3.
+
+   At each unfinished tree node, every remaining field pair is considered. Each
+   candidate test creates two branches, one for eliminating each member of the
+   tested pair.
+
+8. Rank partial trees during final beam search.
+
+   Partial trees are ranked by accumulated weighted surrogate error. The root
+   starts with equal field masses 1/K. Branch masses use the surrogate rule:
+
+       true field is tested and discarded: probability pair_error
+       true field is tested and retained:  probability 1 - pair_error
+       true field is not in the pair:      probability 0.5 to each branch
+
+   After each expansion, only the best 3 partial trees are retained.
+
+9. Select the final tree.
+
+   When every retained partial tree is complete, the full end-to-end surrogate
+   misclassification probability is computed for each complete tree. The tree
+   with the lowest final surrogate error is returned.
+
+10. Return the result.
+
+    The heuristic returns:
+
+       final allocation
+       best pair locations for that allocation
+       final beam-search decision tree
+       allocation score
+       final surrogate tree error
+       number of VND neighborhood evaluations
+       number of accepted allocation moves
+       stopping reason
+
+
+Reporting wording
+-----------------
+
+Describe the method as an allocation + tree heuristic. It first optimizes the
+sensor allocation using a pairwise surrogate allocation score and deterministic
+VND neighborhoods L in {1, 2, 3}. It then constructs the sequential decision
+tree once using beam width B = 3.
+
+Do not describe it as actual-error optimization. Actual error is only used
+afterward to reevaluate fixed allocations and decision trees.

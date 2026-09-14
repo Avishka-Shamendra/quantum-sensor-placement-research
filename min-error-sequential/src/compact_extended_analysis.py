@@ -106,7 +106,7 @@ def _result_panels(results_root: Path, run_scope: str) -> tuple[_Panel, ...]:
     compact_columns = (
         ("Optimal", "optimal_error"),
         ("Greedy", "greedy_error"),
-        ("Heuristic", "tree_aware_error"),
+        ("Heuristic", "heuristic_error"),
         ("Uniform", "uniform_error"),
         ("Random", "random_error"),
     )

@@ -48,9 +48,9 @@ def best_improvement_local_search(
     N: int,
     pair_errors: PairErrorData,
     *,
-    beam_width: int = 3,
-    max_iterations: int = 5,
-    improvement_threshold: float = 1e-5,
+    beam_width: int = 5,
+    max_iterations: int = 250,
+    improvement_threshold: float = 0.0,
     include_greedy_start: bool = True,
     move_sizes: tuple[int, ...] = DEFAULT_MOVE_SIZES,
 ) -> CandidateResult:
@@ -151,7 +151,6 @@ def run_trial(
     beam_width: int,
     heuristic_initialization: str,
     heuristic_max_iterations: int,
-    heuristic_shortlist_size: int,
     heuristic_include_greedy_start: bool,
     move_sizes: tuple[int, ...],
     run_full_candidate: bool,
@@ -192,7 +191,6 @@ def run_trial(
                 initialization=heuristic_initialization,
                 max_iterations=heuristic_max_iterations,
                 include_greedy_start=heuristic_include_greedy_start,
-                move_shortlist_size=heuristic_shortlist_size,
                 move_sizes=move_sizes,
             )
             current_seconds = perf_counter() - started
@@ -346,10 +344,9 @@ def main() -> None:
     parser.add_argument("--dataset", default="compact_benchmark_1d")
     parser.add_argument("--replicates-per-cell", type=int, default=2)
     parser.add_argument("--max-cases", type=int, default=None)
-    parser.add_argument("--beam-width", type=int, default=3)
-    parser.add_argument("--heuristic-initialization", default="greedy")
-    parser.add_argument("--heuristic-max-iterations", type=int, default=5)
-    parser.add_argument("--heuristic-shortlist-size", type=int, default=1)
+    parser.add_argument("--beam-width", type=int, default=5)
+    parser.add_argument("--heuristic-initialization", default="near_uniform")
+    parser.add_argument("--heuristic-max-iterations", type=int, default=250)
     parser.add_argument("--move-sizes", type=int, nargs="+", default=DEFAULT_MOVE_SIZES)
     parser.add_argument(
         "--no-heuristic-greedy-start",
@@ -357,6 +354,7 @@ def main() -> None:
         dest="heuristic_include_greedy_start",
         help="Do not use the greedy allocation as a heuristic start.",
     )
+    parser.set_defaults(heuristic_include_greedy_start=False)
     parser.add_argument(
         "--skip-full-candidate",
         action="store_false",
@@ -377,7 +375,6 @@ def main() -> None:
         beam_width=args.beam_width,
         heuristic_initialization=args.heuristic_initialization,
         heuristic_max_iterations=args.heuristic_max_iterations,
-        heuristic_shortlist_size=args.heuristic_shortlist_size,
         heuristic_include_greedy_start=args.heuristic_include_greedy_start,
         move_sizes=tuple(args.move_sizes),
         run_full_candidate=args.run_full_candidate,

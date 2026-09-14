@@ -1,4 +1,4 @@
-"""Statistical summaries and publication figures for both benchmarks."""
+"""Statistical summaries and figures for both benchmarks."""
 
 from __future__ import annotations
 
@@ -190,7 +190,7 @@ def _clear_figure_files(output_directory: Path) -> None:
             path.unlink()
 
 
-# Apply a consistent publication style before figures are created.
+# Apply a consistent figure style before figures are created.
 def _configure_plot_style() -> None:
     import matplotlib
 
@@ -708,7 +708,7 @@ def analyze_benchmarks(
     ]
     convergence = _convergence_rows(rows)
     _write_csv(tables_directory / "sample_convergence.csv", convergence)
-    (tables_directory / "paper_findings.md").write_text(
+    (tables_directory / "summary_findings.md").write_text(
         _claim_text(overall_summary, dimension_summaries), encoding="utf-8"
     )
 

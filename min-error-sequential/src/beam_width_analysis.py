@@ -1,4 +1,4 @@
-"""Evaluate tree-aware heuristic performance across beam widths."""
+"""Evaluate allocation + tree heuristic performance across beam widths."""
 
 from __future__ import annotations
 
@@ -34,10 +34,11 @@ def run_beam_width_study(
     replicates_per_cell: int | None = 1,
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
     *,
-    max_iterations: int = 5,
-    improvement_threshold: float = 1e-3,
+    max_iterations: int | None = None,
+    improvement_threshold: float = 0.0,
     initialization: str = "near_uniform",
     random_seed: int | None = 0,
+    include_greedy_start: bool = False,
     move_sizes: tuple[int, ...] = DEFAULT_MOVE_SIZES,
     progress_every: int = 25,
     k_values: tuple[int, ...] | None = None,
@@ -106,6 +107,7 @@ def run_beam_width_study(
                     improvement_threshold=improvement_threshold,
                     initialization=initialization,
                     random_seed=random_seed,
+                    include_greedy_start=include_greedy_start,
                     move_sizes=move_sizes,
                 )
                 elapsed = perf_counter() - started
@@ -125,6 +127,7 @@ def run_beam_width_study(
                         "budget_fraction_of_N_min": budget / minimum_sensors,
                         "beam_width": beam_width,
                         "heuristic_error": result.error_probability,
+                        "heuristic_allocation_score": result.allocation_score,
                         "heuristic_seconds": elapsed,
                         "heuristic_move_sizes": list(result.move_sizes),
                         "allocation": list(result.allocation),
@@ -152,6 +155,7 @@ def run_beam_width_study(
         "improvement_threshold": improvement_threshold,
         "initialization": initialization,
         "random_seed": random_seed,
+        "include_greedy_start": include_greedy_start,
         "move_sizes": list(move_sizes),
         "progress_every": progress_every,
         "k_values": list(k_values) if k_values is not None else None,
@@ -205,6 +209,7 @@ def save_beam_width_results(
         "budget_fraction_of_N_min",
         "beam_width",
         "heuristic_error",
+        "heuristic_allocation_score",
         "heuristic_seconds",
         "heuristic_move_sizes",
     ]

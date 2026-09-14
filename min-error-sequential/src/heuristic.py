@@ -1,8 +1,7 @@
-"""Tree-aware alternating heuristic for sequential discrimination."""
+"""Allocation + tree heuristic for sequential discrimination."""
 
 from __future__ import annotations
 
-from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from itertools import combinations
@@ -10,13 +9,8 @@ from math import isfinite
 from numbers import Real
 from random import Random
 
-from greedy import greedy as _greedy_algorithm
-
-
 Pair = tuple[int, int]
 PairErrorTable = Mapping[Pair, Sequence[Mapping[int, float]]]
-# Stores an allocation and compact pair locations and errors in pair order.
-_SensorMove = tuple[tuple[int, ...], tuple[int, ...], tuple[float, ...]]
 DEFAULT_MOVE_SIZES = (1, 2, 3)
 
 
@@ -43,16 +37,17 @@ DecisionTree = DecisionLeaf | DecisionNode
 
 @dataclass(frozen=True)
 class HeuristicResult:
-    """The allocation and tree returned by the alternating heuristic."""
+    """The allocation and tree returned by the allocation + tree heuristic."""
 
     allocation: tuple[int, ...]
     pair_locations: dict[Pair, int]
     decision_tree: DecisionTree
+    allocation_score: float
     error_probability: float
     iterations_run: int
     accepted_moves: int
     stopping_reason: str
-    max_iterations: int
+    max_iterations: int | None
     move_sizes: tuple[int, ...]
 
 
@@ -84,15 +79,14 @@ def heuristic(
     pijmn: PairErrorTable,
     *,
     beam_width: int = 3,
-    max_iterations: int = 5,
-    improvement_threshold: float = 1e-5,
-    initialization: str = "greedy",
+    max_iterations: int | None = None,
+    improvement_threshold: float = 0.0,
+    initialization: str = "near_uniform",
     random_seed: int | None = 0,
-    include_greedy_start: bool = True,
-    move_shortlist_size: int = 1,
+    include_greedy_start: bool = False,
     move_sizes: tuple[int, ...] = DEFAULT_MOVE_SIZES,
 ) -> HeuristicResult:
-    """Optimize a beam-search tree with shortlisted allocation local search."""
+    """Run allocation VND first, then build the final beam-search tree."""
     pairs = _validate_inputs(K, M, N, pijmn)
     _validate_settings(
         beam_width,
@@ -101,91 +95,62 @@ def heuristic(
         initialization,
         random_seed,
         include_greedy_start,
-        move_shortlist_size,
         move_sizes,
     )
 
-    # Step 1: Evaluate formal starting points and keep the best tree objective.
-    starts = _initial_allocations(
-        K,
-        M,
-        N,
-        pijmn,
-        initialization,
-        random_seed,
-        include_greedy_start,
-    )
-    allocation, pair_locations, pair_errors, tree, error = min(
-        (
-            _evaluate_allocation_objective(
-                K, M, allocation, pairs, pijmn, beam_width
-            )
-            for allocation in starts
-        ),
-        key=lambda item: (item[4], item[0]),
-    )
+    current_allocation = _initial_allocation(M, N, initialization, random_seed)
+    _, current_pair_errors = _compute_pair_errors(pairs, M, current_allocation, pijmn)
+    current_score = _allocation_score(current_pair_errors)
 
     iterations_run = 0
     accepted_moves = 0
-    stopping_reason = "maximum_iterations"
+    stopping_reason = "vnd_converged"
+    neighborhood_index = 0
 
-    # Step 2: Rank all d-sensor transfers cheaply, then rebuild only a shortlist.
-    for _ in range(max_iterations):
+    # Variable Neighborhood Descent. At each level L, select the best feasible
+    # L-sensor transfer. Accept any strict AS improvement and return to L=1.
+    while neighborhood_index < len(move_sizes):
+        if max_iterations is not None and iterations_run >= max_iterations:
+            stopping_reason = "maximum_iterations"
+            break
         iterations_run += 1
-        best_move = (
-            allocation,
-            pair_locations,
-            pair_errors,
-            tree,
-            error,
-        )
-
-        pair_weights = _compute_pair_weights(tree, K)
-        candidates = _ranked_sensor_moves(
-            allocation,
+        move_size = move_sizes[neighborhood_index]
+        candidate = _best_allocation_neighbor(
+            current_allocation,
             pairs,
             M,
             pijmn,
-            pair_weights,
-            pair_errors,
-            move_shortlist_size,
-            move_sizes,
+            current_score,
+            move_size,
+            improvement_threshold,
         )
-        for candidate_allocation, candidate_locations, candidate_errors in candidates:
-            candidate_tree = _build_tree_with_beam_search(
-                K,
-                candidate_locations,
-                candidate_errors,
-                beam_width,
-            )
-            candidate_error = _tree_error(candidate_tree, K)
-            candidate_result = (
-                candidate_allocation,
-                candidate_locations,
-                candidate_errors,
-                candidate_tree,
-                candidate_error,
-            )
-            if (
-                candidate_result[4] < best_move[4]
-                or (
-                    candidate_result[4] == best_move[4]
-                    and candidate_result[0] < best_move[0]
-                )
-            ):
-                best_move = candidate_result
+        if candidate is None:
+            neighborhood_index += 1
+            continue
 
-        if best_move[4] >= error - improvement_threshold:
-            stopping_reason = "no_accepted_move"
-            break
-
-        allocation, pair_locations, pair_errors, tree, error = best_move
+        current_allocation, current_score = candidate
         accepted_moves += 1
+        neighborhood_index = 0
+
+    pair_locations, pair_errors = _compute_pair_errors(
+        pairs,
+        M,
+        current_allocation,
+        pijmn,
+    )
+    tree = _build_tree_with_beam_search(
+        K,
+        pair_locations,
+        pair_errors,
+        beam_width,
+    )
+    error = _tree_error(tree, K)
 
     return HeuristicResult(
-        allocation=allocation,
+        allocation=current_allocation,
         pair_locations=pair_locations,
         decision_tree=tree,
+        allocation_score=current_score,
         error_probability=error,
         iterations_run=iterations_run,
         accepted_moves=accepted_moves,
@@ -197,12 +162,11 @@ def heuristic(
 
 def _validate_settings(
     beam_width: int,
-    max_iterations: int,
+    max_iterations: int | None,
     improvement_threshold: float,
     initialization: str,
     random_seed: int | None,
     include_greedy_start: bool,
-    move_shortlist_size: int,
     move_sizes: tuple[int, ...],
 ) -> None:
     """Validate the controls used by the heuristic search."""
@@ -210,10 +174,11 @@ def _validate_settings(
         raise ValueError("beam_width must be a positive integer.")
     if beam_width < 1:
         raise ValueError("beam_width must be a positive integer.")
-    if isinstance(max_iterations, bool) or not isinstance(max_iterations, int):
-        raise ValueError("max_iterations must be a nonnegative integer.")
-    if max_iterations < 0:
-        raise ValueError("max_iterations must be a nonnegative integer.")
+    if max_iterations is not None:
+        if isinstance(max_iterations, bool) or not isinstance(max_iterations, int):
+            raise ValueError("max_iterations must be a nonnegative integer or None.")
+        if max_iterations < 0:
+            raise ValueError("max_iterations must be a nonnegative integer or None.")
     if (
         isinstance(improvement_threshold, bool)
         or not isinstance(improvement_threshold, Real)
@@ -221,9 +186,9 @@ def _validate_settings(
         or improvement_threshold < 0.0
     ):
         raise ValueError("improvement_threshold must be finite and nonnegative.")
-    if initialization not in {"near_uniform", "random", "greedy"}:
+    if initialization not in {"near_uniform", "random"}:
         raise ValueError(
-            "initialization must be 'near_uniform', 'random', or 'greedy'."
+            "initialization must be 'near_uniform' or 'random'."
         )
     if random_seed is not None and (
         isinstance(random_seed, bool) or not isinstance(random_seed, int)
@@ -231,12 +196,10 @@ def _validate_settings(
         raise ValueError("random_seed must be an integer or None.")
     if not isinstance(include_greedy_start, bool):
         raise ValueError("include_greedy_start must be a boolean.")
-    if (
-        isinstance(move_shortlist_size, bool)
-        or not isinstance(move_shortlist_size, int)
-        or move_shortlist_size < 1
-    ):
-        raise ValueError("move_shortlist_size must be a positive integer.")
+    if include_greedy_start:
+        raise ValueError(
+            "include_greedy_start is not supported by the allocation + tree heuristic."
+        )
     if not move_sizes:
         raise ValueError("move_sizes must not be empty.")
     if any(
@@ -250,128 +213,48 @@ def _validate_settings(
         raise ValueError("move_sizes must not contain duplicate values.")
 
 
-def _initial_allocations(
-    K: int,
-    M: int,
-    N: int,
-    pijmn: PairErrorTable,
-    initialization: str,
-    random_seed: int | None,
-    include_greedy_start: bool,
-) -> tuple[tuple[int, ...], ...]:
-    """Return deterministic local-search starting allocations."""
-    starts: list[tuple[int, ...]] = []
-    if initialization == "greedy":
-        starts.append(_greedy_algorithm(K, M, N, pijmn).allocation)
-    else:
-        starts.append(
-            _initial_allocation(
-                M,
-                N,
-                initialization,
-                random_seed,
-            )
-        )
-        if include_greedy_start:
-            starts.append(_greedy_algorithm(K, M, N, pijmn).allocation)
-
-    unique_starts = dict.fromkeys(starts)
-    return tuple(unique_starts)
+def _allocation_score(pair_errors: Mapping[Pair, float]) -> float:
+    """Average the best pairwise errors induced by an allocation."""
+    return sum(pair_errors.values()) / len(pair_errors)
 
 
-def _evaluate_allocation_objective(
-    K: int,
-    M: int,
-    allocation: tuple[int, ...],
-    pairs: tuple[Pair, ...],
-    pijmn: PairErrorTable,
-    beam_width: int,
-) -> tuple[
-    tuple[int, ...],
-    dict[Pair, int],
-    dict[Pair, float],
-    DecisionTree,
-    float,
-]:
-    """Evaluate one allocation by rebuilding its best beam-search tree."""
-    pair_locations, pair_errors = _compute_pair_errors(
-        pairs,
-        M,
-        allocation,
-        pijmn,
-    )
-    tree = _build_tree_with_beam_search(
-        K,
-        pair_locations,
-        pair_errors,
-        beam_width,
-    )
-    return allocation, pair_locations, pair_errors, tree, _tree_error(tree, K)
-
-
-def _ranked_sensor_moves(
+def _best_allocation_neighbor(
     allocation: tuple[int, ...],
     pairs: tuple[Pair, ...],
     M: int,
     pijmn: PairErrorTable,
-    pair_weights: Mapping[Pair, float],
-    current_pair_errors: Mapping[Pair, float],
-    move_shortlist_size: int,
-    move_sizes: tuple[int, ...] = DEFAULT_MOVE_SIZES,
-) -> list[tuple[tuple[int, ...], dict[Pair, int], dict[Pair, float]]]:
-    """Return the best proxy-ranked d-sensor moves for full tree scoring."""
-    current_objective = sum(
-        pair_weights.get(pair, 0.0) * current_pair_errors[pair]
-        for pair in pairs
-    )
-    ranked: list[
-        tuple[
-            float,
-            tuple[int, ...],
-            dict[Pair, int],
-            dict[Pair, float],
-        ]
-    ] = []
+    current_score: float,
+    move_size: int,
+    improvement_threshold: float,
+) -> tuple[tuple[int, ...], float] | None:
+    """Return the best improving d-sensor allocation move."""
+    best_allocation: tuple[int, ...] | None = None
+    best_score = current_score
 
     for source in range(M):
-        feasible_move_sizes = tuple(
-            move_size for move_size in move_sizes if move_size <= allocation[source]
-        )
-        if not feasible_move_sizes:
+        if allocation[source] < move_size:
             continue
         for destination in range(M):
             if destination == source:
                 continue
-            for move_size in feasible_move_sizes:
-                candidate = list(allocation)
-                candidate[source] -= move_size
-                candidate[destination] += move_size
-                candidate_allocation = tuple(candidate)
-                candidate_locations, candidate_errors = _compute_pair_errors(
-                    pairs,
-                    M,
-                    candidate_allocation,
-                    pijmn,
-                )
-                objective = sum(
-                    pair_weights.get(pair, 0.0) * candidate_errors[pair]
-                    for pair in pairs
-                )
-                if objective < current_objective:
-                    ranked.append(
-                        (
-                            objective,
-                            candidate_allocation,
-                            candidate_locations,
-                            candidate_errors,
-                        )
-                    )
+            candidate = list(allocation)
+            candidate[source] -= move_size
+            candidate[destination] += move_size
+            candidate_allocation = tuple(candidate)
+            _, candidate_errors = _compute_pair_errors(
+                pairs,
+                M,
+                candidate_allocation,
+                pijmn,
+            )
+            candidate_score = _allocation_score(candidate_errors)
+            if candidate_score < best_score - improvement_threshold:
+                best_allocation = candidate_allocation
+                best_score = candidate_score
 
-    ranked.sort(key=lambda item: (item[0], item[1]))
-    return [
-        (allocation, locations, errors)
-        for _, allocation, locations, errors in ranked[:move_shortlist_size]
-    ]
+    if best_allocation is None:
+        return None
+    return best_allocation, best_score
 
 
 def _initial_allocation(
@@ -692,105 +575,6 @@ def _partial_tree_signature(tree: _PartialTree) -> tuple[object, ...]:
         _partial_tree_signature(tree.discard_i),
         _partial_tree_signature(tree.discard_j),
     )
-
-
-def _improving_sensor_moves(
-    allocation: tuple[int, ...],
-    pairs: tuple[Pair, ...],
-    M: int,
-    pijmn: PairErrorTable,
-    pair_weights: Mapping[Pair, float],
-    current_pair_errors: Mapping[Pair, float],
-    move_sizes: tuple[int, ...] = DEFAULT_MOVE_SIZES,
-) -> list[_SensorMove]:
-    """Return all d-sensor moves that reduce the fixed objective J."""
-    improving: list[_SensorMove] = []
-    current_objective = sum(
-        pair_weights.get(pair, 0.0) * current_pair_errors[pair]
-        for pair in pairs
-    )
-
-    # Step 8: Move d sensors from each feasible source to every destination.
-    for source in range(M):
-        feasible_move_sizes = tuple(
-            move_size for move_size in move_sizes if move_size <= allocation[source]
-        )
-        if not feasible_move_sizes:
-            continue
-        for destination in range(M):
-            if destination == source:
-                continue
-            for move_size in feasible_move_sizes:
-                candidate = list(allocation)
-                candidate[source] -= move_size
-                candidate[destination] += move_size
-                candidate_allocation = tuple(candidate)
-                candidate_locations, candidate_errors = _compute_pair_errors(
-                    pairs, M, candidate_allocation, pijmn
-                )
-                # Step 7: Hold the weights fixed and calculate J for this move.
-                objective = sum(
-                    pair_weights.get(pair, 0.0) * candidate_errors[pair]
-                    for pair in pairs
-                )
-                if objective < current_objective:
-                    improving.append(
-                        (
-                            candidate_allocation,
-                            tuple(candidate_locations[pair] for pair in pairs),
-                            tuple(candidate_errors[pair] for pair in pairs),
-                        )
-                    )
-
-    return improving
-
-
-def _compute_pair_weights(tree: DecisionTree, K: int) -> dict[Pair, float]:
-    """Combine the probability-based importance of repeated pair tests."""
-    pair_weights: defaultdict[Pair, float] = defaultdict(float)
-
-    # Step 4: At the root, every field has probability mass 1/K.
-    initial_mass = tuple(1.0 / K for _ in range(K))
-
-    def visit(node: DecisionTree, mass: tuple[float, ...]) -> None:
-        if isinstance(node, DecisionLeaf):
-            return
-
-        i, j = node.pair
-
-        # Step 5: The node weight is the current mass of fields i and j.
-        # Step 6: Adding to the same key combines repeated tests of this pair.
-        pair_weights[node.pair] += mass[i] + mass[j]
-
-        # For discard_i, field i receives zero mass, field j survives with
-        # factor (1 - p_ij), and every field outside the pair receives 1/2.
-        discard_i_mass = tuple(
-            0.0
-            if field == i
-            else (
-                value * (1.0 - node.pair_error)
-                if field == j
-                else value * 0.5
-            )
-            for field, value in enumerate(mass)
-        )
-        # The discard_j branch applies the same rule with i and j reversed.
-        discard_j_mass = tuple(
-            0.0
-            if field == j
-            else (
-                value * (1.0 - node.pair_error)
-                if field == i
-                else value * 0.5
-            )
-            for field, value in enumerate(mass)
-        )
-        # Continue until every branch reaches a one-field leaf.
-        visit(node.discard_i, discard_i_mass)
-        visit(node.discard_j, discard_j_mass)
-
-    visit(tree, initial_mass)
-    return dict(pair_weights)
 
 
 def _tree_error(tree: DecisionTree, K: int) -> float:

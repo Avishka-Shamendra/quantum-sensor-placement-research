@@ -2,7 +2,7 @@
 
 Each generated case contains ``K`` fields evaluated at ``M`` random candidate
 locations in either ``[0, 1]`` or ``[0, 1]^2``.  The phase-gap conversion uses
-the paper's definition
+the benchmark definition
 
     r_ijm = Arg(exp(i c (f_i(x_m) - f_j(x_m)))).
 

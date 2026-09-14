@@ -24,7 +24,7 @@ from approximate_comparison_analysis import load_approximate_results
 from comparison_analysis import DEFAULT_RESULTS_ROOT, load_paired_results
 from input_data import PhaseGaps, principal_phase
 from plot_style import (
-    METHOD_COLORS as PAPER_METHOD_COLORS,
+    METHOD_COLORS as BASE_METHOD_COLORS,
     METHOD_LINESTYLES,
     METHOD_MARKERS,
     REFERENCE_LINE_COLOR,
@@ -38,7 +38,7 @@ DEFAULT_ACTUAL_RESULTS_ROOT = HERE / "results" / "actual_error"
 METHODS = {
     "optimal": "Exhaustive",
     "greedy": "Greedy",
-    "tree_aware": "Heuristic",
+    "heuristic": "Heuristic",
     "uniform": "Uniform",
     "random": "Random",
 }
@@ -49,7 +49,7 @@ EXPANDED_METHODS = {
     "random": "Random",
 }
 METHOD_COLORS = {
-    method: PAPER_METHOD_COLORS[method]
+    method: BASE_METHOD_COLORS[method]
     for method in ("Exhaustive", "Greedy", "Heuristic", "Uniform", "Random")
 }
 
@@ -186,9 +186,9 @@ def evaluate_actual_records(
                 recomputed_surrogate - surrogate_error
             )
 
-        row["tree_aware_actual_gap_vs_optimal"] = (
-            float(row["tree_aware_actual_error"]) - float(row["optimal_actual_error"])
-            if "tree_aware_actual_error" in row and "optimal_actual_error" in row
+        row["heuristic_actual_gap_vs_optimal"] = (
+            float(row["heuristic_actual_error"]) - float(row["optimal_actual_error"])
+            if "heuristic_actual_error" in row and "optimal_actual_error" in row
             else None
         )
         row["greedy_actual_gap_vs_optimal"] = (
@@ -196,9 +196,9 @@ def evaluate_actual_records(
             if "greedy_actual_error" in row and "optimal_actual_error" in row
             else None
         )
-        row["tree_aware_surrogate_gap_vs_optimal"] = (
-            float(row["tree_aware_error"]) - float(row["optimal_error"])
-            if "tree_aware_error" in row and "optimal_error" in row
+        row["heuristic_surrogate_gap_vs_optimal"] = (
+            float(row["heuristic_error"]) - float(row["optimal_error"])
+            if "heuristic_error" in row and "optimal_error" in row
             else None
         )
         row["greedy_surrogate_gap_vs_optimal"] = (
@@ -211,16 +211,13 @@ def evaluate_actual_records(
             continue
 
         greedy_actual_error = float(row["greedy_actual_error"])
-        heuristic_prefix = (
-            "tree_aware" if "tree_aware_actual_error" in row else "heuristic"
+        heuristic_actual_error = float(row["heuristic_actual_error"])
+        row["heuristic_actual_reduction_vs_greedy"] = (
+            greedy_actual_error - heuristic_actual_error
         )
-        tree_aware_actual_error = float(row[f"{heuristic_prefix}_actual_error"])
-        row[f"{heuristic_prefix}_actual_reduction_vs_greedy"] = (
-            greedy_actual_error - tree_aware_actual_error
-        )
-        row[f"{heuristic_prefix}_actual_reduction_vs_greedy_percent"] = (
+        row["heuristic_actual_reduction_vs_greedy_percent"] = (
             100.0
-            * (greedy_actual_error - tree_aware_actual_error)
+            * (greedy_actual_error - heuristic_actual_error)
             / greedy_actual_error
             if greedy_actual_error > 0.0
             else 0.0
@@ -369,10 +366,8 @@ def save_actual_results(
     optional_columns = [
         "greedy_surrogate_gap_vs_optimal",
         "greedy_actual_gap_vs_optimal",
-        "tree_aware_surrogate_gap_vs_optimal",
-        "tree_aware_actual_gap_vs_optimal",
-        "tree_aware_actual_reduction_vs_greedy",
-        "tree_aware_actual_reduction_vs_greedy_percent",
+        "heuristic_surrogate_gap_vs_optimal",
+        "heuristic_actual_gap_vs_optimal",
         "heuristic_actual_reduction_vs_greedy",
         "heuristic_actual_reduction_vs_greedy_percent",
     ]
@@ -438,7 +433,7 @@ def actual_method_comparison_summary(
         float(record["greedy_actual_error"]) for record in records
     ]
     heuristic_actual_errors = [
-        float(record["tree_aware_actual_error"]) for record in records
+        float(record["heuristic_actual_error"]) for record in records
     ]
     optimal_actual_errors = [
         float(record["optimal_actual_error"]) for record in records
@@ -450,14 +445,14 @@ def actual_method_comparison_summary(
         "runs": len(records),
         "optimal_mean_actual_error": float(np.mean(optimal_actual_errors)),
         "greedy_mean_actual_error": mean_greedy_actual,
-        "tree_aware_mean_actual_error": mean_heuristic_actual,
-        "tree_aware_actual_reduction_vs_greedy": mean_reduction,
-        "tree_aware_actual_reduction_vs_greedy_percent": (
+        "heuristic_mean_actual_error": mean_heuristic_actual,
+        "heuristic_actual_reduction_vs_greedy": mean_reduction,
+        "heuristic_actual_reduction_vs_greedy_percent": (
             100.0 * mean_reduction / mean_greedy_actual
             if mean_greedy_actual > 0.0
             else 0.0
         ),
-        "tree_aware_actual_gap_vs_optimal": float(
+        "heuristic_actual_gap_vs_optimal": float(
             np.mean(heuristic_actual_errors) - np.mean(optimal_actual_errors)
         ),
     }

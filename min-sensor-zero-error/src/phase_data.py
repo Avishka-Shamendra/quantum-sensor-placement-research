@@ -1,4 +1,4 @@
-"""Load the paper's phase-gap input and derive sensor thresholds.
+"""Load phase-gap inputs and derive sensor thresholds.
 
 The CSV representation stores one row for every canonical field pair ``i < j``
 and sensing location ``m``. Values obey
@@ -26,7 +26,7 @@ Thresholds = dict[tuple[int, int], list[Threshold]]
 
 
 def principal_phase(value: Real) -> float:
-    """Wrap a finite phase to the paper's principal interval ``(-pi, pi]``."""
+    """Wrap a finite phase to the principal interval ``(-pi, pi]``."""
     if isinstance(value, bool) or not isinstance(value, Real) or not isfinite(value):
         raise ValueError("phase must be a finite real number")
     wrapped = (float(value) + pi) % (2 * pi) - pi
@@ -65,7 +65,7 @@ def compute_nijm(
     M: int,
     phase_gaps: Mapping[tuple[int, int], Sequence[Real]],
 ) -> Thresholds:
-    """Convert canonical phase gaps to the paper's ``N_ijm`` thresholds."""
+    """Convert canonical phase gaps to ``N_ijm`` thresholds."""
     _validate_dimensions(K, M)
     pairs = tuple((i, j) for i in range(K) for j in range(i + 1, K))
     if set(phase_gaps) != set(pairs):

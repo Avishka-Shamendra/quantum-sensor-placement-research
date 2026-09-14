@@ -160,6 +160,9 @@ def run_approximate_dataset(
                     "budget_fraction_of_N_min": budget / minimum_sensors,
                     "greedy_error": greedy_result.error_probability,
                     "heuristic_error": heuristic_result.error_probability,
+                    "heuristic_allocation_score": (
+                        heuristic_result.allocation_score
+                    ),
                     "uniform_error": uniform_result.error_probability,
                     "random_error": random_result.error_probability,
                     "greedy_seconds": greedy_seconds,
@@ -332,6 +335,7 @@ def save_approximate_results(
         "budget_fraction_of_N_min",
         "greedy_error",
         "heuristic_error",
+        "heuristic_allocation_score",
         "uniform_error",
         "random_error",
         "greedy_seconds",
@@ -747,7 +751,7 @@ def _plot_error_by_family(
 def _plot_heuristic_iteration_distribution(
     dimension_records: list[list[dict[str, object]]],
 ) -> plt.Figure:
-    """Plot how many iterations the heuristic performs before stopping."""
+    """Plot how many VND neighborhood evaluations occur before convergence."""
     required_fields = {
         "heuristic_iterations",
         "heuristic_stopping_reason",
@@ -765,16 +769,19 @@ def _plot_heuristic_iteration_distribution(
     )
     for axis, records in zip(axes, dimension_records):
         dimension = int(records[0]["spatial_dimension"])
-        iteration_limits = {
-            int(record["heuristic_max_iterations"]) for record in records
+        raw_limits = {
+            record["heuristic_max_iterations"]
+            for record in records
+            if record["heuristic_max_iterations"] not in {None, ""}
         }
-        if len(iteration_limits) != 1:
-            raise ValueError(
-                "each dataset must use one heuristic maximum iteration setting"
-            )
-        iteration_limit = iteration_limits.pop()
+        if len(raw_limits) > 1:
+            raise ValueError("each dataset must use one heuristic iteration setting")
+        iteration_limit = int(next(iter(raw_limits))) if raw_limits else None
         iterations = [int(record["heuristic_iterations"]) for record in records]
-        bins = np.arange(0.5, iteration_limit + 1.5, 1.0)
+        x_max = max(iterations)
+        if iteration_limit is not None:
+            x_max = max(x_max, iteration_limit)
+        bins = np.arange(0.5, x_max + 1.5, 1.0)
         weights = np.full(len(iterations), 100.0 / len(iterations))
 
         axis.hist(
@@ -786,36 +793,15 @@ def _plot_heuristic_iteration_distribution(
             edgecolor=REFERENCE_LINE_COLOR,
             linewidth=0.5,
         )
-        axis.axvline(
-            iteration_limit,
-            color=REFERENCE_LINE_COLOR,
-            linestyle="--",
-            linewidth=1.5,
-            label=f"Maximum iterations ({iteration_limit})",
-        )
-        reached_limit = sum(
-            record["heuristic_stopping_reason"] == "maximum_iterations"
-            for record in records
-        )
-        reached_limit_percentage = 100.0 * reached_limit / len(records)
-        axis.text(
-            0.97,
-            0.92,
-            f"Reached limit: {reached_limit_percentage:.1f}%",
-            ha="right",
-            va="top",
-            transform=axis.transAxes,
-        )
         axis.set(
             title=f"{dimension}D",
-            xlabel="Heuristic iterations performed",
-            xlim=(0.5, iteration_limit + 0.5),
+            xlabel="VND neighborhood evaluations",
+            xlim=(0.5, x_max + 0.5),
             ylim=(0, None),
         )
         axis.xaxis.set_major_locator(MaxNLocator(integer=True))
         axis.grid(axis="y", alpha=0.25)
     axes[0].set_ylabel("Percentage of runs (%)")
-    axes[1].legend()
     return figure
 
 

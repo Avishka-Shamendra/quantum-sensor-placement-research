@@ -122,7 +122,7 @@ def load_sparse_input(
             expected = pair_error_probability(phase, sensor_count)
             if abs(error - expected) > 1e-12:
                 raise ValueError(
-                    f"P_ijmn on row {row_number} does not match the paper's equation"
+                    f"P_ijmn on row {row_number} does not match the model equation"
                 )
             location_errors[sensor_count] = error
 

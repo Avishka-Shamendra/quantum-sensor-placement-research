@@ -36,7 +36,7 @@ class AppendixOverlap:
 
 
 def principal_phase(value: Real) -> float:
-    """Wrap a finite phase to the paper's principal interval (-pi, pi]."""
+    """Wrap a finite phase to the principal interval (-pi, pi]."""
     if isinstance(value, bool) or not isinstance(value, Real) or not isfinite(value):
         raise ValueError("phase must be a finite real number")
     wrapped = (float(value) + pi) % (2 * pi) - pi

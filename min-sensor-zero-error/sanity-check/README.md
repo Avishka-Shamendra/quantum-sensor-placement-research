@@ -1,7 +1,7 @@
 # Zero-Error Appendix Overlap Sanity Check
 
 This folder checks the quantum-state construction used for the zero-error
-sensor thresholds in the paper appendix.
+sensor thresholds.
 
 For each saved input case in `benchmark_1d` and `benchmark_2d`, the checker:
 
