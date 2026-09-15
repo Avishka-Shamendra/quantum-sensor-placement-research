@@ -49,7 +49,7 @@ def best_improvement_local_search(
     pair_errors: PairErrorData,
     *,
     beam_width: int = 5,
-    max_iterations: int = 250,
+    max_iterations: int = 30,
     improvement_threshold: float = 0.0,
     include_greedy_start: bool = True,
     move_sizes: tuple[int, ...] = DEFAULT_MOVE_SIZES,
@@ -346,7 +346,7 @@ def main() -> None:
     parser.add_argument("--max-cases", type=int, default=None)
     parser.add_argument("--beam-width", type=int, default=5)
     parser.add_argument("--heuristic-initialization", default="near_uniform")
-    parser.add_argument("--heuristic-max-iterations", type=int, default=250)
+    parser.add_argument("--heuristic-max-iterations", type=int, default=30)
     parser.add_argument("--move-sizes", type=int, nargs="+", default=DEFAULT_MOVE_SIZES)
     parser.add_argument(
         "--no-heuristic-greedy-start",

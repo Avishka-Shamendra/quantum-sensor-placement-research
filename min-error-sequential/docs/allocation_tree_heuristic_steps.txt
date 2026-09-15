@@ -45,6 +45,10 @@ Parameters used by the main heuristic
         mean pairwise allocation score. The main setting uses no positive
         practical threshold.
 
+    max_iterations = 30
+        Maximum number of VND neighborhood evaluations. In the current saved
+        full runs, this cap is above the largest observed iteration count.
+
     initialization = "near_uniform"
         Starting allocation is near-uniform across locations.
 
@@ -102,12 +106,14 @@ Algorithm steps
 
    If a level-L move improves AS, the candidate becomes the current allocation
    and the search resets to L = 1. If no level-L move improves AS, the search
-   advances to the next level.
+   advances to the next level. The VND phase is capped at 30 neighborhood
+   evaluations.
 
 6. Stop the allocation search.
 
    The allocation phase stops when no improving move exists for L = 1, 2, and
-   3. The returned allocation is the final VND allocation.
+   3, or when 30 neighborhood evaluations have been performed. The returned
+   allocation is the final VND allocation.
 
 7. Build the final sequential decision tree.
 

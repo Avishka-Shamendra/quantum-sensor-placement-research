@@ -34,7 +34,7 @@ def run_beam_width_study(
     replicates_per_cell: int | None = 1,
     results_root: str | Path = DEFAULT_RESULTS_ROOT,
     *,
-    max_iterations: int | None = None,
+    max_iterations: int | None = 30,
     improvement_threshold: float = 0.0,
     initialization: str = "near_uniform",
     random_seed: int | None = 0,
@@ -300,9 +300,9 @@ def make_beam_width_plot(
         )
         axis.grid(alpha=0.25)
 
-    axes[0].set_ylabel("Mean surrogate final error")
+    axes[0].set_ylabel("Mean surrogate misclassification probability")
     axes[1].legend()
-    figure.supxlabel(r"Budget ratio $\rho=N/N_{\min}^{opt}$")
+    figure.supxlabel(r"Sensor ratio $N/N_{\min}$")
     figures_directory = (
         Path(results_root)
         / f"summary_beam_width_{run_scope}"

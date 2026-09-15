@@ -79,7 +79,7 @@ def heuristic(
     pijmn: PairErrorTable,
     *,
     beam_width: int = 3,
-    max_iterations: int | None = None,
+    max_iterations: int | None = 30,
     improvement_threshold: float = 0.0,
     initialization: str = "near_uniform",
     random_seed: int | None = 0,
