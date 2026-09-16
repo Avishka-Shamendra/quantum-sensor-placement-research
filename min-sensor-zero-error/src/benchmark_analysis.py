@@ -252,9 +252,9 @@ def family_excess_table(
     table: list[dict[str, object]] = []
     for dimension, dimension_rows in sorted(_group_rows(rows, "spatial_dimension").items()):
         panel_title = (
-            "(a) One-dimensional benchmark"
+            "(a) One-dimensional data set"
             if int(dimension) == 1
-            else "(b) Two-dimensional benchmark"
+            else "(b) Two-dimensional data set"
         )
         by_model = _group_rows(dimension_rows, "field_model")
         for model in ("gaussian", "sinusoidal", "quadratic"):
@@ -335,7 +335,7 @@ def _draw_quality_heatmap(
     axis.set_yticks(range(len(k_values)), k_values)
     axis.set_xlabel(r"Number of candidate sensing locations, $M$")
     axis.set_ylabel(r"Number of candidate fields, $K$")
-    axis.set_title(panel_title, loc="left")
+    axis.set_title(panel_title, loc="center", pad=8)
     for row_index, K in enumerate(k_values):
         for column_index, M in enumerate(m_values):
             value = cell_means[(K, M)]
@@ -418,7 +418,7 @@ def _draw_family_bars(
     axis.set_xticks(base_positions, [str(K) for K in k_values])
     axis.set_xlabel(r"Number of candidate fields, $K$")
     axis.set_ylabel("Mean additional sensors used by Greedy (%)")
-    axis.set_title(panel_title, loc="left")
+    axis.set_title(panel_title, loc="center", pad=8)
     axis.set_axisbelow(True)
     axis.grid(axis="y", alpha=0.25)
     return handles, [labels[model] for model in models], maximum_upper
@@ -473,7 +473,7 @@ def _draw_guarantee_comparison(
     axis.set_ylim(0, 105)
     axis.set_xlabel(r"Number of candidate fields, $K$")
     axis.set_ylabel("Worst-case sensor-excess allowance used (%)")
-    axis.set_title(panel_title, loc="left")
+    axis.set_title(panel_title, loc="center", pad=8)
     axis.grid(alpha=0.25)
     handles, labels = axis.get_legend_handles_labels()
     return handles, labels
@@ -484,14 +484,14 @@ def _heatmap_figure(
     output_directory: Path,
     color_limit: float,
 ):
-    """Create the side-by-side 1D and 2D quality heatmaps."""
+    """Create side-by-side quality heatmaps for both data sets."""
     import matplotlib.pyplot as plt
 
     figure, axes = plt.subplots(1, 2, figsize=(11.5, 4.8), constrained_layout=True)
     images = []
     for axis, dimension, title in (
-        (axes[0], 1, "(a) One-dimensional benchmark"),
-        (axes[1], 2, "(b) Two-dimensional benchmark"),
+        (axes[0], 1, "(a) One-dimensional data set"),
+        (axes[1], 2, "(b) Two-dimensional data set"),
     ):
         images.append(
             _draw_quality_heatmap(
@@ -520,8 +520,8 @@ def _family_figure(
     labels: list[str] = []
     maximum_upper = 0.0
     for axis, dimension, title in (
-        (axes[0], 1, "(a) One-dimensional benchmark"),
-        (axes[1], 2, "(b) Two-dimensional benchmark"),
+        (axes[0], 1, "(a) One-dimensional data set"),
+        (axes[1], 2, "(b) Two-dimensional data set"),
     ):
         handles, labels, panel_upper = _draw_family_bars(
             axis,
@@ -557,8 +557,8 @@ def _guarantee_figure(
     handles: list[object] = []
     labels: list[str] = []
     for axis, dimension, title in (
-        (axes[0], 1, "(a) One-dimensional benchmark"),
-        (axes[1], 2, "(b) Two-dimensional benchmark"),
+        (axes[0], 1, "(a) One-dimensional data set"),
+        (axes[1], 2, "(b) Two-dimensional data set"),
     ):
         handles, labels = _draw_guarantee_comparison(
             axis,
