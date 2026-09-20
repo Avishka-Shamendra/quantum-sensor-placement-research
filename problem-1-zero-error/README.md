@@ -9,6 +9,8 @@ and greedy approximation methods, and summarizes the resulting sensor budgets.
 ```text
 problem-1-zero-error/
 ├── 01_solution_method_analysis.ipynb
+├── 02_minimum_sensor_trends.ipynb
+├── final_figures.ipynb
 ├── src/
 │   ├── optimal.py             # exact dynamic program
 │   ├── greedy.py              # greedy gain-based approximation
@@ -43,11 +45,18 @@ Run the full benchmark workflow:
 python problem-1-zero-error/scripts/evaluate_benchmarks.py
 ```
 
-Or run the notebook:
+Or run the notebooks in order:
 
 ```bash
 jupyter lab problem-1-zero-error/01_solution_method_analysis.ipynb
+jupyter lab problem-1-zero-error/02_minimum_sensor_trends.ipynb
+jupyter lab problem-1-zero-error/final_figures.ipynb
 ```
+
+The first notebook runs the exact and greedy solution-method comparison. The
+second creates the exact minimum-sensor trend table and figure from the saved
+comparison results. The final notebook redraws the publication-ready figures
+from those saved tables.
 
 Generate benchmark inputs without evaluating algorithms:
 
