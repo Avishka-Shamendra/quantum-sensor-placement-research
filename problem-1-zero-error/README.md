@@ -8,7 +8,7 @@ and greedy approximation methods, and summarizes the resulting sensor budgets.
 
 ```text
 problem-1-zero-error/
-├── 01_zero_error_algorithm_comparison.ipynb
+├── 01_solution_method_analysis.ipynb
 ├── src/
 │   ├── optimal.py             # exact dynamic program
 │   ├── greedy.py              # greedy gain-based approximation
@@ -46,7 +46,7 @@ python problem-1-zero-error/scripts/evaluate_benchmarks.py
 Or run the notebook:
 
 ```bash
-jupyter lab problem-1-zero-error/01_zero_error_algorithm_comparison.ipynb
+jupyter lab problem-1-zero-error/01_solution_method_analysis.ipynb
 ```
 
 Generate benchmark inputs without evaluating algorithms:
