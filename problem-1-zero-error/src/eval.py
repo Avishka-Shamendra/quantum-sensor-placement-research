@@ -2,7 +2,7 @@
 
 Run from the repository root:
 
-    python3 min-sensor-zero-error/scripts/evaluate_benchmarks.py --require-existing
+    python3 problem-1-zero-error/scripts/evaluate_benchmarks.py --require-existing
 
 There are no algorithm modes: every case is evaluated with both the exact
 dynamic program and the greedy gain-based approximation.
@@ -327,7 +327,10 @@ def _print_summary(dataset_name: str, records: list[dict[str, object]]) -> None:
 
 
 def evaluate_dataset(
-    dataset_name: str = "benchmark_1d", repeats: int = 1
+    dataset_name: str = "benchmark_1d",
+    repeats: int = 1,
+    *,
+    progress_interval: int = 250,
 ) -> tuple[list[dict[str, object]], Path]:
     """Run both algorithms for every case and write JSON/CSV results."""
     if not isinstance(dataset_name, str) or not DATASET_NAME.fullmatch(dataset_name):
@@ -336,6 +339,12 @@ def evaluate_dataset(
         )
     if isinstance(repeats, bool) or not isinstance(repeats, int) or repeats < 1:
         raise ValueError("repeats must be a positive integer")
+    if (
+        isinstance(progress_interval, bool)
+        or not isinstance(progress_interval, int)
+        or progress_interval < 1
+    ):
+        raise ValueError("progress_interval must be a positive integer")
 
     dataset_directory = INPUT_ROOT / dataset_name
     if not dataset_directory.is_dir():
@@ -348,10 +357,15 @@ def evaluate_dataset(
             f"expected {dataset_name!r}, found {manifest.get('dataset')!r}"
         )
     entries = _case_entries(dataset_directory, manifest)
-    records = [
-        _evaluate_case(case_path, metadata, repeats)
-        for case_path, metadata in entries
-    ]
+    records = []
+    total_cases = len(entries)
+    for index, (case_path, metadata) in enumerate(entries, start=1):
+        records.append(_evaluate_case(case_path, metadata, repeats))
+        if index == 1 or index % progress_interval == 0 or index == total_cases:
+            print(
+                f"  progress {dataset_name}: {index:,}/{total_cases:,} cases",
+                flush=True,
+            )
     for record in records:
         record["dataset"] = dataset_name
     output_directory = _write_outputs(dataset_name, manifest, records, repeats)

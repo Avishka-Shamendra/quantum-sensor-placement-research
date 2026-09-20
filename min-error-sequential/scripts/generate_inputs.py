@@ -13,7 +13,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = HERE / "src"
 INPUT_ROOT = HERE / "inputs"
-ZERO_ERROR_ROOT = HERE.parent / "min-sensor-zero-error"
+ZERO_ERROR_ROOT = HERE.parent / "problem-1-zero-error"
 ZERO_ERROR_SOURCE_ROOT = ZERO_ERROR_ROOT / "src"
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 

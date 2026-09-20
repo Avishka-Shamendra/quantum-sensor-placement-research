@@ -2,8 +2,8 @@
 
 Examples, run from the repository root:
 
-    python3 min-sensor-zero-error/scripts/generate_inputs.py custom_1d
-    python3 min-sensor-zero-error/scripts/generate_inputs.py custom_2d --dimension 2 --cases 40
+    python3 problem-1-zero-error/scripts/generate_inputs.py custom_1d
+    python3 problem-1-zero-error/scripts/generate_inputs.py custom_2d --dimension 2 --cases 40
 
 Dataset names describe experiments, not field models. By default, cases cycle
 through every available model and the requested K/M grid. The model used for a

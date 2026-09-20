@@ -7,7 +7,7 @@ and greedy approximation methods, and summarizes the resulting sensor budgets.
 ## Structure
 
 ```text
-min-sensor-zero-error/
+problem-1-zero-error/
 ├── 01_zero_error_algorithm_comparison.ipynb
 ├── src/
 │   ├── optimal.py             # exact dynamic program
@@ -32,7 +32,7 @@ From the repository root:
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r min-sensor-zero-error/requirements.txt
+python -m pip install -r problem-1-zero-error/requirements.txt
 ```
 
 ## Run
@@ -40,26 +40,26 @@ python -m pip install -r min-sensor-zero-error/requirements.txt
 Run the full benchmark workflow:
 
 ```bash
-python min-sensor-zero-error/scripts/evaluate_benchmarks.py
+python problem-1-zero-error/scripts/evaluate_benchmarks.py
 ```
 
 Or run the notebook:
 
 ```bash
-jupyter lab min-sensor-zero-error/01_zero_error_algorithm_comparison.ipynb
+jupyter lab problem-1-zero-error/01_zero_error_algorithm_comparison.ipynb
 ```
 
 Generate benchmark inputs without evaluating algorithms:
 
 ```bash
-python min-sensor-zero-error/scripts/generate_benchmarks.py all
+python problem-1-zero-error/scripts/generate_benchmarks.py all
 ```
 
 Evaluate one generated dataset:
 
 ```bash
-python min-sensor-zero-error/scripts/evaluate_dataset.py benchmark_1d
-python min-sensor-zero-error/scripts/evaluate_dataset.py benchmark_2d
+python problem-1-zero-error/scripts/evaluate_dataset.py benchmark_1d
+python problem-1-zero-error/scripts/evaluate_dataset.py benchmark_2d
 ```
 
 ## Benchmark Design
@@ -79,7 +79,7 @@ program and `N_greedy` is the budget returned by the greedy method.
 
 ## Outputs
 
-Generated files are written under `min-sensor-zero-error/results/`:
+Generated files are written under `problem-1-zero-error/results/`:
 
 ```text
 results/algorithm_comparison/
