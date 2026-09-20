@@ -5,10 +5,10 @@ __pycache__/
 .jupyter-notebook/
 
 # Large deterministic benchmark intermediates are regenerated from fixed seeds.
-min-sensor-zero-error/inputs/benchmark_1d/
-min-sensor-zero-error/inputs/benchmark_2d/
-min-sensor-zero-error/results/algorithm_comparison/benchmark_1d_results_full/
-min-sensor-zero-error/results/algorithm_comparison/benchmark_2d_results_full/
+problem-1-zero-error/inputs/benchmark_1d/
+problem-1-zero-error/inputs/benchmark_2d/
+problem-1-zero-error/results/algorithm_comparison/benchmark_1d_results_full/
+problem-1-zero-error/results/algorithm_comparison/benchmark_2d_results_full/
 
 # Deterministic minimum-error benchmark inputs and exact-search outputs.
 min-error-sequential/inputs/compact_benchmark_1d/
