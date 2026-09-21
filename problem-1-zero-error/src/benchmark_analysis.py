@@ -7,6 +7,7 @@ import json
 import math
 import random
 import zlib
+from run_config import validate_run_mode
 from collections import defaultdict
 from pathlib import Path
 from statistics import fmean, median
@@ -653,8 +654,10 @@ def analyze_benchmarks(
     output_directory: str | Path,
     *,
     bootstrap_iterations: int = 2_000,
+    run_mode: str = "full",
 ) -> dict[str, object]:
     """Write combined statistics and figures for both spatial dimensions."""
+    validate_run_mode(run_mode)
     required = {"benchmark_1d", "benchmark_2d"}
     missing = required - set(records_by_dataset)
     if missing:
@@ -736,6 +739,7 @@ def analyze_benchmarks(
         ),
     }
     payload = {
+        "run_mode": run_mode,
         "bootstrap_iterations": bootstrap_iterations,
         "overall_summary": overall_summary,
         "dimension_summaries": dimension_summaries,

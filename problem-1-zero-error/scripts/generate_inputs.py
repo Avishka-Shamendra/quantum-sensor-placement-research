@@ -109,8 +109,6 @@ def _parse_arguments() -> argparse.Namespace:
         parser.error("dataset may contain only letters, digits, underscores, and hyphens")
     if arguments.k_min < 2 or arguments.k_min > arguments.k_max:
         parser.error("require 2 <= --k-min <= --k-max")
-    if arguments.k_max > 10:
-        parser.error("--k-max must be at most 10 because evaluation always runs the exact algorithm")
     if arguments.m_min < 2 or arguments.m_min > arguments.m_max:
         parser.error("require 2 <= --m-min <= --m-max")
     return arguments
@@ -191,10 +189,10 @@ def generate_factorial_dataset(
     if not selected_models or any(model not in FIELD_MODELS for model in selected_models):
         raise ValueError("models must contain known field-model names")
     if not k_values or any(
-        isinstance(K, bool) or not isinstance(K, int) or not 2 <= K <= 10
+        isinstance(K, bool) or not isinstance(K, int) or K < 2
         for K in k_values
     ):
-        raise ValueError("Every K must be an integer between 2 and 10")
+        raise ValueError("Every K must be an integer of at least 2")
     if not m_values or any(
         isinstance(M, bool) or not isinstance(M, int) or M < 2
         for M in m_values

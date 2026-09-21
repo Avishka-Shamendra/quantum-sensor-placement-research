@@ -4,8 +4,8 @@ Run from the repository root:
 
     python3 problem-1-zero-error/scripts/evaluate_benchmarks.py --require-existing
 
-There are no algorithm modes: every case is evaluated with both the exact
-dynamic program and the greedy gain-based approximation.
+Both run modes use the exact dynamic program and greedy approximation;
+test mode selects a small, deterministic subset of the saved cases.
 """
 
 from __future__ import annotations
@@ -25,11 +25,12 @@ from typing import List, Optional, Tuple
 from greedy import greedy_perfect_pairwise_sensor_placement
 from optimal import optimal_perfect_pairwise_sensor_placement
 from phase_data import Thresholds, compute_nijm, load_phase_csv
+from run_config import select_cases, validate_run_mode
 
 
 HERE = Path(__file__).resolve().parents[1]
 INPUT_ROOT = HERE / "inputs"
-RESULTS_ROOT = HERE / "results" / "algorithm_comparison"
+RESULTS_ROOT = HERE / "results" / "methods"
 MAX_EXACT_FIELDS = 10
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 SolverResult = Tuple[int, List[int], List[List[Optional[int]]]]
@@ -67,6 +68,10 @@ def _parse_arguments() -> argparse.Namespace:
         default="benchmark_1d",
         type=_dataset_name,
         help="Dataset directory below inputs/ (default: benchmark_1d).",
+    )
+    parser.add_argument(
+        "--mode", choices=("test", "full"), default="full",
+        help="Case selection: test subset or full dataset (default: full).",
     )
     parser.add_argument(
         "--repeats",
@@ -281,11 +286,14 @@ def _write_outputs(
     manifest: dict[str, object],
     records: list[dict[str, object]],
     repeats: int,
+    run_mode: str = "full",
 ) -> Path:
-    output_directory = RESULTS_ROOT / f"{dataset_name}_results_full" / "tables"
+    dataset_folder = {"benchmark_1d": "1d", "benchmark_2d": "2d"}.get(dataset_name, dataset_name)
+    output_directory = RESULTS_ROOT / run_mode / dataset_folder / "tables"
     output_directory.mkdir(parents=True, exist_ok=True)
     payload = {
         "schema_version": 1,
+        "run_mode": run_mode,
         "dataset": dataset_name,
         "timing_repetitions": repeats,
         "phase_data": manifest.get("phase_data"),
@@ -331,8 +339,10 @@ def evaluate_dataset(
     repeats: int = 1,
     *,
     progress_interval: int = 250,
+    run_mode: str = "full",
 ) -> tuple[list[dict[str, object]], Path]:
-    """Run both algorithms for every case and write JSON/CSV results."""
+    """Run both algorithms on the selected cases and write JSON/CSV results."""
+    validate_run_mode(run_mode)
     if not isinstance(dataset_name, str) or not DATASET_NAME.fullmatch(dataset_name):
         raise ValueError(
             "dataset_name may contain only letters, digits, underscores, and hyphens"
@@ -356,7 +366,7 @@ def evaluate_dataset(
             "Manifest dataset name does not match its directory: "
             f"expected {dataset_name!r}, found {manifest.get('dataset')!r}"
         )
-    entries = _case_entries(dataset_directory, manifest)
+    entries = select_cases(_case_entries(dataset_directory, manifest), run_mode)
     records = []
     total_cases = len(entries)
     for index, (case_path, metadata) in enumerate(entries, start=1):
@@ -368,7 +378,8 @@ def evaluate_dataset(
             )
     for record in records:
         record["dataset"] = dataset_name
-    output_directory = _write_outputs(dataset_name, manifest, records, repeats)
+        record["run_mode"] = run_mode
+    output_directory = _write_outputs(dataset_name, manifest, records, repeats, run_mode)
     return records, output_directory
 
 
@@ -378,7 +389,7 @@ def main() -> int:
 
     try:
         records, output_directory = evaluate_dataset(
-            arguments.dataset, arguments.repeats
+            arguments.dataset, arguments.repeats, run_mode=arguments.mode
         )
     except (ValueError, RuntimeError) as error:
         print(error, file=sys.stderr)

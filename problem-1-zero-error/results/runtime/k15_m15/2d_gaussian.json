@@ -1,0 +1,8 @@
+{
+  "status": "memory_limit",
+  "dp_elapsed_seconds": 25.734731582924724,
+  "peak_rss_mib": 1205.53125,
+  "completed_locations": 12,
+  "last_completed_states": 973708,
+  "peak_completed_states": 973708
+}

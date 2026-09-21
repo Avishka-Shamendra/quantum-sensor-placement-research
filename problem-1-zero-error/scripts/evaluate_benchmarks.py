@@ -14,6 +14,7 @@ if str(SOURCE_ROOT) not in sys.path:
 from eval import INPUT_ROOT, RESULTS_ROOT, evaluate_dataset
 from generate_benchmarks import BENCHMARKS, generate_benchmarks
 from benchmark_analysis import analyze_benchmarks
+from run_config import validate_run_mode
 
 
 DATASETS = [str(design["dataset"]) for design in BENCHMARKS.values()]
@@ -35,8 +36,10 @@ def run_benchmark_evaluation(
     repeats: int = 1,
     bootstrap_iterations: int = 2_000,
     generate_missing: bool = True,
+    run_mode: str = "full",
 ) -> dict[str, object]:
     """Generate missing benchmarks, run both solvers, and analyze results."""
+    validate_run_mode(run_mode)
     missing_names = [
         name
         for name, design in BENCHMARKS.items()
@@ -50,16 +53,16 @@ def run_benchmark_evaluation(
     records_by_dataset: dict[str, list[dict[str, object]]] = {}
     for dataset in DATASETS:
         print(f"Evaluating {dataset} ...", flush=True)
-        records, output_directory = evaluate_dataset(dataset, repeats)
+        records, output_directory = evaluate_dataset(dataset, repeats, run_mode=run_mode)
         records_by_dataset[dataset] = records
         print(f"  {len(records)} cases -> {output_directory}", flush=True)
 
-    dataset_names = "_".join(DATASETS)
-    analysis_directory = RESULTS_ROOT / f"results_summary_{dataset_names}_full"
+    analysis_directory = RESULTS_ROOT / run_mode
     analysis = analyze_benchmarks(
         records_by_dataset,
         analysis_directory,
         bootstrap_iterations=bootstrap_iterations,
+        run_mode=run_mode,
     )
     print(f"Benchmark tables and figures -> {analysis_directory}")
     return analysis
@@ -69,6 +72,10 @@ def run_benchmark_evaluation(
 def _parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate, evaluate, and analyze both benchmark datasets."
+    )
+    parser.add_argument(
+        "--mode", choices=("test", "full"), default="full",
+        help="Case selection: test subset or full benchmarks (default: full).",
     )
     parser.add_argument(
         "--repeats",
@@ -98,6 +105,7 @@ def main() -> int:
             repeats=arguments.repeats,
             bootstrap_iterations=arguments.bootstrap,
             generate_missing=not arguments.require_existing,
+            run_mode=arguments.mode,
         )
     except (ValueError, RuntimeError) as error:
         print(error)

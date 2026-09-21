@@ -1,0 +1,99 @@
+{
+  "field_model": "sinusoidal",
+  "spatial_dimension": 1,
+  "K": 12,
+  "M": 12,
+  "phase_scale_c": 1.0,
+  "min_best_pair_phase_gap": 0.01,
+  "maximum_best_pair_sensor_threshold": 315,
+  "generation_seed": 20361920,
+  "generation_attempt": 1,
+  "sensor_locations": [
+    0.460459223346958,
+    0.5239928508715007,
+    0.677041718225134,
+    0.8602226705127578,
+    0.31819692935686916,
+    0.912647327976082,
+    0.6017866035051728,
+    0.8573845194913061,
+    0.11101446066946452,
+    0.8566343591282418,
+    0.3609810524026136,
+    0.06776880342025737
+  ],
+  "field_parameters": [
+    {
+      "field_index": 0,
+      "amplitude": 0.9661564313657354,
+      "frequency": 3,
+      "phase_offset": 1.3038374872125447
+    },
+    {
+      "field_index": 1,
+      "amplitude": 1.291361467165475,
+      "frequency": 2,
+      "phase_offset": 2.6008329593598045
+    },
+    {
+      "field_index": 2,
+      "amplitude": 0.8854489612401922,
+      "frequency": 2,
+      "phase_offset": 0.6553999724373991
+    },
+    {
+      "field_index": 3,
+      "amplitude": 0.5688574512826916,
+      "frequency": 3,
+      "phase_offset": -1.9591498922477215
+    },
+    {
+      "field_index": 4,
+      "amplitude": 0.8898289869987436,
+      "frequency": 2,
+      "phase_offset": -2.466681352043643
+    },
+    {
+      "field_index": 5,
+      "amplitude": 0.8122278901549191,
+      "frequency": 2,
+      "phase_offset": 1.7141626727764558
+    },
+    {
+      "field_index": 6,
+      "amplitude": 0.7308594220474238,
+      "frequency": 1,
+      "phase_offset": -1.1473760139495066
+    },
+    {
+      "field_index": 7,
+      "amplitude": 0.9285125954162312,
+      "frequency": 1,
+      "phase_offset": -3.0909651226824706
+    },
+    {
+      "field_index": 8,
+      "amplitude": 1.2442341654882547,
+      "frequency": 3,
+      "phase_offset": -1.1752314137756728
+    },
+    {
+      "field_index": 9,
+      "amplitude": 1.1976993093714934,
+      "frequency": 1,
+      "phase_offset": -1.4665963628710257
+    },
+    {
+      "field_index": 10,
+      "amplitude": 1.4128879143760025,
+      "frequency": 3,
+      "phase_offset": 1.812507017505606
+    },
+    {
+      "field_index": 11,
+      "amplitude": 0.642194738429752,
+      "frequency": 1,
+      "phase_offset": -0.10044214636747384
+    }
+  ]
+}
