@@ -1,36 +1,7 @@
-# Minimum-Sensor Zero-Error Discrimination
+# Zero-Error Sensor Allocation
 
-This folder contains the zero-error sensor-allocation pipeline. It generates
-one- and two-dimensional benchmark inputs, evaluates exact dynamic programming
-and greedy approximation methods, and summarizes the resulting sensor budgets.
-
-## Structure
-
-```text
-problem-1-zero-error/
-├── 01_solution_method_analysis.ipynb
-├── 02_minimum_sensor_trends.ipynb
-├── 03_lower_bound_comparison.ipynb
-├── final_figures.ipynb
-├── src/
-│   ├── optimal.py             # exact dynamic program
-│   ├── lower_bound.py         # Section 3.2.1 Eq. (14) integer program
-│   ├── sensor_budget_analysis.py # independent budget analyses from inputs
-│   ├── run_config.py          # shared test/full selection and output paths
-│   ├── test_lower_bound.py    # optional automated correctness checks
-│   ├── greedy.py              # greedy gain-based approximation
-│   ├── phase_data.py          # phase loading and threshold conversion
-│   ├── field_models.py        # benchmark field families
-│   ├── eval.py                # dataset evaluation
-│   └── benchmark_analysis.py  # summaries, tables, and figures
-├── scripts/
-│   ├── generate_inputs.py
-│   ├── generate_benchmarks.py
-│   ├── evaluate_dataset.py
-│   └── evaluate_benchmarks.py
-├── inputs/                    # generated benchmark inputs
-└── results/                   # generated tables and figures
-```
+Compare sequential DP, sequential Greedy, and a global integer-program minimum
+on one- and two-dimensional field datasets.
 
 ## Setup
 
@@ -42,163 +13,104 @@ source .venv/bin/activate
 python -m pip install -r problem-1-zero-error/requirements.txt
 ```
 
-## Run
+## Notebooks
 
-Run the solution-method comparison from the command line:
+| Notebook | Analysis | Output folder |
+| --- | --- | --- |
+| `01_solution_method_analysis.ipynb` | DP vs Greedy quality, timing, allocation agreement | `results/methods/` |
+| `02_minimum_sensor_trends.ipynb` | Sequential minimum budget trends | `results/nmin/` |
+| `03_global_seq_comparison.ipynb` | Greedy, sequential optimum, global minimum | `results/lb/` |
+| `final_figures.ipynb` | Figures and tables from saved full results | `results/final/` |
 
-```bash
-python problem-1-zero-error/scripts/evaluate_benchmarks.py --mode test --require-existing
-# Use --mode full for the complete solution-method comparison.
-```
+Notebooks 01–03 run independently from saved inputs. Choose `RUN_MODE = "test"`
+or `"full"` in each configuration cell, then run all cells:
 
-The three analysis notebooks run independently from the saved benchmark inputs,
-in any order. Only `final_figures.ipynb` depends on their saved output tables:
+- `test`: 132 cases across both dimensions and all families and K values,
+  using M=3 or 6 and replicate 1.
+- `full`: all 39,600 cases.
 
-```bash
-jupyter lab problem-1-zero-error/01_solution_method_analysis.ipynb
-jupyter lab problem-1-zero-error/02_minimum_sensor_trends.ipynb
-jupyter lab problem-1-zero-error/03_lower_bound_comparison.ipynb
-jupyter lab problem-1-zero-error/final_figures.ipynb
-```
+Each analysis saves separate `test/` and `full/` folders with `tables/` and
+`figures/`. Notebook 01 also saves per-dataset details in `1d/tables/` and
+`2d/tables/`. Run all three in full mode before running `final_figures.ipynb`.
 
-All three analysis notebooks have the same **Run configuration** cell:
+In 02 and 03, `REUSE_SAVED_RESULTS = True` reuses matching DP results from 01
+or earlier 02/03 runs. Metadata, freshness or input hashes, and allocation
+feasibility are checked. Missing or stale results are computed normally.
+Let 01 finish first for maximum reuse. Set the flag to `False` for fresh DP
+solves. Notebook 03 computes Greedy and the global integer program for each case.
 
-```python
-RUN_MODE = "test"  # Change to "full" for the complete benchmark.
-```
+## Inputs
 
-Test mode selects 96 cases: both dimensions, all families and K values,
-M=3 and 6, and replicate 1. Full mode selects all 11,520 cases. Each mode uses
-the same solvers. Run all cells after choosing the mode. Notebook 01 uses 200
-bootstrap resamples in test mode and 2,000 in full mode.
-
-The first notebook runs the exact and greedy solution-method comparison. The
-second recomputes the exact minimum-sensor trends directly from the raw inputs.
-The third independently recomputes the exact sequential minimum and the global
-integer lower bound on the same inputs, then plots both curves versus K for 1D
-and 2D. The final notebook redraws the publication-ready figures from the three
-analyses' **full-mode** saved tables. The command-line workflow above produces the
-solution-method comparison only; run notebooks 02 and 03 for their analyses.
-
-Each analysis requires existing benchmark inputs by default. If they are missing,
-generate them with the command below; no other notebook is a prerequisite.
-
-Generate benchmark inputs without evaluating algorithms:
+Each dataset contains Gaussian, sinusoidal, and quadratic fields with K=2–12,
+M=1–12, and 50 realizations per family and (K,M): 19,800 cases per dimension.
+Generate inputs without running solvers:
 
 ```bash
 python problem-1-zero-error/scripts/generate_benchmarks.py all
 ```
 
-Evaluate one generated dataset:
+Run the method comparison from the command line:
 
 ```bash
-python problem-1-zero-error/scripts/evaluate_dataset.py benchmark_1d
-python problem-1-zero-error/scripts/evaluate_dataset.py benchmark_2d
+python problem-1-zero-error/scripts/evaluate_benchmarks.py --mode test --require-existing
+# Use --mode full for all cases.
 ```
 
-## Benchmark Design
-
-The standard benchmarks are `benchmark_1d` and `benchmark_2d`. Each contains
-Gaussian, sinusoidal, and quadratic field families with `K = 3..10`,
-`M = 3..10`, and 30 realizations per family, `K`, and `M` setting.
-
-The main quality measure is
-
-$$\rho = N_{\mathrm{greedy}} / N_{\min}^{\mathrm{seq}}.$$
-
-Here $N_{\min}^{\mathrm{seq}}$ is the exact minimum sequential sensor budget
-returned by the dynamic program, and $N_{\mathrm{greedy}}$ is the budget returned
-by the greedy method. Existing CSV keys such as `N_optimal` and `mean_N_min_opt`
-are retained for compatibility; displayed labels use $N_{\min}^{\mathrm{seq}}$.
-
-## Separate scalability pilot
-
-The original datasets and notebooks retain K,M=3..10. A separate input-only pilot
-uses K={10,12,14,16,18,20}, M={5,10,15,20}, and three realizations per field-family
-and K,M cell. It creates 216 cases in each of `inputs/scale_1d/` and
-`inputs/scale_2d/`, preserving the main datasets:
+An optional input-only pilot uses K={10,12,14,16,18,20}, M={5,10,15,20}, and
+three realizations per family and cell (216 cases per dimension):
 
 ```bash
 python problem-1-zero-error/scripts/generate_benchmarks.py all --suite scale
 ```
 
-Use `--replicates N` to choose another replication count when generating a new
-pilot; replacing existing pilot files requires `--overwrite`. Generation does
-not run any solvers. The standard comparison evaluator retains its K<=10 guard,
-and notebooks 01-03 continue to select the main datasets. Larger exact runs need
-explicit runtime and memory limits.
+Pilot inputs go to `inputs/scale_1d/` and `inputs/scale_2d/`. The main notebooks
+use `benchmark_1d` and `benchmark_2d`; the standard evaluator has a K≤12 guard.
 
-For presentation, the pilot grid needs only a 6-row by 4-column heatmap per
-dimension, even though its maximum K and M are larger. Keep the original 8-by-8
-heatmaps for the main benchmark; report scalability separately, including any
-unsolved cases instead of treating them as exact results.
+## Budget definitions
 
-## Outputs
+$N_{\mathrm{greedy}}^{\mathrm{seq}}$ is the sequential Greedy budget and
+$N_{\min}^{\mathrm{seq}}$ is the sequential DP optimum. The global minimum is
 
-Generated files are written under `problem-1-zero-error/results/`:
+$$N_{\min}^{\mathrm{global}}=\min_{\boldsymbol n\in\mathbb Z_{\geq0}^M}\sum_m n_m,
+\qquad \sum_m n_m|r_{ijm}|\geq\pi\quad\text{for every }i<j.$$
 
-```text
-results/
-├── methods/                  # notebook 01
-│   ├── test/
-│   └── full/
-├── nmin/                     # notebook 02
-│   ├── test/
-│   └── full/
-├── lb/                       # notebook 03
-│   ├── test/
-│   └── full/
-└── final/                    # final_figures.ipynb
-```
+Here $r_{ijm}$ is the principal phase gap. This minimum refers to the integer
+program; its constraints alone do not certify a shared global input state.
+Every case is checked for
+$N_{\min}^{\mathrm{global}}\leq N_{\min}^{\mathrm{seq}}\leq N_{\mathrm{greedy}}^{\mathrm{seq}}$.
 
-Each mode has `tables/` and `figures/` subfolders. Notebook 01 also saves detailed
-per-dataset outputs in `1d/tables/` and `2d/tables/` inside the selected mode.
-Tables are CSV files; figures are PDF and PNG files. Existing legacy output
-folders are preserved; new runs use these short paths.
+`src/lower_bound.py` uses SciPy/HiGHS with zero relative MIP gap and $10^{-9}$
+feasibility tolerances. Integer allocations are independently checked to
+$10^{-8}$ after normalization by $\pi$. Computation uses floating-point inputs.
+Existing code and CSV identifiers such as `N_LB` remain for compatibility.
 
-Notebook 03's selected mode folder includes:
+## Figures and tables
 
-- `tables/case_budgets.csv`: both optima, allocations, input hashes, solve times,
-  lower-bound solver diagnostics, and per-instance gaps.
-- `tables/nlb_vs_nmin_by_dimension_k.csv`: the main paired mean curves.
-- `tables/nlb_vs_nmin_by_k_m.csv`: comparisons at fixed K and M.
-- `figures/nlb_vs_nmin_by_k.{pdf,png}`: two panels, with both curves in each.
+Notebook 01 reports Greedy sensor excess, worst-case allowance used, quality
+heatmaps, and allocation agreement. “Same allocation” compares the full sensor
+vectors; “same total budget” compares their sums. Different vectors can both
+be optimal. For K=2, zero theoretical excess allowance is reported as 0% used.
 
-Test runs do not overwrite full results. Run all three notebooks with
-`RUN_MODE = "full"` before running `final_figures.ipynb`, which reads only
-`methods/full/`, `nmin/full/`, and `lb/full/`.
+Notebook 02 saves `case_budgets.csv` and `nmin_by_dimension_k.csv`.
+Notebook 03 saves:
 
-## Lower-bound interpretation and solver
+- `tables/case_budgets.csv`: all three budgets, allocations, timings, and diagnostics.
+- `tables/nlb_vs_nmin_by_dimension_k.csv`: mean curves by dimension and K.
+- `tables/nlb_vs_nmin_by_k_m.csv`: summaries at fixed K and M.
+- `figures/nlb_vs_nmin_by_k.{pdf,png}`: all three curves for each dimension.
 
-In the supplied *Quantum Sensor Resource Allocation for Spatial Field
-Discrimination* manuscript, Section 3.2.1, equation (14), defines
+These existing output names remain compatible with saved-result reuse.
+Full budget curves pool 1,800 cases per dimension and K; test curves pool 6.
 
-```text
-N_LB_global = min sum_m n_m
-subject to sum_m n_m * abs(r_ijm) >= pi for every i < j,
-           n_m nonnegative integers.
-```
+Final figures use blue, red, and green, with yellow-to-red heatmaps. The bar,
+guarantee, and heatmap figures and their tables use K=3–12 and M=2–12.
+Other figures retain the full saved ranges. Dataset panels use (a)/(b) labels.
 
-`lower_bound.py` solves this ILP with SciPy/HiGHS using the original phase gaps.
-It requests zero relative MIP gap, requires optimal termination and agreement
-between the primal objective and dual bound, and validates the integer allocation
-against every constraint to 1e-8 after normalization by pi. This is floating-point
-numerical optimization, not a symbolic exact-arithmetic certificate. See the
-[SciPy milp documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.milp.html).
-
-The comparison $N_{\min}^{\mathrm{seq}}$ is the exact **sequential** optimum in Section 3.3,
-equation (15), computed with the existing dynamic program. Every feasible
-sequential allocation satisfies the lower-bound constraints, so
-$N_{\mathrm{LB}}^{\mathrm{global}} \leq N_{\min}^{\mathrm{seq}}$;
-this is checked for every instance. The gap does not establish achievable global
-savings: equation (14) alone does not ensure a common global input state exists.
-In full mode, each plotted mean pools the same 720 cases per dimension and K (three families,
-eight M values, 30 replicates). The fixed-K,M table retains location counts separately.
-
-Optional automated correctness checks live in `src/test_lower_bound.py`; no
-separate tests folder is needed. These checks are separate from notebook test
-mode. Run them from the repository root:
+## Checks
 
 ```bash
-python problem-1-zero-error/src/test_lower_bound.py -v
+python problem-1-zero-error/src/test_lower_bound.py -q
 ```
+
+These checks are separate from notebook test mode. Main implementations and
+plot helpers live in `src/`; input and evaluation entry points live in `scripts/`.

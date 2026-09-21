@@ -33,8 +33,8 @@ def sensing_locations(dimension: int, M: int, rng: Random) -> list[Location]:
     """Sample ``M`` independent uniform locations from ``[0, 1]^dimension``."""
     if dimension not in (1, 2):
         raise ValueError("dimension must be 1 or 2.")
-    if isinstance(M, bool) or not isinstance(M, int) or M < 2:
-        raise ValueError("M must be an integer of at least 2.")
+    if isinstance(M, bool) or not isinstance(M, int) or M < 1:
+        raise ValueError("M must be an integer of at least 1.")
     return [tuple(rng.random() for _ in range(dimension)) for _ in range(M)]
 
 

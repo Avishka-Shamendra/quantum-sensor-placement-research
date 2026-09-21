@@ -104,12 +104,67 @@ def case_metrics(record: dict[str, object]) -> dict[str, object]:
         "relative_excess_percent": 100 * (ratio - 1),
         "theorem_factor": theorem_factor,
         "theorem_excess_percent": 100 * (theorem_factor - 1),
-        "theorem_excess_fraction_used": (ratio - 1) / (theorem_factor - 1),
+        "theorem_excess_fraction_used": (
+            (ratio - 1) / (theorem_factor - 1) if theorem_factor > 1 else 0.0
+        ),
         "exact_match": int(optimal["minimum_sensors"] == greedy["minimum_sensors"]),
+        "allocation_match": int(optimal["allocation"] == greedy["allocation"]),
+        "optimal_allocation": json.dumps(optimal["allocation"]),
+        "greedy_allocation": json.dumps(greedy["allocation"]),
         "optimal_seconds": optimal_seconds,
         "greedy_seconds": greedy_seconds,
         "runtime_speedup": optimal_seconds / greedy_seconds,
     }
+
+
+def allocation_match_table(rows):
+    """Pool all families and M values; distinguish vector and total agreement."""
+    groups = defaultdict(list)
+    for row in rows:
+        groups[(int(row["spatial_dimension"]), int(row["K"]))].append(row)
+    table = []
+    for (dimension, K), group in sorted(groups.items()):
+        allocations = sum(int(row["allocation_match"]) for row in group)
+        budgets = sum(int(row["exact_match"]) for row in group)
+        if any(int(row["allocation_match"]) > int(row["exact_match"]) for row in group):
+            raise ValueError("Identical allocations must have identical total budgets")
+        table.append({
+            "spatial_dimension": dimension,
+            "dimension": "One-dimensional" if dimension == 1 else "Two-dimensional",
+            "K": K, "case_count": len(group),
+            "allocation_matches": allocations, "budget_matches": budgets,
+            "allocation_match_percent": 100 * allocations / len(group),
+            "budget_match_percent": 100 * budgets / len(group),
+        })
+    return table
+
+
+def plot_allocation_match(table):
+    """Consolidated Greedy/DP agreement, one panel per spatial dimension."""
+    import matplotlib.pyplot as plt
+    _configure_plot_style()
+    figure, axes = plt.subplots(1, 2, figsize=(10.8, 3.9), sharey=True)
+    for axis, dimension, title in zip(axes, (1, 2),
+            ("One-dimensional dataset", "Two-dimensional dataset")):
+        selected = sorted([row for row in table if int(row["spatial_dimension"]) == dimension],
+                          key=lambda row: int(row["K"]))
+        ks = [int(row["K"]) for row in selected]
+        for key, label, color, marker, linestyle in (
+            ("allocation_match_percent", "Same allocation", "#0072B2", "o", "-"),
+            ("budget_match_percent", "Same total budget", "#D55E00", "s", "--"),
+        ):
+            axis.plot(ks, [float(row[key]) for row in selected], label=label,
+                      color=color, marker=marker, linestyle=linestyle, linewidth=1.8)
+        axis.set_title(title)
+        axis.set_xlabel(r"Number of candidate fields, $K$")
+        axis.set_xticks(ks)
+        axis.set_ylim(0, 105)
+        axis.set_yticks(range(0, 101, 20))
+        axis.grid(alpha=0.22)
+        axis.legend(frameon=False, fontsize=10)
+    axes[0].set_ylabel("Greedy–DP match rate (%)")
+    figure.tight_layout()
+    return figure
 
 
 def summarize_group(
@@ -676,6 +731,8 @@ def analyze_benchmarks(
         for record in records
     ]
     _write_csv(tables_directory / "case_metrics.csv", rows)
+    match_table = allocation_match_table(rows)
+    _write_csv(tables_directory / "allocation_match.csv", match_table)
 
     summary_rows: list[dict[str, object]] = []
 
@@ -748,10 +805,17 @@ def analyze_benchmarks(
     (tables_directory / "analysis_summary.json").write_text(
         json.dumps(payload, indent=2) + "\n", encoding="utf-8"
     )
+    match_figure = plot_allocation_match(match_table)
+    if run_mode == "test":
+        match_figure.suptitle(f"Test run: {len(rows):,} cases")
+        match_figure.tight_layout(rect=(0, 0, 1, 0.93))
+    _save_figure(match_figure, figures_directory, "allocation_match")
+    figures["allocation_match"] = match_figure
     return {
         "rows": rows,
         "summaries": summary_rows,
         "figures": figures,
+        "allocation_match_table": match_table,
         "output_directory": str(output),
         **payload,
     }

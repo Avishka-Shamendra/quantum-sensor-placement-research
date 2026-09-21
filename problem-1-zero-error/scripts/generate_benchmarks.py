@@ -23,10 +23,10 @@ BENCHMARKS: dict[str, dict[str, object]] = {
         "dataset": "benchmark_1d",
         "dimension": 1,
         "models": MODELS,
-        "k_values": list(range(3, 11)),
-        "m_values": list(range(3, 11)),
+        "k_values": list(range(2, 13)),
+        "m_values": list(range(1, 13)),
         "c_values": [1.0],
-        "replicates": 30,
+        "replicates": 50,
         "seed": 20260901,
         "min_best_pair_phase_gap": DEFAULT_MIN_BEST_PAIR_PHASE_GAP,
         "description": (
@@ -38,10 +38,10 @@ BENCHMARKS: dict[str, dict[str, object]] = {
         "dataset": "benchmark_2d",
         "dimension": 2,
         "models": MODELS,
-        "k_values": list(range(3, 11)),
-        "m_values": list(range(3, 11)),
+        "k_values": list(range(2, 13)),
+        "m_values": list(range(1, 13)),
         "c_values": [1.0],
-        "replicates": 30,
+        "replicates": 50,
         "seed": 20261017,
         "min_best_pair_phase_gap": DEFAULT_MIN_BEST_PAIR_PHASE_GAP,
         "description": (
@@ -133,11 +133,11 @@ def _parse_arguments() -> argparse.Namespace:
     )
     parser.add_argument(
         "--suite", choices=("main", "scale"), default="main",
-        help="main: existing K,M=3..10 design; scale: separate pilot up to 20.",
+        help="main: K=2..12, M=1..12 design; scale: separate pilot up to 20.",
     )
     parser.add_argument(
         "--replicates", type=int,
-        help="Realizations per family/K/M cell (default: main=30, scale=3).",
+        help="Realizations per family/K/M cell (default: main=50, scale=3).",
     )
     parser.add_argument(
         "--overwrite",

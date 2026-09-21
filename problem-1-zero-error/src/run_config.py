@@ -9,7 +9,7 @@ def validate_run_mode(run_mode):
 
 
 def select_cases(entries, run_mode):
-    """Test: all K/families, M=3 or 6, replicate 1 (96 benchmark cases)."""
+    """Test: all K/families, M=3 or 6, replicate 1 (132 benchmark cases)."""
     validate_run_mode(run_mode)
     if run_mode == "full":
         return entries

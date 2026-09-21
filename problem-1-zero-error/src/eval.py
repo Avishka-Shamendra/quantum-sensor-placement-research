@@ -31,7 +31,7 @@ from run_config import select_cases, validate_run_mode
 HERE = Path(__file__).resolve().parents[1]
 INPUT_ROOT = HERE / "inputs"
 RESULTS_ROOT = HERE / "results" / "methods"
-MAX_EXACT_FIELDS = 10
+MAX_EXACT_FIELDS = 12
 DATASET_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]*$")
 SolverResult = Tuple[int, List[int], List[List[Optional[int]]]]
 Solver = Callable[[int, int, Thresholds], SolverResult]

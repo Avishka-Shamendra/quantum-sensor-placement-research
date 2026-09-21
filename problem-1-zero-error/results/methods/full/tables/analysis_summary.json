@@ -1,0 +1,173 @@
+{
+  "run_mode": "full",
+  "bootstrap_iterations": 2000,
+  "overall_summary": {
+    "group_type": "benchmark",
+    "group_value": "combined",
+    "case_count": 39600,
+    "exact_match_rate": 0.398989898989899,
+    "exact_match_ci95_low": 0.3941768643151532,
+    "exact_match_ci95_high": 0.40382252904373994,
+    "mean_greedy_ratio": 1.1303648199901453,
+    "mean_greedy_ratio_ci95_low": 1.1290182588845115,
+    "mean_greedy_ratio_ci95_high": 1.1317813629969593,
+    "median_greedy_ratio": 1.0714285714285714,
+    "p95_greedy_ratio": 1.4545454545454546,
+    "max_greedy_ratio": 2.3142857142857145,
+    "mean_relative_excess_percent": 13.036481999014526,
+    "p95_relative_excess_percent": 45.45454545454546,
+    "max_relative_excess_percent": 131.42857142857144,
+    "mean_theorem_excess_fraction_used": 0.04789751866665216,
+    "p95_theorem_excess_fraction_used": 0.18204784532536739,
+    "max_theorem_excess_fraction_used": 0.6068261510845582,
+    "median_optimal_seconds": 0.0006479795556515455,
+    "median_greedy_seconds": 0.0004058744525536895,
+    "median_runtime_speedup": 1.6434708270047946
+  },
+  "dimension_summaries": [
+    {
+      "group_type": "dimension",
+      "group_value": "1D",
+      "case_count": 19800,
+      "exact_match_rate": 0.38782828282828286,
+      "exact_match_ci95_low": 0.38106375830050604,
+      "exact_match_ci95_high": 0.39463632447199487,
+      "mean_greedy_ratio": 1.1369767365642673,
+      "mean_greedy_ratio_ci95_low": 1.1350379954150966,
+      "mean_greedy_ratio_ci95_high": 1.1390499652763155,
+      "median_greedy_ratio": 1.0810810810810811,
+      "p95_greedy_ratio": 1.4666666666666666,
+      "max_greedy_ratio": 2.16,
+      "mean_relative_excess_percent": 13.697673656426728,
+      "p95_relative_excess_percent": 46.66666666666666,
+      "max_relative_excess_percent": 116.00000000000001,
+      "mean_theorem_excess_fraction_used": 0.050252138445899534,
+      "p95_theorem_excess_fraction_used": 0.18204784532536739,
+      "max_theorem_excess_fraction_used": 0.6068261510845582,
+      "median_optimal_seconds": 0.0006152919959276915,
+      "median_greedy_seconds": 0.0003962289774790406,
+      "median_runtime_speedup": 1.5967111778840062
+    },
+    {
+      "group_type": "dimension",
+      "group_value": "2D",
+      "case_count": 19800,
+      "exact_match_rate": 0.41015151515151516,
+      "exact_match_ci95_low": 0.40331852400275975,
+      "exact_match_ci95_high": 0.41701936309867166,
+      "mean_greedy_ratio": 1.1237529034160232,
+      "mean_greedy_ratio_ci95_low": 1.1217665315803877,
+      "mean_greedy_ratio_ci95_high": 1.1256231876243732,
+      "median_greedy_ratio": 1.0638297872340425,
+      "p95_greedy_ratio": 1.4444444444444444,
+      "max_greedy_ratio": 2.3142857142857145,
+      "mean_relative_excess_percent": 12.375290341602323,
+      "p95_relative_excess_percent": 44.44444444444444,
+      "max_relative_excess_percent": 131.42857142857144,
+      "mean_theorem_excess_fraction_used": 0.04554289888740478,
+      "p95_theorem_excess_fraction_used": 0.17939806829574276,
+      "max_theorem_excess_fraction_used": 0.6068261510845582,
+      "median_optimal_seconds": 0.000684937578625977,
+      "median_greedy_seconds": 0.00041729153599590063,
+      "median_runtime_speedup": 1.700910943820018
+    }
+  ],
+  "sample_convergence": [
+    {
+      "spatial_dimension": 1,
+      "replicates_per_cell": 5,
+      "case_count": 1980,
+      "mean_greedy_ratio": 1.1419291316734472,
+      "p95_greedy_ratio": 1.5,
+      "exact_match_rate": 0.38636363636363635
+    },
+    {
+      "spatial_dimension": 1,
+      "replicates_per_cell": 10,
+      "case_count": 3960,
+      "mean_greedy_ratio": 1.140343321076255,
+      "p95_greedy_ratio": 1.4751669898728719,
+      "exact_match_rate": 0.3888888888888889
+    },
+    {
+      "spatial_dimension": 1,
+      "replicates_per_cell": 15,
+      "case_count": 5940,
+      "mean_greedy_ratio": 1.1390906735925537,
+      "p95_greedy_ratio": 1.4736842105263157,
+      "exact_match_rate": 0.38804713804713803
+    },
+    {
+      "spatial_dimension": 1,
+      "replicates_per_cell": 20,
+      "case_count": 7920,
+      "mean_greedy_ratio": 1.139188357789175,
+      "p95_greedy_ratio": 1.4736842105263157,
+      "exact_match_rate": 0.3880050505050505
+    },
+    {
+      "spatial_dimension": 1,
+      "replicates_per_cell": 25,
+      "case_count": 9900,
+      "mean_greedy_ratio": 1.1397814210421933,
+      "p95_greedy_ratio": 1.4782608695652173,
+      "exact_match_rate": 0.38676767676767676
+    },
+    {
+      "spatial_dimension": 1,
+      "replicates_per_cell": 50,
+      "case_count": 19800,
+      "mean_greedy_ratio": 1.1369767365642673,
+      "p95_greedy_ratio": 1.4666666666666666,
+      "exact_match_rate": 0.38782828282828286
+    },
+    {
+      "spatial_dimension": 2,
+      "replicates_per_cell": 5,
+      "case_count": 1980,
+      "mean_greedy_ratio": 1.1285619041138206,
+      "p95_greedy_ratio": 1.4736842105263157,
+      "exact_match_rate": 0.3994949494949495
+    },
+    {
+      "spatial_dimension": 2,
+      "replicates_per_cell": 10,
+      "case_count": 3960,
+      "mean_greedy_ratio": 1.1266875944364665,
+      "p95_greedy_ratio": 1.4666666666666666,
+      "exact_match_rate": 0.4128787878787879
+    },
+    {
+      "spatial_dimension": 2,
+      "replicates_per_cell": 15,
+      "case_count": 5940,
+      "mean_greedy_ratio": 1.1265915617958262,
+      "p95_greedy_ratio": 1.4615384615384615,
+      "exact_match_rate": 0.4134680134680135
+    },
+    {
+      "spatial_dimension": 2,
+      "replicates_per_cell": 20,
+      "case_count": 7920,
+      "mean_greedy_ratio": 1.1265415472047786,
+      "p95_greedy_ratio": 1.463010691103474,
+      "exact_match_rate": 0.41224747474747475
+    },
+    {
+      "spatial_dimension": 2,
+      "replicates_per_cell": 25,
+      "case_count": 9900,
+      "mean_greedy_ratio": 1.1256596797939626,
+      "p95_greedy_ratio": 1.4545454545454546,
+      "exact_match_rate": 0.4106060606060606
+    },
+    {
+      "spatial_dimension": 2,
+      "replicates_per_cell": 50,
+      "case_count": 19800,
+      "mean_greedy_ratio": 1.1237529034160232,
+      "p95_greedy_ratio": 1.4444444444444444,
+      "exact_match_rate": 0.41015151515151516
+    }
+  ]
+}

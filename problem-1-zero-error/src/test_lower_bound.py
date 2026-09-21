@@ -21,6 +21,8 @@ from phase_data import compute_nijm
 from sensor_budget_analysis import run_budget_analysis
 from run_config import select_cases
 import eval as dataset_eval
+from benchmark_analysis import allocation_match_table, case_metrics
+from field_models import generate_case
 
 
 def brute_force_bound(phases, M, upper):
@@ -37,6 +39,42 @@ def brute_force_bound(phases, M, upper):
 
 
 class LowerBoundTests(unittest.TestCase):
+    def test_nearly_feasible_integer_allocation_rejected(self):
+        total, _, diagnostics = optimal_global_lower_bound(
+            2, 1, {(0, 1): [pi * (1 - 5e-7) / 2]})
+        self.assertEqual(total, 3)
+        self.assertGreaterEqual(diagnostics["lb_min_pair_coverage_pi"], 1 - 1e-8)
+
+    def test_quadratic_solver_tolerance_regression(self):
+        # Reproduces benchmark_1d/case_19614 without needing generated files.
+        rows, _ = generate_case("quadratic", 1, 12, 9, seed=19634319743)
+        phases = {}
+        for i, j, m, phase in rows:
+            phases.setdefault((i, j), [0.0] * 9)[m] = phase
+        total, allocation, diagnostics = optimal_global_lower_bound(12, 9, phases)
+        self.assertEqual(total, 53)
+        self.assertEqual(sum(allocation), total)
+        self.assertGreaterEqual(diagnostics["lb_min_pair_coverage_pi"], 1 - 1e-8)
+
+    def test_allocation_match_distinguishes_alternative_optima(self):
+        rows = []
+        for index, allocation in enumerate(([2, 0], [0, 2], [2, 1])):
+            record = {
+                "spatial_dimension": 1, "case": str(index), "field_model": "gaussian",
+                "K": 3, "M": 2,
+                "optimal": {"minimum_sensors": 2, "allocation": [2, 0], "mean_seconds": 1.0},
+                "greedy": {"minimum_sensors": sum(allocation), "allocation": allocation, "mean_seconds": 1.0},
+                "comparison": {"greedy_to_optimal_ratio": sum(allocation) / 2, "theorem_factor": 2.0},
+            }
+            rows.append(case_metrics(record))
+        self.assertEqual([row["allocation_match"] for row in rows], [1, 0, 0])
+        self.assertEqual([row["exact_match"] for row in rows], [1, 1, 0])
+        summary = allocation_match_table(rows)[0]
+        self.assertEqual(summary["case_count"], 3)
+        self.assertEqual(summary["allocation_matches"], 1)
+        self.assertEqual(summary["budget_matches"], 2)
+        self.assertAlmostEqual(summary["allocation_match_percent"], 100 / 3)
+
     def test_one_pair_closed_form_and_phase_sign(self):
         for phases, expected in [([0, pi / 3], 3), ([-pi, 0], 1), ([0.4*pi, -0.3*pi], 3)]:
             total, allocation, diagnostics = optimal_global_lower_bound(2, 2, {(0, 1): phases})
@@ -118,6 +156,17 @@ class LowerBoundTests(unittest.TestCase):
             self.assertEqual(len(methods), 1)
             self.assertEqual(methods_path, project / "results/methods/test/1d/tables")
             self.assertEqual(methods[0]["case"], quick["rows"][0]["case"])
+            self.assertEqual(case_metrics(methods[0])["theorem_excess_fraction_used"], 0.0)
+
+    def test_twelve_fields_at_one_location(self):
+        rows, metadata = generate_case("gaussian", 2, 12, 1, seed=20260921)
+        phases = {(i, j): [phase] for i, j, m, phase in rows}
+        thresholds = compute_nijm(12, 1, phases)
+        total, allocation, _ = optimal_perfect_pairwise_sensor_placement(12, 1, thresholds)
+        self.assertEqual(metadata["M"], 1)
+        self.assertEqual(len(rows), 66)
+        self.assertEqual(total, max(values[0] for values in thresholds.values()))
+        self.assertEqual(allocation, [total])
 
     def test_mode_selection_keeps_all_families_and_k(self):
         entries = [(Path(f"{family}_{k}_{m}_{r}.csv"),

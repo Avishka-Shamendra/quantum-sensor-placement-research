@@ -109,8 +109,8 @@ def _parse_arguments() -> argparse.Namespace:
         parser.error("dataset may contain only letters, digits, underscores, and hyphens")
     if arguments.k_min < 2 or arguments.k_min > arguments.k_max:
         parser.error("require 2 <= --k-min <= --k-max")
-    if arguments.m_min < 2 or arguments.m_min > arguments.m_max:
-        parser.error("require 2 <= --m-min <= --m-max")
+    if arguments.m_min < 1 or arguments.m_min > arguments.m_max:
+        parser.error("require 1 <= --m-min <= --m-max")
     return arguments
 
 
@@ -194,10 +194,10 @@ def generate_factorial_dataset(
     ):
         raise ValueError("Every K must be an integer of at least 2")
     if not m_values or any(
-        isinstance(M, bool) or not isinstance(M, int) or M < 2
+        isinstance(M, bool) or not isinstance(M, int) or M < 1
         for M in m_values
     ):
-        raise ValueError("Every M must be an integer of at least 2")
+        raise ValueError("Every M must be an integer of at least 1")
     if not c_values or any(
         isinstance(c, bool)
         or not isinstance(c, (int, float))
@@ -251,6 +251,8 @@ def generate_factorial_dataset(
                             "replicate": replicate,
                             **metadata,
                         })
+                        if case_number % 1_000 == 0:
+                            print(f"  {dataset}: {case_number:,} cases generated", flush=True)
 
     manifest = {
         "schema_version": 2,
