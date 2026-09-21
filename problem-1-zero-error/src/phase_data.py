@@ -1,14 +1,7 @@
-"""Load phase-gap inputs and derive sensor thresholds.
+"""Load principal phase gaps and derive integer sensor thresholds.
 
-The CSV representation stores one row for every canonical field pair ``i < j``
-and sensing location ``m``. Values obey
-
-    r_ijm = Arg(exp(i c (f_i(x_m) - f_j(x_m)))) in (-pi, pi].
-
-The reverse orientation is not stored because
-``r_jim = principal_phase(-r_ijm)``. At the branch cut this identity is modulo
-``2 pi``: both ``pi`` and ``-pi`` have the canonical representation ``pi``.
-"""
+CSV rows store (i, j, m, r_ijm) for i < j. Reverse gaps are negated and
+wrapped to (-pi, pi]; both branch-cut endpoints are represented by pi."""
 
 from __future__ import annotations
 
@@ -152,7 +145,6 @@ def load_phase_csv(csv_path: str | Path) -> tuple[int, int, PhaseGaps]:
     return K, M, phase_gaps
 
 
-# Check the number of fields and sensing locations.
 def _validate_dimensions(K: int, M: int) -> None:
     if isinstance(K, bool) or not isinstance(K, int) or K < 2:
         raise ValueError("K must be an integer of at least 2")
@@ -160,5 +152,4 @@ def _validate_dimensions(K: int, M: int) -> None:
         raise ValueError("M must be a positive integer")
 
 
-# Backwards-compatible name for notebooks written against the original layout.
 load_rijm_csv = load_phase_csv

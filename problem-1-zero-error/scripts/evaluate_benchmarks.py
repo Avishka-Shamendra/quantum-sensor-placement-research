@@ -20,7 +20,6 @@ from run_config import validate_run_mode
 DATASETS = [str(design["dataset"]) for design in BENCHMARKS.values()]
 
 
-# Parse a command-line value that must be a positive integer.
 def _positive_integer(value: str) -> int:
     try:
         parsed = int(value)
@@ -68,7 +67,6 @@ def run_benchmark_evaluation(
     return analysis
 
 
-# Define command-line options for the complete benchmark pipeline.
 def _parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate, evaluate, and analyze both benchmark datasets."
@@ -97,7 +95,6 @@ def _parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-# Run the benchmark pipeline and return a process status code.
 def main() -> int:
     arguments = _parse_arguments()
     try:

@@ -19,7 +19,7 @@ python -m pip install -r problem-1-zero-error/requirements.txt
 | --- | --- | --- |
 | `01_solution_method_analysis.ipynb` | DP vs Greedy quality, timing, allocation agreement | `results/methods/` |
 | `02_minimum_sensor_trends.ipynb` | Sequential minimum budget trends | `results/nmin/` |
-| `03_global_seq_comparison.ipynb` | Greedy, sequential optimum, global minimum | `results/lb/` |
+| `03_global_seq_comparison.ipynb` | Greedy, sequential optimum, global minimum | `results/global/` |
 | `final_figures.ipynb` | Figures and tables from saved full results | `results/final/` |
 
 Notebooks 01–03 run independently from saved inputs. Choose `RUN_MODE = "test"`
@@ -79,10 +79,10 @@ program; its constraints alone do not certify a shared global input state.
 Every case is checked for
 $N_{\min}^{\mathrm{global}}\leq N_{\min}^{\mathrm{seq}}\leq N_{\mathrm{greedy}}^{\mathrm{seq}}$.
 
-`src/lower_bound.py` uses SciPy/HiGHS with zero relative MIP gap and $10^{-9}$
+`src/global_minimum.py` uses SciPy/HiGHS with zero relative MIP gap and $10^{-9}$
 feasibility tolerances. Integer allocations are independently checked to
 $10^{-8}$ after normalization by $\pi$. Computation uses floating-point inputs.
-Existing code and CSV identifiers such as `N_LB` remain for compatibility.
+Global budgets use `N_min_global` in saved tables.
 
 ## Figures and tables
 
@@ -95,11 +95,10 @@ Notebook 02 saves `case_budgets.csv` and `nmin_by_dimension_k.csv`.
 Notebook 03 saves:
 
 - `tables/case_budgets.csv`: all three budgets, allocations, timings, and diagnostics.
-- `tables/nlb_vs_nmin_by_dimension_k.csv`: mean curves by dimension and K.
-- `tables/nlb_vs_nmin_by_k_m.csv`: summaries at fixed K and M.
-- `figures/nlb_vs_nmin_by_k.{pdf,png}`: all three curves for each dimension.
+- `tables/global_vs_seq_by_dimension_k.csv`: mean curves by dimension and K.
+- `tables/global_vs_seq_by_k_m.csv`: summaries at fixed K and M.
+- `figures/global_vs_seq_by_k.{pdf,png}`: all three curves for each dimension.
 
-These existing output names remain compatible with saved-result reuse.
 Full budget curves pool 1,800 cases per dimension and K; test curves pool 6.
 
 Final figures use blue, red, and green, with yellow-to-red heatmaps. The bar,
@@ -109,7 +108,7 @@ Other figures retain the full saved ranges. Dataset panels use (a)/(b) labels.
 ## Checks
 
 ```bash
-python problem-1-zero-error/src/test_lower_bound.py -q
+python problem-1-zero-error/src/test_global_minimum.py -q
 ```
 
 These checks are separate from notebook test mode. Main implementations and

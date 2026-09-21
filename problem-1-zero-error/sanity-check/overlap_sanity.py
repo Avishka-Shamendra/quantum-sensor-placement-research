@@ -1,8 +1,4 @@
-"""Appendix-state overlap sanity checks for zero-error benchmark inputs.
-
-This module is intentionally self-contained so the sanity-check notebook can be
-run from this folder without depending on the main solver implementation.
-"""
+"""Check zero-error state overlaps directly from sparse eigen-components."""
 
 from __future__ import annotations
 
@@ -22,7 +18,7 @@ PhaseGaps = dict[tuple[int, int], list[float]]
 
 
 @dataclass(frozen=True)
-class AppendixOverlap:
+class StateOverlap:
     """One overlap evaluation for one pair and sensing location."""
 
     threshold: int | None
@@ -99,12 +95,12 @@ def load_phase_csv(csv_path: str | Path) -> tuple[int, int, PhaseGaps]:
     return K, M, phase_gaps
 
 
-def appendix_state_overlap(
+def state_overlap(
     r_ijm: Real,
     *,
     boundary_tolerance: float = 1e-12,
-) -> AppendixOverlap:
-    """Evaluate <psi|V_ijm^{tensor n}|psi> for the Appendix construction.
+) -> StateOverlap:
+    """Evaluate <psi|V_ijm^{tensor n}|psi> for the state construction.
 
     The state is represented by its nonzero eigen-components instead of a full
     2^n vector. This is essential because some generated phase gaps are tiny,
@@ -113,7 +109,7 @@ def appendix_state_overlap(
     phase = principal_phase(r_ijm)
     n = minimum_sensors_for_phase_gap(phase)
     if n is None:
-        return AppendixOverlap(
+        return StateOverlap(
             threshold=None,
             construction_case="zero_phase_gap_unusable",
             phase_spread=None,
@@ -121,7 +117,7 @@ def appendix_state_overlap(
             overlap_imag=None,
             overlap_abs=None,
             support_size=0,
-            state_description="No finite Appendix state exists because r_ijm = 0.",
+            state_description="No finite state exists because r_ijm = 0.",
         )
 
     theta = abs(phase) / 2.0
@@ -161,7 +157,7 @@ def appendix_state_overlap(
         )
 
     overlap = sum(probability * exp(1j * eigenphase) for probability, eigenphase in components)
-    return AppendixOverlap(
+    return StateOverlap(
         threshold=n,
         construction_case=construction_case,
         phase_spread=phase_spread,
@@ -201,7 +197,7 @@ def iter_overlap_rows(
         K, M, phase_gaps = load_phase_csv(path)
         for (i, j), phases in phase_gaps.items():
             for m, phase in enumerate(phases):
-                result = appendix_state_overlap(
+                result = state_overlap(
                     phase,
                     boundary_tolerance=boundary_tolerance,
                 )
@@ -249,7 +245,7 @@ def run_sanity_check(
     write_detailed_csv: bool = False,
     sample_size: int = 20,
 ) -> dict[str, object]:
-    """Run the Appendix overlap check and write summary/violation tables."""
+    """Run the state overlap check and write summary/violation tables."""
     output = Path(output_root)
     output.mkdir(parents=True, exist_ok=True)
 

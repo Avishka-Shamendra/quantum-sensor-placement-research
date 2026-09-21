@@ -1,15 +1,7 @@
-"""Synthetic one- and two-dimensional spatial fields for the benchmarks.
+"""Generate spatial fields at uniform locations in [0, 1]^dimension.
 
-Each generated case contains ``K`` fields evaluated at ``M`` random candidate
-locations in either ``[0, 1]`` or ``[0, 1]^2``.  The phase-gap conversion uses
-the benchmark definition
-
-    r_ijm = Arg(exp(i c (f_i(x_m) - f_j(x_m)))).
-
-Only canonical pairs ``i < j`` are stored.  Reverse phases are reconstructed
-with the principal-phase convention, so antisymmetry is maintained modulo
-``2 pi``.
-"""
+Store r_ijm = Arg(exp(i*c*(f_i(x_m)-f_j(x_m)))) for canonical pairs i < j.
+Reverse gaps are reconstructed using the principal-phase convention."""
 
 from __future__ import annotations
 
@@ -38,7 +30,6 @@ def sensing_locations(dimension: int, M: int, rng: Random) -> list[Location]:
     return [tuple(rng.random() for _ in range(dimension)) for _ in range(M)]
 
 
-# Validate field count and location coordinates, then return the dimension.
 def _validate_field_request(K: int, locations: Sequence[Location]) -> int:
     if isinstance(K, bool) or not isinstance(K, int) or K < 2:
         raise ValueError("K must be an integer of at least 2.")
@@ -61,12 +52,10 @@ def _validate_field_request(K: int, locations: Sequence[Location]) -> int:
     return dimension
 
 
-# Sample one field centre uniformly from the sensing region.
 def _sample_centre(dimension: int, rng: Random) -> Location:
     return tuple(rng.uniform(0.0, 1.0) for _ in range(dimension))
 
 
-# Store a 1D centre as a scalar and a 2D centre as a list.
 def _centre_metadata(centre: Location) -> float | list[float]:
     return centre[0] if len(centre) == 1 else list(centre)
 
@@ -176,14 +165,12 @@ def generate_quadratic_fields(
     return fields, parameters
 
 
-# Map each family name to its field generator.
 FIELD_MODELS: dict[str, FieldFactory] = {
     "gaussian": generate_gaussian_fields,
     "sinusoidal": generate_sinusoidal_fields,
     "quadratic": generate_quadratic_fields,
 }
 
-# Record the formulas written to each dataset manifest.
 FIELD_FORMULAS: dict[str, dict[int, str]] = {
     "gaussian": {
         1: "f_k(alpha) = A_k exp(-(alpha-mu_k)^2 / (2 w_k^2))",
@@ -208,7 +195,6 @@ FIELD_FORMULAS: dict[str, dict[int, str]] = {
     },
 }
 
-# Record the sampling ranges written to each dataset manifest.
 FIELD_PARAMETER_RANGES: dict[str, dict[int, dict[str, object]]] = {
     "gaussian": {
         1: {"A_k": [0.5, 1.5], "mu_k": [0.0, 1.0], "w_k": [0.1, 0.3]},
@@ -281,7 +267,6 @@ def best_pair_phase_gaps(rows: Sequence[CsvRow]) -> dict[tuple[int, int], float]
     return best_gaps
 
 
-# Convert sampled locations to a JSON-ready representation.
 def _location_metadata(locations: Sequence[Location]) -> list[object]:
     if len(locations[0]) == 1:
         return [location[0] for location in locations]

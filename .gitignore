@@ -15,7 +15,7 @@ problem-1-zero-error/results/algorithm_comparison/benchmark_2d_results_full/
 # Short output paths: test previews and deterministic per-dataset intermediates.
 problem-1-zero-error/results/methods/test/
 problem-1-zero-error/results/nmin/test/
-problem-1-zero-error/results/lb/test/
+problem-1-zero-error/results/global/test/
 problem-1-zero-error/results/methods/full/1d/
 problem-1-zero-error/results/methods/full/2d/
 

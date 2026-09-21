@@ -46,7 +46,7 @@ def _saved_dp_candidates(project, dataset, run_mode):
                 })
         except (OSError, ValueError, KeyError, TypeError):
             pass
-        for name in ("nmin", "lb"):
+        for name in ("nmin", "global"):
             path = project / "results" / name / mode / "tables/case_budgets.csv"
             try:
                 with path.open(newline="") as stream:
@@ -103,13 +103,13 @@ def write_csv(path, rows):
         writer.writerows(rows)
 
 
-def evaluate_sensor_budgets(project_directory, *, include_lower_bound=False,
+def evaluate_sensor_budgets(project_directory, *, include_global_minimum=False,
                             progress_every=500, run_mode="full", reuse_saved=True):
     """Reuse matching saved DP optima when enabled; solve missing cases normally."""
     validate_run_mode(run_mode)
     project_directory = Path(project_directory)
-    if include_lower_bound:
-        from lower_bound import optimal_global_lower_bound
+    if include_global_minimum:
+        from global_minimum import optimal_global_minimum
 
     # Preflight both datasets before any expensive computation.
     datasets = []
@@ -159,7 +159,7 @@ def evaluate_sensor_budgets(project_directory, *, include_lower_bound=False,
                 "nmin_original_seconds": original_seconds,
                 "nmin_source": source,
             }
-            if include_lower_bound:
+            if include_global_minimum:
                 begin = perf_counter()
                 greedy_result = greedy_perfect_pairwise_sensor_placement(K, M, thresholds)
                 greedy_seconds = perf_counter() - begin
@@ -172,19 +172,19 @@ def evaluate_sensor_budgets(project_directory, *, include_lower_bound=False,
                             "greedy_seconds": greedy_seconds})
                 begin = perf_counter()
                 try:
-                    nlb, lb_allocation, diagnostics = optimal_global_lower_bound(K, M, phases)
+                    nglobal, global_allocation, diagnostics = optimal_global_minimum(K, M, phases)
                 except RuntimeError as error:
                     raise RuntimeError(
-                        f"Lower-bound solve failed for {dataset}/{path.name} (K={K}, M={M}): {error}"
+                        f"Global-minimum solve failed for {dataset}/{path.name} (K={K}, M={M}): {error}"
                     ) from error
-                if nlb > nmin:
-                    raise RuntimeError(f"N_LB > N_min for {path}")
+                if nglobal > nmin:
+                    raise RuntimeError(f"N_min_global > N_min for {path}")
                 row.update({
-                    "N_LB": nlb, "lb_allocation": json.dumps(lb_allocation),
-                    "lb_seconds": perf_counter() - begin,
-                    "sensor_gap": nmin - nlb,
-                    "lb_to_nmin_ratio": nlb / nmin,
-                    "equal_budgets": int(nlb == nmin), **diagnostics,
+                    "N_min_global": nglobal, "global_allocation": json.dumps(global_allocation),
+                    "global_seconds": perf_counter() - begin,
+                    "sensor_gap": nmin - nglobal,
+                    "global_to_nmin_ratio": nglobal / nmin,
+                    "equal_budgets": int(nglobal == nmin), **diagnostics,
                 })
             rows.append(row)
             if index == 1 or index % progress_every == 0 or index == len(entries):
@@ -212,11 +212,11 @@ def summarize_budgets(rows, *, group_keys=("spatial_dimension", "K")):
         })
         if "N_greedy" in group[0]:
             row["mean_N_greedy"] = fmean(r["N_greedy"] for r in group)
-        if "N_LB" in group[0]:
+        if "N_min_global" in group[0]:
             row.update({
-                "mean_N_LB": fmean(r["N_LB"] for r in group),
+                "mean_N_min_global": fmean(r["N_min_global"] for r in group),
                 "mean_sensor_gap": fmean(r["sensor_gap"] for r in group),
-                "mean_lb_to_nmin_ratio": fmean(r["lb_to_nmin_ratio"] for r in group),
+                "mean_global_to_nmin_ratio": fmean(r["global_to_nmin_ratio"] for r in group),
                 "equal_budget_fraction": fmean(r["equal_budgets"] for r in group),
             })
         summary.append(row)
@@ -245,7 +245,7 @@ def plot_budget_comparison(summary):
         ks = [int(row["K"]) for row in selected]
         for key, label, color, marker, line in (
             ("mean_N_min_opt", r"$N_{\min}^{\mathrm{seq}}$", "#1f77b4", "o", "-"),
-            ("mean_N_LB", r"$N_{\min}^{\mathrm{global}}$", "#d62728", "s", "--"),
+            ("mean_N_min_global", r"$N_{\min}^{\mathrm{global}}$", "#d62728", "s", "--"),
             ("mean_N_greedy", r"$N_{\mathrm{greedy}}^{\mathrm{seq}}$", "#2ca02c", "^", "-."),
         ):
             if not all(key in row for row in selected):
@@ -260,7 +260,7 @@ def plot_budget_comparison(summary):
     axes[0].set_ylabel("Mean sensor budget")
     # Include both dimensions before fixing the shared y-axis limits.
     maximum = max(float(row[key]) for row in summary
-                  for key in ("mean_N_min_opt", "mean_N_LB", "mean_N_greedy") if key in row)
+                  for key in ("mean_N_min_opt", "mean_N_min_global", "mean_N_greedy") if key in row)
     axes[0].set_ylim(0, max(1, maximum * 1.08))
     figure.tight_layout()
     return figure
@@ -273,21 +273,21 @@ def save_figure(figure, directory, stem):
     figure.savefig(directory / f"{stem}.png", dpi=300, bbox_inches="tight")
 
 
-def run_budget_analysis(project_directory, *, include_lower_bound=False, run_mode="full", reuse_saved=True):
+def run_budget_analysis(project_directory, *, include_global_minimum=False, run_mode="full", reuse_saved=True):
     """Compute from inputs and save only this analysis's own output tables."""
-    name = "lb" if include_lower_bound else "nmin"
+    name = "global" if include_global_minimum else "nmin"
     output = output_directory(project_directory, name, run_mode)
-    rows = evaluate_sensor_budgets(project_directory, include_lower_bound=include_lower_bound,
+    rows = evaluate_sensor_budgets(project_directory, include_global_minimum=include_global_minimum,
                                   run_mode=run_mode,
                                   reuse_saved=reuse_saved,
                                   progress_every=10 if run_mode == "test" else 500)
     summary = summarize_budgets(rows)
     write_csv(output / "tables" / "case_budgets.csv", rows)
-    stem = "nlb_vs_nmin_by_dimension_k" if include_lower_bound else "nmin_by_dimension_k"
+    stem = "global_vs_seq_by_dimension_k" if include_global_minimum else "nmin_by_dimension_k"
     write_csv(output / "tables" / f"{stem}.csv", summary)
     result = {"rows": rows, "summary": summary, "output_directory": output,
               "run_mode": run_mode}
-    if include_lower_bound:
+    if include_global_minimum:
         cell_summary = summarize_budgets(rows, group_keys=("spatial_dimension", "K", "M"))
-        write_csv(output / "tables" / "nlb_vs_nmin_by_k_m.csv", cell_summary)
+        write_csv(output / "tables" / "global_vs_seq_by_k_m.csv", cell_summary)
     return result

@@ -1,4 +1,4 @@
-"""Independent small-instance checks: python problem-1-zero-error/src/test_lower_bound.py."""
+"""Independent small-instance checks: python problem-1-zero-error/src/test_global_minimum.py."""
 
 import itertools
 import json
@@ -15,7 +15,7 @@ from scipy.optimize import OptimizeResult
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lower_bound import optimal_global_lower_bound
+from global_minimum import optimal_global_minimum
 from optimal import optimal_perfect_pairwise_sensor_placement
 from phase_data import compute_nijm
 from sensor_budget_analysis import run_budget_analysis
@@ -25,7 +25,7 @@ from benchmark_analysis import allocation_match_table, case_metrics
 from field_models import generate_case
 
 
-def brute_force_bound(phases, M, upper):
+def brute_force_minimum(phases, M, upper):
     for total in range(upper + 1):
         for allocation in itertools.product(range(total + 1), repeat=M - 1):
             last = total - sum(allocation)
@@ -38,12 +38,12 @@ def brute_force_bound(phases, M, upper):
     raise AssertionError("No feasible enumerated allocation")
 
 
-class LowerBoundTests(unittest.TestCase):
+class GlobalMinimumTests(unittest.TestCase):
     def test_nearly_feasible_integer_allocation_rejected(self):
-        total, _, diagnostics = optimal_global_lower_bound(
+        total, _, diagnostics = optimal_global_minimum(
             2, 1, {(0, 1): [pi * (1 - 5e-7) / 2]})
         self.assertEqual(total, 3)
-        self.assertGreaterEqual(diagnostics["lb_min_pair_coverage_pi"], 1 - 1e-8)
+        self.assertGreaterEqual(diagnostics["global_min_pair_coverage_pi"], 1 - 1e-8)
 
     def test_quadratic_solver_tolerance_regression(self):
         # Reproduces benchmark_1d/case_19614 without needing generated files.
@@ -51,10 +51,10 @@ class LowerBoundTests(unittest.TestCase):
         phases = {}
         for i, j, m, phase in rows:
             phases.setdefault((i, j), [0.0] * 9)[m] = phase
-        total, allocation, diagnostics = optimal_global_lower_bound(12, 9, phases)
+        total, allocation, diagnostics = optimal_global_minimum(12, 9, phases)
         self.assertEqual(total, 53)
         self.assertEqual(sum(allocation), total)
-        self.assertGreaterEqual(diagnostics["lb_min_pair_coverage_pi"], 1 - 1e-8)
+        self.assertGreaterEqual(diagnostics["global_min_pair_coverage_pi"], 1 - 1e-8)
 
     def test_allocation_match_distinguishes_alternative_optima(self):
         rows = []
@@ -77,14 +77,14 @@ class LowerBoundTests(unittest.TestCase):
 
     def test_one_pair_closed_form_and_phase_sign(self):
         for phases, expected in [([0, pi / 3], 3), ([-pi, 0], 1), ([0.4*pi, -0.3*pi], 3)]:
-            total, allocation, diagnostics = optimal_global_lower_bound(2, 2, {(0, 1): phases})
+            total, allocation, diagnostics = optimal_global_minimum(2, 2, {(0, 1): phases})
             self.assertEqual(total, expected)
             self.assertEqual(total, sum(allocation))
-            self.assertEqual(diagnostics["lb_solver_status"], 0)
+            self.assertEqual(diagnostics["global_solver_status"], 0)
 
     def test_one_location_matches_sequential(self):
         phases = {(0, 1): [0.3*pi], (0, 2): [0.5*pi], (1, 2): [0.2*pi]}
-        actual, _, _ = optimal_global_lower_bound(3, 1, phases)
+        actual, _, _ = optimal_global_minimum(3, 1, phases)
         sequential, _, _ = optimal_perfect_pairwise_sensor_placement(3, 1, compute_nijm(3, 1, phases))
         self.assertEqual(actual, sequential)
 
@@ -93,9 +93,9 @@ class LowerBoundTests(unittest.TestCase):
         # (0, .6*pi, .2*pi) at location 2. Shared contributions need 2+1
         # sensors, whereas covering each pair at one location requires 3+2.
         phases = {(0, 1): [-.2*pi, -.6*pi], (0, 2): [-.6*pi, -.2*pi], (1, 2): [-.4*pi, .4*pi]}
-        nlb, _, _ = optimal_global_lower_bound(3, 2, phases)
+        nglobal, _, _ = optimal_global_minimum(3, 2, phases)
         nmin, _, _ = optimal_perfect_pairwise_sensor_placement(3, 2, compute_nijm(3, 2, phases))
-        self.assertEqual((nlb, nmin), (3, 5))
+        self.assertEqual((nglobal, nmin), (3, 5))
 
     def test_random_small_instances_against_enumeration(self):
         rng = random.Random(192)
@@ -103,22 +103,22 @@ class LowerBoundTests(unittest.TestCase):
             phases = {pair: [rng.uniform(.2, .9)*pi for _ in range(3)]
                       for pair in ((0, 1), (0, 2), (1, 2))}
             nmin, _, _ = optimal_perfect_pairwise_sensor_placement(3, 3, compute_nijm(3, 3, phases))
-            actual, _, _ = optimal_global_lower_bound(3, 3, phases)
-            self.assertEqual(actual, brute_force_bound(phases, 3, nmin))
+            actual, _, _ = optimal_global_minimum(3, 3, phases)
+            self.assertEqual(actual, brute_force_minimum(phases, 3, nmin))
             self.assertLessEqual(actual, nmin)
 
     def test_indistinguishable_pair_rejected(self):
         with self.assertRaises(ValueError):
-            optimal_global_lower_bound(2, 2, {(0, 1): [0.0, 0.0]})
+            optimal_global_minimum(2, 2, {(0, 1): [0.0, 0.0]})
 
     def test_malformed_dimensions_rejected(self):
         with self.assertRaises(ValueError):
-            optimal_global_lower_bound(2, 2, {(0, 1): [pi]})
+            optimal_global_minimum(2, 2, {(0, 1): [pi]})
 
     def test_nonoptimal_incumbent_rejected(self):
         result = OptimizeResult(status=1, success=False, x=np.array([2.]), message="Time limit")
-        with patch("lower_bound.milp", return_value=result), self.assertRaises(RuntimeError):
-            optimal_global_lower_bound(2, 1, {(0, 1): [pi]})
+        with patch("global_minimum.milp", return_value=result), self.assertRaises(RuntimeError):
+            optimal_global_minimum(2, 1, {(0, 1): [pi]})
 
     def test_both_analyses_run_without_prior_outputs(self):
         # Input-only project: no notebook 01 output or results directory exists.
@@ -137,16 +137,16 @@ class LowerBoundTests(unittest.TestCase):
                 (directory / "manifest.json").write_text(json.dumps({
                     "dataset": f"benchmark_{dimension}d", "cases": [case, second]}))
             with patch("builtins.print"):
-                comparison = run_budget_analysis(project, include_lower_bound=True)
+                comparison = run_budget_analysis(project, include_global_minimum=True)
                 minimum = run_budget_analysis(project)
             self.assertEqual([r["N_min"] for r in minimum["rows"]], [2] * 4)
-            self.assertEqual([r["N_LB"] for r in comparison["rows"]], [2] * 4)
-            full_table = project / "results/lb/full/tables/nlb_vs_nmin_by_dimension_k.csv"
+            self.assertEqual([r["N_min_global"] for r in comparison["rows"]], [2] * 4)
+            full_table = project / "results/global/full/tables/global_vs_seq_by_dimension_k.csv"
             original = full_table.read_bytes()
             with patch("builtins.print"):
-                quick = run_budget_analysis(project, include_lower_bound=True, run_mode="test")
+                quick = run_budget_analysis(project, include_global_minimum=True, run_mode="test")
             self.assertEqual(len(quick["rows"]), 2)
-            self.assertEqual(quick["output_directory"], project / "results/lb/test")
+            self.assertEqual(quick["output_directory"], project / "results/global/test")
             self.assertTrue((quick["output_directory"] / "tables/case_budgets.csv").is_file())
             self.assertEqual(full_table.read_bytes(), original)
             with patch.object(dataset_eval, "INPUT_ROOT", project / "inputs"), \

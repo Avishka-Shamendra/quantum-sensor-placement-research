@@ -20,7 +20,6 @@ FIELD_FAMILY_COLORS = {
 }
 
 
-# Calculate a percentile using linear interpolation between sample values.
 def _percentile(values: list[float], probability: float) -> float:
     ordered = sorted(values)
     if not ordered:
@@ -34,7 +33,6 @@ def _percentile(values: list[float], probability: float) -> float:
     return ordered[lower] * (1 - weight) + ordered[upper] * weight
 
 
-# Estimate a mean confidence interval while preserving the chosen strata.
 def _stratified_bootstrap_mean_interval(
     rows: list[dict[str, object]],
     *,
@@ -59,7 +57,6 @@ def _stratified_bootstrap_mean_interval(
     return _percentile(estimates, 0.025), _percentile(estimates, 0.975)
 
 
-# Calculate a 95% Wilson interval for a success proportion.
 def _wilson_interval(successes: int, total: int) -> tuple[float, float]:
     z = 1.959963984540054
     proportion = successes / total
@@ -213,7 +210,6 @@ def summarize_group(
     }
 
 
-# Write a table only when it contains at least one row.
 def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
     if not rows:
         return
@@ -223,7 +219,6 @@ def _write_csv(path: Path, rows: list[dict[str, object]]) -> None:
         writer.writerows(rows)
 
 
-# Split result rows according to one field.
 def _group_rows(
     rows: list[dict[str, object]], key: str
 ) -> dict[object, list[dict[str, object]]]:
@@ -233,7 +228,6 @@ def _group_rows(
     return dict(groups)
 
 
-# Save one figure in vector and high-resolution raster formats.
 def _save_figure(figure: object, output_directory: Path, stem: str) -> None:
     figure.savefig(output_directory / f"{stem}.pdf", bbox_inches="tight")
     figure.savefig(output_directory / f"{stem}.png", dpi=300, bbox_inches="tight")
@@ -246,7 +240,6 @@ def _clear_figure_files(output_directory: Path) -> None:
             path.unlink()
 
 
-# Apply a consistent figure style before figures are created.
 def _configure_plot_style() -> None:
     import matplotlib
 
@@ -272,7 +265,6 @@ def _configure_plot_style() -> None:
     })
 
 
-# Calculate mean greedy sensor excess for every K and M cell.
 def _cell_mean_excess(rows: list[dict[str, object]]) -> dict[tuple[int, int], float]:
     cells: dict[tuple[int, int], list[float]] = defaultdict(list)
     for row in rows:
@@ -635,7 +627,6 @@ def _guarantee_figure(
     return figure
 
 
-# Measure how summary statistics change as more replicates are included.
 def _convergence_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     results: list[dict[str, object]] = []
     for dimension, dimension_rows in sorted(_group_rows(rows, "spatial_dimension").items()):
@@ -660,7 +651,6 @@ def _convergence_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
     return results
 
 
-# Build a short findings template from the current numerical summaries.
 def _claim_text(
     overall_summary: dict[str, object],
     dimension_summaries: list[dict[str, object]],

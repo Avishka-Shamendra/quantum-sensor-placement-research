@@ -1,10 +1,4 @@
-"""Exact solver for the zero-error pairwise sensor-placement problem.
-
-Function indices are ``0, 1, ..., F - 1`` and location indices are
-``0, 1, ..., M - 1``.  The input ``Nijm[(i, j)][m]`` is the number of
-sensors required at location ``m`` to perfectly distinguish functions ``i``
-and ``j``.
-"""
+"""Exact sequential allocation by dynamic programming over covered pairs."""
 
 from __future__ import annotations
 
@@ -20,39 +14,13 @@ def optimal_perfect_pairwise_sensor_placement(
     M: int,
     Nijm: Mapping[tuple[int, int], Sequence[Threshold]],
 ) -> tuple[int, list[int], list[list[int | None]]]:
-    """Return an optimal zero-error pairwise sensor allocation.
+    """Return (minimum_total, allocation, pair_locations).
 
-    A pair is covered at a location when the allocated sensor count there is
-    at least its corresponding ``Nijm`` threshold.  The objective is to
-    minimize the total count over all locations.
-
-    Args:
-        F: Number of candidate functions.  Their indices are ``0`` through
-            ``F - 1``.
-        M: Number of candidate sensor locations.  Their indices are ``0``
-            through ``M - 1``.
-        Nijm: A mapping for every unordered function pair ``(i, j)`` where
-            ``0 <= i < j < F``.  Its value is a sequence of length ``M``;
-            ``Nijm[(i, j)][m]`` is the positive integer threshold from the
-            model, i.e., the minimum sensors needed to distinguish that pair
-            at location ``m``. ``None`` represents an unusable location with
-            zero phase gap for that pair.
-
-    Returns:
-        ``(minimum_total, allocation, pair_locations)`` where ``allocation[m]``
-        is the selected number of sensors at location ``m`` and
-        ``pair_locations[i][j]`` is one location that covers pair ``(i, j)``.
-        The location matrix is symmetric and has ``None`` on its diagonal.
-
-    Raises:
-        ValueError: If the inputs are malformed or no allocation can cover
-            every function pair.
-
-    Notes:
-        This is an exact dynamic program over subsets of function pairs.  If
-        ``P = F(F - 1)/2``, its worst-case space is O(2^P) and its running
-        time is O(M * 2^P * P) in the usual threshold representation.
-    """
+    Nijm[(i, j)][m] is a positive sensor threshold, or None for an unusable
+    location. Indices start at zero; each pair must have one usable location.
+    The symmetric pair_locations matrix identifies a covering location and
+    has None on its diagonal. Invalid or infeasible inputs raise ValueError.
+    For P=F(F-1)/2 pairs, worst-case space is O(2^P) and time O(M*P*2^P)."""
     if isinstance(F, bool) or not isinstance(F, int) or F < 2:
         raise ValueError("F must be an integer of at least 2.")
     if isinstance(M, bool) or not isinstance(M, int) or M < 1:

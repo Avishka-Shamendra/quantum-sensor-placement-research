@@ -1,4 +1,4 @@
-spatial_dimension,K,M,dimension,case_count,mean_N_min_opt,median_N_min_opt,p95_N_min_opt,maximum_N_min_opt,mean_N_greedy,mean_N_LB,mean_sensor_gap,mean_lb_to_nmin_ratio,equal_budget_fraction
+spatial_dimension,K,M,dimension,case_count,mean_N_min_opt,median_N_min_opt,p95_N_min_opt,maximum_N_min_opt,mean_N_greedy,mean_N_min_global,mean_sensor_gap,mean_global_to_nmin_ratio,equal_budget_fraction
 1,2,1,1D,150,17.593333333333334,8.0,64.0,161,17.593333333333334,17.593333333333334,0.0,1.0,1.0
 1,2,2,1D,150,12.0,6.0,44.54999999999998,214,12.0,12.0,0.0,1.0,1.0
 1,2,3,1D,150,8.493333333333334,5.0,21.549999999999983,161,8.493333333333334,8.493333333333334,0.0,1.0,1.0

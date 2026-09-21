@@ -1,9 +1,4 @@
-"""Greedy heuristic for zero-error pairwise sensor placement.
-
-This is the greedy gain-based approximation. It repeatedly chooses the location and
-sensor-count upgrade with the highest number of newly covered function pairs
-per additional sensor.
-"""
+"""Sequential Greedy allocation by newly covered pairs per added sensor."""
 
 from __future__ import annotations
 
@@ -19,34 +14,12 @@ def greedy_perfect_pairwise_sensor_placement(
     M: int,
     Nijm: Mapping[tuple[int, int], Sequence[Threshold]],
 ) -> tuple[int, list[int], list[list[int | None]]]:
-    """Return the greedy zero-error pairwise sensor allocation.
+    """Return (total, allocation, pair_locations) using Greedy upgrades.
 
-    Function and location indices are zero-based.  ``Nijm[(i, j)][m]`` is the
-    positive number of sensors needed to perfectly distinguish functions
-    ``i`` and ``j`` at location ``m``.
-
-    Args:
-        F: Number of candidate functions, indexed from ``0`` to ``F - 1``.
-        M: Number of candidate sensor locations, indexed from ``0`` to
-            ``M - 1``.
-        Nijm: A mapping for every pair ``(i, j)`` with ``0 <= i < j < F``.
-            Each value is a sequence of length ``M``. A positive integer is
-            a finite discrimination threshold; ``None`` means that the pair
-            has zero phase gap and cannot be distinguished at that location.
-
-    Returns:
-        ``(total, allocation, pair_locations)``.  ``allocation[m]`` is the
-        final sensor count at location ``m``.  ``pair_locations[i][j]`` gives
-        the location selected when pair ``(i, j)`` was first covered; the
-        matrix is symmetric and has ``None`` on its diagonal.
-
-    Raises:
-        ValueError: If the inputs do not satisfy the problem definition.
-
-    Notes:
-        This follows the strict ``gain > best_gain`` rule. Ties are
-        consequently resolved by the first location and count encountered.
-    """
+    Nijm[(i, j)][m] is a positive sensor threshold, or None for an unusable
+    location. Indices start at zero. pair_locations is symmetric with None
+    on its diagonal. Ties use the first location and count encountered.
+    Invalid or infeasible inputs raise ValueError."""
     if isinstance(F, bool) or not isinstance(F, int) or F < 2:
         raise ValueError("F must be an integer of at least 2.")
     if isinstance(M, bool) or not isinstance(M, int) or M < 1:
@@ -79,7 +52,7 @@ def greedy_perfect_pairwise_sensor_placement(
                 f"Pair {pair} cannot be distinguished at any sensing location."
             )
 
-    # Algorithm 2: precompute Counts_m and Cover_m(n) for every location.
+    # Precompute sensor counts and pair coverage at each location.
     location_options: list[list[tuple[int, frozenset[tuple[int, int]]]]] = []
     for m in range(M):
         counts = sorted(

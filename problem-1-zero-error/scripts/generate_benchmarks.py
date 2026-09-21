@@ -17,7 +17,6 @@ from generate_inputs import generate_factorial_dataset
 
 MODELS = ["gaussian", "sinusoidal", "quadratic"]
 
-# Fixed designs make both benchmark datasets reproducible.
 BENCHMARKS: dict[str, dict[str, object]] = {
     "1d": {
         "dataset": "benchmark_1d",
@@ -119,7 +118,6 @@ def generate_benchmarks(names: list[str], overwrite: bool = False, *,
     return generated
 
 
-# Define command-line options for selecting and replacing benchmarks.
 def _parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Generate the one- and two-dimensional benchmark datasets."
@@ -147,7 +145,6 @@ def _parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-# Generate the requested benchmark datasets.
 def main() -> int:
     arguments = _parse_arguments()
     names = list(BENCHMARKS) if arguments.benchmark == "all" else [arguments.benchmark]
