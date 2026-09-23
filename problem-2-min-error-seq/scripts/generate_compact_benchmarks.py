@@ -17,7 +17,7 @@ from generate_inputs import generate_factorial_dataset
 MODELS = ["gaussian", "sinusoidal", "quadratic"]
 K_VALUES = [3, 4]
 M_VALUES = [3, 4]
-REPLICATES_PER_CELL = 140
+REPLICATES_PER_CELL = 50
 
 # This cap limits exhaustive-search runtime. It is not a problem constraint.
 EXHAUSTIVE_SEARCH_BUDGET_CAP = 12

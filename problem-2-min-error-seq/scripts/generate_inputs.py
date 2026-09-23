@@ -9,10 +9,7 @@ import sys
 from itertools import combinations, product
 from math import ceil, isfinite
 from pathlib import Path
-from statistics import fmean
 from zlib import crc32
-
-import numpy as np
 
 HERE = Path(__file__).resolve().parents[1]
 SOURCE_ROOT = HERE / "src"
@@ -40,16 +37,6 @@ from optimal import optimal_perfect_pairwise_sensor_placement  # noqa: E402
 from phase_data import compute_nijm  # noqa: E402
 
 
-R_MIN = 1e-2
-MIN_DISTINCT_BEST_LOCATIONS = 2
-SECOND_BEST_RATIO = 0.5
-COMPETITIVE_PAIR_FRACTION = 0.15
-ALT_LOCAL_RATIO = 0.8
-CONFLICT_QUANTILE = 0.70
-CALIBRATION_SAMPLES = 1_000
-EPSILON = 1e-12
-
-
 def select_budgets(
     minimum_sensors: int,
     fractions: list[float],
@@ -69,102 +56,6 @@ def select_budgets(
     return sorted(budgets)
 
 
-def _phase_structure(rows, K, M):
-    gaps = {pair: [0.0] * M for pair in combinations(range(K), 2)}
-    for i, j, location, value in rows:
-        gaps[(i, j)][location] = abs(float(value))
-    return gaps
-
-
-def _hard_quartile_mean(fields, best_gaps):
-    values = sorted(
-        best_gaps[tuple(sorted(pair))]
-        for pair in combinations(sorted(fields), 2)
-    )
-    count = max(1, ceil(0.25 * len(values)))
-    return fmean(values[:count])
-
-
-def structural_metrics(rows, K, M):
-    """Return preliminary checks and the H-based conflict diagnostics."""
-    gaps = _phase_structure(rows, K, M)
-    best_gaps = {pair: max(values) for pair, values in gaps.items()}
-    best_locations = {
-        pair: max(range(M), key=lambda location: (values[location], -location))
-        for pair, values in gaps.items()
-    }
-    second_ratios = {}
-    for pair, values in gaps.items():
-        ordered = sorted(values, reverse=True)
-        second_ratios[pair] = ordered[1] / ordered[0] if ordered[0] else 1.0
-
-    preliminary = (
-        all(value >= R_MIN for value in best_gaps.values())
-        and len(set(best_locations.values())) >= MIN_DISTINCT_BEST_LOCATIONS
-        and sum(value >= SECOND_BEST_RATIO for value in second_ratios.values())
-        / len(second_ratios)
-        >= COMPETITIVE_PAIR_FRACTION
-    )
-
-    fields = set(range(K))
-
-    def future(pair):
-        i, j = pair
-        return 0.5 * (
-            _hard_quartile_mean(fields - {i}, best_gaps)
-            + _hard_quartile_mean(fields - {j}, best_gaps)
-        )
-
-    tests = sorted(
-        (-values[location], pair, location)
-        for pair, values in gaps.items()
-        for location in range(M)
-    )
-    negative_local_g, pair_g, location_g = tests[0]
-    local_g = -negative_local_g
-    future_g = future(pair_g)
-    alternatives = []
-    for negative_local, pair, location in tests[1:]:
-        local = -negative_local
-        if local + EPSILON >= ALT_LOCAL_RATIO * local_g:
-            alternatives.append((future(pair), local, pair, location))
-
-    alternative = None
-    conflict_ratio = 1.0
-    if alternatives:
-        future_a, local_a, pair_a, location_a = min(
-            alternatives,
-            key=lambda item: (-item[0], -item[1], item[2], item[3]),
-        )
-        conflict_ratio = future_a / max(future_g, EPSILON)
-        alternative = {
-            "pair": list(pair_a),
-            "location": location_a,
-            "local_score": local_a,
-            "future_score": future_a,
-        }
-
-    return preliminary, {
-        "best_locations": [
-            {"pair": list(pair), "location": best_locations[pair]}
-            for pair in sorted(best_locations)
-        ],
-        "second_best_ratios": [
-            {"pair": list(pair), "ratio": second_ratios[pair]}
-            for pair in sorted(second_ratios)
-        ],
-        "H_full": _hard_quartile_mean(fields, best_gaps),
-        "local_test": {
-            "pair": list(pair_g),
-            "location": location_g,
-            "local_score": local_g,
-            "future_score": future_g,
-        },
-        "competitive_alternative": alternative,
-        "conflict_ratio": conflict_ratio,
-    }
-
-
 def _draw_case(model, dimension, K, M, seed, phase_scale):
     return generate_case(
         model,
@@ -176,22 +67,6 @@ def _draw_case(model, dimension, K, M, seed, phase_scale):
         max_attempts=1,
         min_best_pair_phase_gap=0.0,
     )
-
-
-def calibrate_conflict_threshold(
-    model, dimension, K, M, seed, phase_scale, sample_count
-):
-    ratios = []
-    generated = 0
-    while len(ratios) < sample_count:
-        rows, _ = _draw_case(
-            model, dimension, K, M, seed + generated, phase_scale
-        )
-        generated += 1
-        preliminary, metrics = structural_metrics(rows, K, M)
-        if preliminary and metrics["competitive_alternative"] is not None:
-            ratios.append(metrics["conflict_ratio"])
-    return float(np.quantile(ratios, CONFLICT_QUANTILE)), generated
 
 
 def generate_factorial_dataset(
@@ -209,7 +84,6 @@ def generate_factorial_dataset(
     seed: int,
     description: str,
     overwrite: bool = False,
-    calibration_samples: int = CALIBRATION_SAMPLES,
 ) -> Path:
     """Generate a balanced field-family by K by M input dataset."""
     _validate_design(
@@ -223,7 +97,6 @@ def generate_factorial_dataset(
         phase_scale,
         budget_fractions,
         budget_cap,
-        calibration_samples,
     )
 
     target = INPUT_ROOT / dataset
@@ -250,40 +123,20 @@ def generate_factorial_dataset(
     case_number = 0
     dataset_code = crc32(dataset.encode())
 
-    # Calibrate and then sample each design cell with independent seeds.
+    # Sample each design cell with independent deterministic seeds.
     for model in selected_models:
         for (K, M), replicate_count in zip(factorial_cells, cell_replicates):
             cell_code = crc32(f"{model}:{dimension}:{K}:{M}".encode())
-            calibration_seed = (seed << 32) + cell_code
-            threshold, calibration_generated = calibrate_conflict_threshold(
-                model,
-                dimension,
-                K,
-                M,
-                calibration_seed,
-                phase_scale,
-                calibration_samples,
-            )
             data_seed = ((seed + dataset_code) << 32) + cell_code
-            generated = 0
             for replicate in range(1, replicate_count + 1):
-                while True:
-                    phase_rows, metadata = _draw_case(
-                        model,
-                        dimension,
-                        K,
-                        M,
-                        data_seed + generated,
-                        phase_scale,
-                    )
-                    generated += 1
-                    preliminary, metrics = structural_metrics(phase_rows, K, M)
-                    if (
-                        preliminary
-                        and metrics["competitive_alternative"] is not None
-                        and metrics["conflict_ratio"] + EPSILON >= threshold
-                    ):
-                        break
+                phase_rows, metadata = _draw_case(
+                    model,
+                    dimension,
+                    K,
+                    M,
+                    data_seed + replicate - 1,
+                    phase_scale,
+                )
 
                 case_number += 1
                 phase_lookup = {
@@ -308,10 +161,6 @@ def generate_factorial_dataset(
                     "replicate": replicate,
                     "minimum_sensors_for_zero_error": minimum_sensors,
                     "sensor_budgets": budgets,
-                    "structural_metrics": {
-                        **metrics,
-                        "conflict_threshold": threshold,
-                    },
                     **metadata,
                 })
             cell_statistics.append({
@@ -319,17 +168,9 @@ def generate_factorial_dataset(
                 "spatial_dimension": dimension,
                 "K": K,
                 "M": M,
-                "calibration_samples": calibration_samples,
-                "calibration_candidates": calibration_generated,
-                "conflict_threshold": threshold,
-                "accepted_cases": replicate_count,
-                "generated_candidates": generated,
-                "acceptance_rate": replicate_count / generated,
+                "generated_cases": replicate_count,
             })
-            print(
-                f"{dataset}: {model} K={K} M={M}, "
-                f"threshold={threshold:.6f}, accepted {replicate_count}/{generated}"
-            )
+            print(f"{dataset}: {model} K={K} M={M}, saved {replicate_count} draws")
 
     manifest = {
         "schema_version": 4,
@@ -371,15 +212,7 @@ def generate_factorial_dataset(
             "phase_scale_c": phase_scale,
             "budget_fractions_of_capped_range": budget_fractions,
             "budget_cap": budget_cap,
-            "structural_filter": {
-                "r_min": R_MIN,
-                "min_distinct_best_locations": MIN_DISTINCT_BEST_LOCATIONS,
-                "second_best_ratio": SECOND_BEST_RATIO,
-                "competitive_pair_fraction": COMPETITIVE_PAIR_FRACTION,
-                "alt_local_ratio": ALT_LOCAL_RATIO,
-                "conflict_quantile": CONFLICT_QUANTILE,
-                "calibration_samples_per_cell": calibration_samples,
-            },
+            "sampling": "unfiltered random field draws",
             "budget_cap_constraint": (
                 "The cap limits exhaustive-search runtime and is not a "
                 "constraint of the sensor-allocation problem."
@@ -416,7 +249,6 @@ def _validate_design(
     phase_scale: float,
     budget_fractions: list[float],
     budget_cap: int | None,
-    calibration_samples: int,
 ) -> None:
     """Validate a requested dataset design."""
     if not DATASET_NAME.fullmatch(dataset):
@@ -449,12 +281,6 @@ def _validate_design(
         raise ValueError("budget fractions must lie in (0, 1]")
     if budget_cap is not None and budget_cap < 1:
         raise ValueError("budget_cap must be positive or None")
-    if (
-        isinstance(calibration_samples, bool)
-        or not isinstance(calibration_samples, int)
-        or calibration_samples < 10
-    ):
-        raise ValueError("calibration_samples must be an integer >= 10")
 
 
 def _prepare_directory(directory: Path, overwrite: bool) -> None:
@@ -484,7 +310,6 @@ def _parse_arguments() -> argparse.Namespace:
     parser.add_argument("--budget-cap", type=int, default=12)
     parser.add_argument("--no-budget-cap", action="store_true")
     parser.add_argument("--seed", type=int, default=20260812)
-    parser.add_argument("--calibration-samples", type=int, default=CALIBRATION_SAMPLES)
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
 
@@ -506,7 +331,6 @@ def main() -> int:
         seed=arguments.seed,
         description="Custom minimum-error sequential benchmark.",
         overwrite=arguments.overwrite,
-        calibration_samples=arguments.calibration_samples,
     )
     print(f"Generated dataset: {target}")
     return 0

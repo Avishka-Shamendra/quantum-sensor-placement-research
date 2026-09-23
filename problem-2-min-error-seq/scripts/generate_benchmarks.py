@@ -16,25 +16,25 @@ from generate_inputs import generate_factorial_dataset
 
 # Fixed benchmark parameters used for both spatial dimensions.
 MODELS = ["gaussian", "sinusoidal", "quadratic"]
-K_VALUES = list(range(3, 8))
-M_VALUES = list(range(3, 9))
+K_VALUES = list(range(3, 11))
+M_VALUES = list(range(2, 11))
 REPLICATES_PER_CELL = 30
 
 # This cap limits algorithm runtime. It is not a constraint of the
 # sensor-allocation problem and can be changed for other experiments.
-EXHAUSTIVE_SEARCH_BUDGET_CAP = 12
+BUDGET_CAP = 50
 
 # Separate seeds make the 1D and 2D datasets reproducible and independent.
 BENCHMARKS: dict[str, dict[str, object]] = {
     "1d": {
         "dataset": "benchmark_1d",
         "dimension": 1,
-        "seed": 20260812,
+        "seed": 20260912,
     },
     "2d": {
         "dataset": "benchmark_2d",
         "dimension": 2,
-        "seed": 20260813,
+        "seed": 20260913,
     },
 }
 
@@ -55,7 +55,7 @@ def generate_benchmarks(names: list[str], overwrite: bool = False) -> list[str]:
             cases_per_model=None,
             phase_scale=1.0,
             budget_fractions=[0.25, 0.5, 0.75, 1.0],
-            budget_cap=EXHAUSTIVE_SEARCH_BUDGET_CAP,
+            budget_cap=BUDGET_CAP,
             seed=int(design["seed"]),
             description=(
                 f"Expanded {name.upper()} benchmark for minimum-error "

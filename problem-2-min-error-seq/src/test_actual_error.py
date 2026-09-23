@@ -1,6 +1,7 @@
 """Small-instance checks for physical evaluation and actual-error optimization."""
 
 import csv
+from collections import Counter
 from dataclasses import replace
 from itertools import combinations, product
 import json
@@ -15,7 +16,7 @@ from actual_error import actual_node_probabilities, actual_tree_error, off_pair_
 from analysis import PROJECT, run_analysis, select_cases
 from exhaustive_search import exhaustive_search
 from baselines import random_tree
-from greedy import allocation_score, build_greedy_tree, greedy
+from greedy import build_greedy_tree, greedy, greedy_allocation, location_gain
 from heuristic import heuristic
 from input_data import load_phase_input, pair_error_probability, write_phase_input
 from random_baseline import random_baseline
@@ -24,7 +25,13 @@ from uniform import uniform
 
 
 PHASES = {(0, 1): [-0.8, -1.1], (0, 2): [-1.4, -0.3], (1, 2): [-0.6, 0.8]}
-METHODS = (exhaustive_search, greedy, heuristic, uniform, random_baseline)
+METHODS = (
+    exhaustive_search,
+    greedy,
+    heuristic,
+    uniform,
+    random_baseline,
+)
 
 
 def all_trees(remaining, M):
@@ -101,23 +108,39 @@ class ActualErrorTests(unittest.TestCase):
             with self.assertRaises(SearchTimeout):
                 exhaustive_search(3, 2, 2, PHASES)
 
-    def test_greedy_placement_uses_only_average_pair_scores(self):
+    def test_greedy_placement_uses_largest_average_pair_gain(self):
         model = OutcomeModel(3, 2, 2, PHASES)
         expected = (0, 0)
         for _ in range(2):
-            candidates = []
-            for location in range(2):
-                trial = tuple(
-                    count + int(index == location)
-                    for index, count in enumerate(expected)
-                )
-                candidates.append((allocation_score(model, trial), location, trial))
-            _, _, expected = min(candidates)
+            location = max(
+                range(2),
+                key=lambda candidate: (
+                    sum(
+                        model.pair_error(pair, candidate, expected[candidate])
+                        - model.pair_error(pair, candidate, expected[candidate] + 1)
+                        for pair in model.pairs
+                    ) / len(model.pairs),
+                    -candidate,
+                ),
+            )
+            expected = tuple(
+                count + int(index == location)
+                for index, count in enumerate(expected)
+            )
 
-        with patch("greedy.build_greedy_tree", wraps=build_greedy_tree) as builder:
-            result = greedy(3, 2, 2, PHASES)
-        self.assertEqual(result.allocation, expected)
-        self.assertEqual(builder.call_count, 1)
+        with patch.object(
+            model,
+            "probabilities",
+            side_effect=AssertionError("Q must not guide greedy allocation"),
+        ):
+            self.assertEqual(greedy_allocation(model), expected)
+        self.assertAlmostEqual(
+            location_gain(model, (0, 0), 0),
+            sum(
+                model.pair_error(pair, 0, 0) - model.pair_error(pair, 0, 1)
+                for pair in model.pairs
+            ) / len(model.pairs),
+        )
 
     def test_greedy_tree_uses_only_local_pair_error(self):
         model = OutcomeModel(3, 2, 2, PHASES)
@@ -171,15 +194,29 @@ class ActualErrorTests(unittest.TestCase):
                             "sensor_budgets": [1], "minimum_sensors_for_zero_error": 4,
                             "field_model": "gaussian", "spatial_dimension": dimension}
                 (directory / "manifest.json").write_text(json.dumps({"cases": [metadata]}))
-            with patch("analysis.TEST_CASES_PER_DIMENSION", 1), patch("builtins.print"):
+            with patch(
+                "analysis.TEST_CASES_PER_DIMENSION",
+                {"compact": 1, "extended": 1},
+            ), patch(
+                "builtins.print"
+            ) as progress_print:
                 first = run_analysis(project=root)
             self.assertEqual(len(first["rows"]), 10)
             self.assertEqual({r["status"] for r in first["rows"]}, {"ok"})
-            with patch("analysis.TEST_CASES_PER_DIMENSION", 1), patch("analysis.SOLVERS", {name: lambda *a, **k: self.fail("Cache missed")
+            progress_messages = [call.args[0] for call in progress_print.call_args_list]
+            self.assertIn(
+                "compact_benchmark_1d: completed case 1/1 (gaussian, K=3, M=3)",
+                progress_messages,
+            )
+            self.assertIn(
+                "compact_benchmark_2d: completed case 1/1 (gaussian, K=3, M=3)",
+                progress_messages,
+            )
+            with patch("analysis.TEST_CASES_PER_DIMENSION", {"compact": 1, "extended": 1}), patch("analysis.SOLVERS", {name: lambda *a, **k: self.fail("Cache missed")
                        for name in ("Exhaustive", "Greedy", "Heuristic", "Uniform", "Random")}), patch("builtins.print"):
                 second = run_analysis(project=root)
             self.assertEqual(first["rows"], second["rows"])
-            with patch("analysis.TEST_CASES_PER_DIMENSION", 1), patch("builtins.print"):
+            with patch("analysis.TEST_CASES_PER_DIMENSION", {"compact": 1, "extended": 1}), patch("builtins.print"):
                 third = run_analysis(project=root, time_limit=31)
             self.assertNotEqual(first["rows"][0]["fingerprint"], third["rows"][0]["fingerprint"])
             with (first["output"] / "tables/error_summary.csv").open() as stream:
@@ -189,7 +226,7 @@ class ActualErrorTests(unittest.TestCase):
                 self.assertIn("time_limit_seconds", timeout_reader.fieldnames)
                 self.assertEqual(list(timeout_reader), [])
 
-    def test_default_test_runs_have_180_cases_per_dimension(self):
+    def test_default_test_run_sizes_per_dimension(self):
         for study in ("compact", "extended"):
             entries = select_cases(PROJECT, study, "test", exact_k_max=4)
             counts = {
@@ -199,7 +236,48 @@ class ActualErrorTests(unittest.TestCase):
                 )
                 for dimension in (1, 2)
             }
-            self.assertEqual(counts, {1: 180, 2: 180})
+            expected_count = 90 if study == "compact" else 180
+            self.assertEqual(counts, {1: expected_count, 2: expected_count})
+            expected_k = {3, 4} if study == "compact" else set(range(3, 11))
+            expected_m = {3, 4} if study == "compact" else set(range(2, 11))
+            for dimension in (1, 2):
+                dimension_cases = [
+                    case
+                    for _, _, case in entries
+                    if case["spatial_dimension"] == dimension
+                ]
+                self.assertEqual(
+                    {case["K"] for case in dimension_cases}, expected_k
+                )
+                self.assertEqual(
+                    {case["M"] for case in dimension_cases}, expected_m
+                )
+                if study == "compact":
+                    self.assertEqual(
+                        {
+                            (case["field_model"], case["K"], case["M"])
+                            for case in dimension_cases
+                        },
+                        {
+                            (family, K, M)
+                            for family in ("gaussian", "quadratic", "sinusoidal")
+                            for K in expected_k
+                            for M in expected_m
+                        },
+                    )
+                else:
+                    self.assertEqual(
+                        {(case["K"], case["M"]) for case in dimension_cases},
+                        {(K, M) for K in expected_k for M in expected_m},
+                    )
+                    self.assertEqual(
+                        Counter(case["field_model"] for case in dimension_cases),
+                        Counter({
+                            "gaussian": 60,
+                            "quadratic": 60,
+                            "sinusoidal": 60,
+                        }),
+                    )
 
 
 if __name__ == "__main__":

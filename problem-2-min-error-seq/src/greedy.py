@@ -5,16 +5,32 @@ from itertools import combinations
 from strategy import DecisionLeaf, DecisionNode, OutcomeModel
 
 
-def allocation_score(model, allocation):
-    """Average each field pair's smallest P over the sensing locations."""
+def location_gain(model, allocation, location):
+    """Return the mean pair-error reduction from one sensor at a location."""
     model.check_time()
+    count = allocation[location]
     return sum(
-        min(
-            model.pair_error(pair, location, allocation[location])
-            for location in range(model.M)
-        )
+        model.pair_error(pair, location, count)
+        - model.pair_error(pair, location, count + 1)
         for pair in model.pairs
     ) / len(model.pairs)
+
+
+def greedy_allocation(model):
+    """Allocate sensors by the largest mean pair-error gain."""
+    allocation = (0,) * model.M
+    for _ in range(model.N):
+        location = max(
+            range(model.M),
+            key=lambda candidate: (
+                location_gain(model, allocation, candidate), -candidate
+            ),
+        )
+        allocation = tuple(
+            count + int(index == location)
+            for index, count in enumerate(allocation)
+        )
+    return allocation
 
 
 def build_greedy_tree(model, allocation):
@@ -42,17 +58,8 @@ def build_greedy_tree(model, allocation):
 
 
 def greedy(K, M, N, phase_gaps, *, time_limit=None):
-    """Allocate by mean minimum P, then build one local minimum-P tree."""
+    """Allocate by the largest mean P gain, then build one minimum-P tree."""
     model = OutcomeModel(K, M, N, phase_gaps, time_limit=time_limit)
-    allocation = (0,) * M
-    for _ in range(N):
-        candidates = []
-        for location in range(M):
-            trial = tuple(
-                count + int(index == location)
-                for index, count in enumerate(allocation)
-            )
-            candidates.append((allocation_score(model, trial), location, trial))
-        _, _, allocation = min(candidates)
+    allocation = greedy_allocation(model)
     tree = build_greedy_tree(model, allocation)
     return model.result(allocation, tree)

@@ -20,9 +20,16 @@ from uniform import uniform
 
 
 PROJECT = Path(__file__).resolve().parents[1]
-TEST_CASES_PER_DIMENSION = 180
-SOLVERS = {"Exhaustive": exhaustive_search, "Greedy": greedy, "Heuristic": heuristic,
-           "Uniform": uniform, "Random": random_baseline}
+TEST_CASES_PER_DIMENSION = {"compact": 90, "extended": 180}
+SOLVERS = {
+    "Exhaustive": exhaustive_search,
+    "Greedy": greedy,
+    "Heuristic": heuristic,
+    "Uniform": uniform,
+    "Random": random_baseline,
+}
+COMPACT_METHODS = ("Exhaustive", "Greedy", "Heuristic", "Uniform", "Random")
+EXTENDED_METHODS = ("Greedy", "Heuristic", "Uniform", "Random")
 
 
 def write_csv(path, rows, fieldnames=None):
@@ -41,9 +48,14 @@ def select_cases(project, study, mode, exact_k_max):
         raise ValueError("Choose compact/extended and test/full")
     if exact_k_max < 2:
         raise ValueError("exact_k_max must be >= 2")
+    test_case_count = TEST_CASES_PER_DIMENSION[study]
     entries = []
     for dimension in (1, 2):
-        dataset = f"{'compact_' if study == 'compact' else ''}benchmark_{dimension}d"
+        dataset = (
+            f"compact_benchmark_{dimension}d"
+            if study == "compact"
+            else f"benchmark_{dimension}d"
+        )
         directory = project / "inputs" / dataset
         manifest = json.loads((directory / "manifest.json").read_text())
         eligible = [
@@ -52,24 +64,52 @@ def select_cases(project, study, mode, exact_k_max):
             if study != "compact" or case["K"] <= exact_k_max
         ]
         if mode == "test":
-            families = sorted({case["field_model"] for case in eligible})
-            if not families:
-                raise ValueError(f"No test cases available for {dataset}")
-            quotient, remainder = divmod(TEST_CASES_PER_DIMENSION, len(families))
-            selected = []
-            for family_index, family in enumerate(families):
-                quota = quotient + int(family_index < remainder)
-                family_cases = [
-                    case for case in eligible if case["field_model"] == family
-                ]
-                if len(family_cases) < quota:
-                    raise ValueError(
-                        f"{dataset} needs at least {quota} {family} cases "
-                        f"for a {TEST_CASES_PER_DIMENSION}-case test run"
-                    )
-                selected.extend(family_cases[:quota])
+            if study == "compact":
+                key_fields = ("field_model", "K", "M")
+                cells = sorted({
+                    tuple(case[field] for field in key_fields)
+                    for case in eligible
+                })
+                quotient, remainder = divmod(test_case_count, len(cells))
+                selected = []
+                for cell_index, cell in enumerate(cells):
+                    quota = quotient + int(cell_index < remainder)
+                    cell_cases = [
+                        case
+                        for case in eligible
+                        if tuple(case[field] for field in key_fields) == cell
+                    ]
+                    if len(cell_cases) < quota:
+                        raise ValueError(
+                            f"{dataset} needs at least {quota} cases in cell {cell}"
+                        )
+                    selected.extend(cell_cases[:quota])
+            else:
+                pairs = sorted({(case["K"], case["M"]) for case in eligible})
+                families = sorted({case["field_model"] for case in eligible})
+                if test_case_count < len(pairs):
+                    raise ValueError("Test sample is too small to cover every K, M pair")
+                quotient, remainder = divmod(test_case_count, len(pairs))
+                selected = []
+                for pair_index, (K, M) in enumerate(pairs):
+                    quota = quotient + int(pair_index < remainder)
+                    for pick in range(quota):
+                        family = families[(pair_index + pick) % len(families)]
+                        family_cases = [
+                            case
+                            for case in eligible
+                            if case["field_model"] == family
+                            and case["K"] == K
+                            and case["M"] == M
+                        ]
+                        replicate_index = pick // len(families)
+                        if len(family_cases) <= replicate_index:
+                            raise ValueError(
+                                f"{dataset} lacks cases for {(family, K, M)}"
+                            )
+                        selected.append(family_cases[replicate_index])
             eligible = selected
-            if len(eligible) < TEST_CASES_PER_DIMENSION:
+            if len(eligible) < test_case_count:
                 raise RuntimeError(f"Test selection for {dataset} is too small")
 
         for case in eligible:
@@ -128,7 +168,7 @@ def run_analysis(*, project=PROJECT, study="compact", mode="test", exact_k_max=4
     """Save actual errors, trees, timings, and explicit timeout records."""
     project = Path(project)
     entries = select_cases(project, study, mode, exact_k_max)
-    methods = tuple(SOLVERS) if study == "compact" else tuple(m for m in SOLVERS if m != "Exhaustive")
+    methods = COMPACT_METHODS if study == "compact" else EXTENDED_METHODS
     if not isfinite(time_limit) or time_limit <= 0:
         raise ValueError("time_limit must be positive and finite")
     settings = {"study": study, "mode": mode, "exact_k_max": exact_k_max,
@@ -143,10 +183,12 @@ def run_analysis(*, project=PROJECT, study="compact", mode="test", exact_k_max=4
     with checkpoint.open("a") as stream:
         stream.write("\n")
     rows, reused = [], 0
+    dataset_totals = Counter(dataset for dataset, _, _ in entries)
+    dataset_completed = Counter()
     print(f"{study}/{mode}: {len(entries)} cases, methods: {', '.join(methods)}", flush=True)
     if study == "compact":
         print(f"Exact comparison uses K <= {exact_k_max}; limit {time_limit:g}s per method/budget.", flush=True)
-    for index, (dataset, path, metadata) in enumerate(entries, 1):
+    for dataset, path, metadata in entries:
         K, M, phases = load_phase_input(path)
         if K != metadata["K"] or M != metadata["M"]:
             raise ValueError(f"Manifest dimensions disagree with {path}")
@@ -183,8 +225,13 @@ def run_analysis(*, project=PROJECT, study="compact", mode="test", exact_k_max=4
                     stream.write(json.dumps(row, allow_nan=False) + "\n")
                     stream.flush()
                 rows.append(row)
-        if index == 1 or index % 10 == 0 or index == len(entries):
-            print(f"{index}/{len(entries)} cases; {reused} cached method results", flush=True)
+        dataset_completed[dataset] += 1
+        completed = dataset_completed[dataset]
+        print(
+            f"{dataset}: completed case {completed}/{dataset_totals[dataset]} "
+            f"({metadata['field_model']}, K={K}, M={M})",
+            flush=True,
+        )
     summary = summarize(rows, methods)
     flat = []
     for row in rows:

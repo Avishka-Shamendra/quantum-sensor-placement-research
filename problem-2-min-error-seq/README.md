@@ -8,10 +8,9 @@ and generators; `min-error-sequential` is unchanged. Previous results are not re
 
 - **Exhaustive:** enumerate allocations summing to N, then optimize every test pair,
   location, and branch subtree using actual outcome probabilities.
-- **Greedy:** add one sensor at a time, choosing the trial allocation with the
-  smallest average pair score. Each pair score is its minimum `P_ijmn` over all
-  locations under that allocation. After allocation, build one tree by choosing
-  the smallest `P_ijmn` at every node. The full tree is evaluated exactly once.
+- **Greedy:** add one sensor at a time where it gives the largest average
+  pairwise error reduction at a location. After allocation, build one tree by
+  choosing the smallest `P_ijmn` at every node.
 - **Heuristic:** near-uniform initialization, sensor-transfer moves of sizes 1, 2,
   and 3 using mean pairwise scores, followed by a beam-search tree (width 3).
   Scores guide construction only; the reported error comes from the final tree's
@@ -51,17 +50,19 @@ jupyter lab problem-2-min-error-seq/01_compact_analysis.ipynb
 ```
 
 - `01_compact_analysis.ipynb`: all five methods, including exhaustive search.
-- `02_extended_analysis.ipynb`: the four scalable methods.
+- `02_extended_analysis.ipynb`: the four scalable methods on extended data.
 - `final_figures.ipynb`: figures and tables from saved full results only.
 
 The first two notebooks run independently. Set `RUN_MODE` to `"test"` or
-`"full"`. Test mode uses 180 cases per spatial dimension, balanced equally
-across the three field families. It selects cases deterministically from each
-dataset and uses every selected case's saved budgets.
+`"full"`. Compact test mode uses 90 cases per spatial dimension; extended test
+mode uses 180. Compact samples are balanced across field family, K, and M.
+Extended samples cover every K and M
+pair and contain 60 cases from each field family. Selection is deterministic
+and uses every selected case's saved budgets.
 
-Compact full runs use `EXACT_K_MAX = 4` by default. K=5 inputs are retained but
-excluded unless this setting is increased. Actual exhaustive search considers
-all sensing locations at every node and can be expensive. A 30-second limit
+Compact runs use `K in {3, 4}`, `M in {3, 4}`, and `EXACT_K_MAX = 4` by
+default. Actual exhaustive search considers all sensing locations at every node
+and can be expensive. A 30-second limit
 applies per method and budget; timeout records are not reported as optima.
 Full runs may still take a long time.
 
@@ -70,7 +71,7 @@ python problem-2-min-error-seq/scripts/evaluate_benchmarks.py --study compact --
 python problem-2-min-error-seq/scripts/evaluate_benchmarks.py --study extended --mode test
 ```
 
-Regenerate all four phase-only datasets with:
+Generate the datasets with:
 
 ```bash
 python problem-2-min-error-seq/scripts/generate_compact_benchmarks.py all --overwrite
@@ -87,29 +88,25 @@ The generated datasets use this design:
 
 | Dataset | K | M | Replicates per family and cell | Cases per dimension |
 | --- | --- | --- | --- | --- |
-| Compact | 3–4 | 3–4 | 140 | 1,680 |
-| Extended | 3–7 | 3–8 | 30 | 2,700 |
+| Compact 1D and 2D | 3–4 | 3–4 | 50 | 600 |
+| Extended 1D and 2D | 3–10 | 2–10 | 30 | 6,480 |
 
-Both use Gaussian, sinusoidal, and quadratic families. Each case has up to four
-budgets below its sequential zero-error minimum, capped at 12 sensors.
+All use Gaussian, sinusoidal, and quadratic families. Each case has up to four
+budgets below its sequential zero-error minimum. Compact budgets are capped at
+12 sensors and extended budgets at 50 sensors.
 Generators are in `scripts/`; they reuse field generation and the zero-error
 solver from `problem-1-zero-error` without modifying that folder.
 
-Each family, dimension, K, and M cell uses an independent random calibration
-sample to set the 70th percentile of the H-based conflict ratio. Generated
-cases must pass basic phase feasibility, use at least two preferred sensing
-locations, contain a competing location for at least 15% of pairs, and meet
-their cell's fixed conflict threshold. Dataset selection never uses an
-algorithm result. Manifests store the thresholds, cell acceptance rates, and
-accepted-case structural diagnostics.
+Every dataset saves each seeded random field draw directly without rejection.
 
 Saved results contain error probabilities, allocations, trees, runtime, and
 completion status. `tables/error_summary.csv` and all comparison plots use the
 same cases completed by every requested method. `tables/status.csv` gives the
 status counts, while `tables/timeouts.csv` lists every timed-out dataset, case,
 method, and budget together with its runtime and configured time limit. The
-timeout file is written with headers even when no timeouts occur. Final figures
-show error probability, runtime, and the compact exhaustive-error gap.
+timeout file is written with headers even when no timeouts occur. Each analysis
+exports a mean-error figure, a runtime box plot by K, and an error box plot by
+field family.
 
 ## Checks
 
