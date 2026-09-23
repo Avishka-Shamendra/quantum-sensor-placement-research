@@ -30,3 +30,7 @@ min-error-global/inputs/benchmark_1d/
 min-error-global/inputs/benchmark_2d/
 min-error-sequential/results/
 min-error-global/results/
+
+# Minimum-error sequential experiments.
+problem-2-min-error-seq/inputs/
+problem-2-min-error-seq/results/
