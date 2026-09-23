@@ -17,7 +17,16 @@ from analysis import PROJECT, run_analysis, select_cases
 from exhaustive_search import exhaustive_search
 from baselines import random_tree
 from greedy import build_greedy_tree, greedy, greedy_allocation, location_gain
-from heuristic import heuristic
+from heuristic import (
+    DecisionLeaf as HeuristicLeaf,
+    _PartialNode,
+    _PendingNode,
+    _build_tree_with_beam_search,
+    _compute_pair_errors,
+    _partial_tree_score,
+    _tree_score,
+    heuristic,
+)
 from input_data import load_phase_input, pair_error_probability, write_phase_input
 from random_baseline import random_baseline
 from strategy import DecisionLeaf, DecisionNode, OutcomeModel, SearchTimeout, budget_allocations
@@ -168,6 +177,50 @@ class ActualErrorTests(unittest.TestCase):
             check(node.discard_j, tuple(field for field in remaining if field != j))
 
         check(tree, tuple(range(model.K)))
+
+    def test_heuristic_tree_scores_use_exact_p_and_q(self):
+        model = OutcomeModel(3, 2, 2, PHASES)
+        allocation = (1, 1)
+        pair_locations, pair_errors = _compute_pair_errors(
+            model.pairs, model.M, allocation, model.phases
+        )
+        pair_outcomes = {
+            pair: model.probabilities(
+                pair, pair_locations[pair], allocation[pair_locations[pair]]
+            )
+            for pair in model.pairs
+        }
+        tree = _build_tree_with_beam_search(
+            model.K,
+            pair_locations,
+            pair_errors,
+            pair_outcomes,
+            beam_width=3,
+        )
+        self.assertAlmostEqual(
+            _tree_score(tree, model.K, pair_outcomes),
+            actual_tree_error(tree, model.K, model.phases, allocation),
+        )
+
+        partial = _PartialNode(
+            pair=(0, 1),
+            location=0,
+            pair_error=0.1,
+            discard_i=_PartialNode(
+                pair=(1, 2),
+                location=0,
+                pair_error=0.2,
+                discard_i=HeuristicLeaf(2),
+                discard_j=HeuristicLeaf(1),
+            ),
+            discard_j=_PendingNode((0, 2)),
+        )
+        low_q = {(0, 1): (0.9, 0.1, 0.2), (1, 2): (0.5, 0.8, 0.2)}
+        high_q = {(0, 1): (0.9, 0.1, 0.8), (1, 2): (0.5, 0.8, 0.2)}
+        self.assertNotAlmostEqual(
+            _partial_tree_score(partial, 3, low_q),
+            _partial_tree_score(partial, 3, high_q),
+        )
 
     def test_random_tree_samples_pair_and_location_without_pair_scoring(self):
         model = OutcomeModel(3, 2, 2, PHASES)

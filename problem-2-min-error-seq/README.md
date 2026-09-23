@@ -13,8 +13,8 @@ and generators; `min-error-sequential` is unchanged. Previous results are not re
   choosing the smallest `P_ijmn` at every node.
 - **Heuristic:** near-uniform initialization, sensor-transfer moves of sizes 1, 2,
   and 3 using mean pairwise scores, followed by a beam-search tree (width 3).
-  Scores guide construction only; the reported error comes from the final tree's
-  actual outcome probabilities.
+  Partial and complete trees are scored with the exact tested-pair and off-pair
+  outcome probabilities used for the reported final error.
 - **Uniform:** near-uniform allocation and a seeded random pair-location tree.
 - **Random:** seeded random allocation and a seeded random pair-location tree.
 
@@ -89,7 +89,7 @@ The generated datasets use this design:
 | Dataset | K | M | Replicates per family and cell | Cases per dimension |
 | --- | --- | --- | --- | --- |
 | Compact 1D and 2D | 3–4 | 3–4 | 50 | 600 |
-| Extended 1D and 2D | 3–10 | 2–10 | 30 | 6,480 |
+| Extended 1D and 2D | 3–10 | 2–10 | 10 | 2,160 |
 
 All use Gaussian, sinusoidal, and quadratic families. Each case has up to four
 budgets below its sequential zero-error minimum. Compact budgets are capped at
@@ -105,8 +105,14 @@ same cases completed by every requested method. `tables/status.csv` gives the
 status counts, while `tables/timeouts.csv` lists every timed-out dataset, case,
 method, and budget together with its runtime and configured time limit. The
 timeout file is written with headers even when no timeouts occur. Each analysis
-exports a mean-error figure, a runtime box plot by K, and an error box plot by
-field family.
+exports a mean-error curve and grouped mean-error bars by field family with 95%
+confidence intervals. Extended also exports two-panel line figures for
+allocation agreement and runtime by K; Compact reports allocation agreement in
+a table and omits the runtime figure.
+Compact reports Greedy–Heuristic and Greedy–Exhaustive allocation matches in
+a table by dimension and K. Extended shows Greedy–Heuristic matches in separate
+1D and 2D plot panels. Total-budget agreement is omitted because all methods
+receive the same fixed budget.
 
 ## Checks
 

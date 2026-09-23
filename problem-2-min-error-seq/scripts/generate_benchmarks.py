@@ -18,7 +18,7 @@ from generate_inputs import generate_factorial_dataset
 MODELS = ["gaussian", "sinusoidal", "quadratic"]
 K_VALUES = list(range(3, 11))
 M_VALUES = list(range(2, 11))
-REPLICATES_PER_CELL = 30
+REPLICATES_PER_CELL = 10
 
 # This cap limits algorithm runtime. It is not a constraint of the
 # sensor-allocation problem and can be changed for other experiments.

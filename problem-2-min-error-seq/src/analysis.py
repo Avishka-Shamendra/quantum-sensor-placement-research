@@ -238,8 +238,11 @@ def run_analysis(*, project=PROJECT, study="compact", mode="test", exact_k_max=4
         exported = {
             k: v
             for k, v in row.items()
-            if k not in ("fingerprint", "allocation", "decision_tree", "actual_error")
+            if k not in ("fingerprint", "decision_tree", "actual_error")
         }
+        exported["allocation"] = (
+            json.dumps(row["allocation"]) if row["allocation"] is not None else ""
+        )
         exported["error_probability"] = row["actual_error"]
         flat.append(exported)
     write_csv(output / "tables/case_errors.csv", flat)

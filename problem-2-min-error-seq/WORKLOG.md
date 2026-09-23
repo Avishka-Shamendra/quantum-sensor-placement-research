@@ -14,4 +14,7 @@
   enumerated all allocations and node-specific pair/location choices exactly.
 - Thirteen unit tests and both 360-case command-line studies passed after the update.
 - Checkpoint reuse, figures, generators, and small K=4 searches checked.
+- Compact uses an allocation-agreement table and omits runtime figures. Extended
+  uses allocation and runtime line figures by K; field-family means use bars with
+  95% confidence intervals.
 - Full studies have not been run. Start with RUN_MODE="test"; exact full runs default to K≤4.

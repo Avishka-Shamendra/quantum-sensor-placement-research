@@ -131,10 +131,19 @@ def heuristic(
         current_allocation,
         model.phases,
     )
+    pair_outcomes = {
+        pair: model.probabilities(
+            pair,
+            pair_locations[pair],
+            current_allocation[pair_locations[pair]],
+        )
+        for pair in pairs
+    }
     tree = _build_tree_with_beam_search(
         K,
         pair_locations,
         pair_errors,
+        pair_outcomes,
         beam_width,
         check_time=model.check_time,
     )
@@ -298,6 +307,7 @@ def _build_tree_with_beam_search(
     K: int,
     pair_locations: Mapping[Pair, int],
     pair_errors: Mapping[Pair, float],
+    pair_outcomes: Mapping[Pair, tuple[float, ...]],
     beam_width: int,
     *, check_time=lambda: None,
 ) -> DecisionTree:
@@ -325,7 +335,7 @@ def _build_tree_with_beam_search(
         ranked = sorted(
             (
                 (
-                    _partial_tree_score(partial_tree, K),
+                    _partial_tree_score(partial_tree, K, pair_outcomes),
                     _partial_tree_signature(partial_tree),
                     partial_tree,
                 )
@@ -338,7 +348,10 @@ def _build_tree_with_beam_search(
 
     # Convert the retained complete partial trees to result trees.
     completed = [_finalize_complete_tree(partial_tree) for partial_tree in beam]
-    return min(completed, key=lambda candidate: _tree_score(candidate, K))
+    return min(
+        completed,
+        key=lambda candidate: _tree_score(candidate, K, pair_outcomes),
+    )
 
 
 def _expand_first_pending(
@@ -433,47 +446,44 @@ def _finalize_complete_tree(tree: _PartialTree) -> DecisionTree:
     )
 
 
-def _partial_tree_score(tree: _PartialTree, K: int) -> float:
-    """Sum weighted errors for tests already selected in a partial tree."""
-    return _partial_subtree_score(tree, tuple(1.0 / K for _ in range(K)))
+def _partial_tree_score(
+    tree: _PartialTree,
+    K: int,
+    pair_outcomes: Mapping[Pair, tuple[float, ...]],
+) -> float:
+    """Score selected tests using their exact P/Q branch probabilities."""
+    return _partial_subtree_score(
+        tree,
+        tuple(1.0 / K for _ in range(K)),
+        pair_outcomes,
+    )
 
 
 def _partial_subtree_score(
     tree: _PartialTree,
     mass: tuple[float, ...],
+    pair_outcomes: Mapping[Pair, tuple[float, ...]],
 ) -> float:
     """Find the accumulated weighted-error score below one partial node."""
     if isinstance(tree, (DecisionLeaf, _PendingNode)):
         return 0.0
 
     i, j = tree.pair
-    node_score = (mass[i] + mass[j]) * tree.pair_error
+    keep_i = pair_outcomes[tree.pair]
+    node_score = mass[i] * (1.0 - keep_i[i]) + mass[j] * keep_i[j]
 
-    # The partial-tree score uses the same q-mass rule as pair weighting.
     discard_i_mass = tuple(
-        0.0
-        if field == i
-        else (
-            value * (1.0 - tree.pair_error)
-            if field == j
-            else value * 0.5
-        )
+        0.0 if field == i else value * (1.0 - keep_i[field])
         for field, value in enumerate(mass)
     )
     discard_j_mass = tuple(
-        0.0
-        if field == j
-        else (
-            value * (1.0 - tree.pair_error)
-            if field == i
-            else value * 0.5
-        )
+        0.0 if field == j else value * keep_i[field]
         for field, value in enumerate(mass)
     )
     return (
         node_score
-        + _partial_subtree_score(tree.discard_i, discard_i_mass)
-        + _partial_subtree_score(tree.discard_j, discard_j_mass)
+        + _partial_subtree_score(tree.discard_i, discard_i_mass, pair_outcomes)
+        + _partial_subtree_score(tree.discard_j, discard_j_mass, pair_outcomes)
     )
 
 
@@ -491,14 +501,23 @@ def _partial_tree_signature(tree: _PartialTree) -> tuple[object, ...]:
     )
 
 
-def _tree_score(tree: DecisionTree, K: int) -> float:
-    """Find the final error when all fields have equal prior probability."""
-    return _subtree_score(tree, tuple(1.0 / K for _ in range(K)))
+def _tree_score(
+    tree: DecisionTree,
+    K: int,
+    pair_outcomes: Mapping[Pair, tuple[float, ...]],
+) -> float:
+    """Find the exact P/Q error when all fields have equal prior probability."""
+    return _subtree_score(
+        tree,
+        tuple(1.0 / K for _ in range(K)),
+        pair_outcomes,
+    )
 
 
 def _subtree_score(
     tree: DecisionTree,
     weights: tuple[float, ...],
+    pair_outcomes: Mapping[Pair, tuple[float, ...]],
 ) -> float:
     """Find the error below one decision-tree node."""
     if isinstance(tree, DecisionLeaf):
@@ -508,53 +527,17 @@ def _subtree_score(
             if field != tree.declared_field
         )
 
-    discard_i_weights = _branch_weights(
-        weights,
-        tree.pair,
-        discarded_field=tree.pair[0],
-        pair_error=tree.pair_error,
+    keep_i = pair_outcomes[tree.pair]
+    discard_i_weights = tuple(
+        weight * (1.0 - probability)
+        for weight, probability in zip(weights, keep_i)
     )
-    discard_j_weights = _branch_weights(
-        weights,
-        tree.pair,
-        discarded_field=tree.pair[1],
-        pair_error=tree.pair_error,
+    discard_j_weights = tuple(
+        weight * probability
+        for weight, probability in zip(weights, keep_i)
     )
-    return _subtree_score(tree.discard_i, discard_i_weights) + _subtree_score(
-        tree.discard_j, discard_j_weights
+    return _subtree_score(
+        tree.discard_i, discard_i_weights, pair_outcomes
+    ) + _subtree_score(
+        tree.discard_j, discard_j_weights, pair_outcomes
     )
-
-
-def _branch_weights(
-    weights: tuple[float, ...],
-    pair: Pair,
-    *,
-    discarded_field: int,
-    pair_error: float,
-) -> tuple[float, ...]:
-    """Pass active-field probability masses into one test branch."""
-    return tuple(
-        weight
-        * _branch_probability(
-            field,
-            pair,
-            discarded_field=discarded_field,
-            pair_error=pair_error,
-        )
-        for field, weight in enumerate(weights)
-    )
-
-
-def _branch_probability(
-    active_field: int,
-    pair: Pair,
-    *,
-    discarded_field: int,
-    pair_error: float,
-) -> float:
-    """Return the branch probability conditioned on the active field."""
-    if active_field not in pair:
-        return 0.5
-    if active_field == discarded_field:
-        return pair_error
-    return 1.0 - pair_error
