@@ -51,11 +51,17 @@ jupyter lab problem-2-min-error-seq/01_compact_analysis.ipynb
 
 - `01_compact_analysis.ipynb`: all five methods, including exhaustive search.
 - `02_extended_analysis.ipynb`: the four scalable methods on extended data.
+- `03_heuristic_ablation.ipynb`: near-uniform/VND allocation crossed with
+  greedy/beam tree construction on the extended test sample.
+- `04_beam_width_comparison.ipynb`: matched comparison of beam widths 1, 3,
+  and 5 on the extended test sample.
 - `final_figures.ipynb`: figures and tables from saved full results only.
 
-The first two notebooks run independently. Set `RUN_MODE` to `"test"` or
-`"full"`. Compact test mode uses 90 cases per spatial dimension; extended test
-mode uses 180. Compact samples are balanced across field family, K, and M.
+The first two notebooks run independently. They load saved results by default;
+set `RUN_ANALYSIS = True` only to run or resume the algorithms. Set `RUN_MODE`
+to `"test"` or `"full"`. Compact test mode uses 90 cases per spatial
+dimension; extended test mode uses 180. Compact samples are balanced across
+field family, K, and M.
 Extended samples cover every K and M
 pair and contain 60 cases from each field family. Selection is deterministic
 and uses every selected case's saved budgets.
@@ -105,10 +111,12 @@ same cases completed by every requested method. `tables/status.csv` gives the
 status counts, while `tables/timeouts.csv` lists every timed-out dataset, case,
 method, and budget together with its runtime and configured time limit. The
 timeout file is written with headers even when no timeouts occur. Each analysis
-exports a mean-error curve and grouped mean-error bars by field family with 95%
-confidence intervals. Extended also exports two-panel line figures for
-allocation agreement and runtime by K; Compact reports allocation agreement in
-a table and omits the runtime figure.
+exports a mean-error curve and grouped mean-error bars by field family. The
+field-family confidence intervals are calculated across problem-instance means
+after averaging the evaluated budgets within each instance. Both analyses
+export mean runtime by dimension, K, and method as a table and omit runtime
+plots. Extended also exports a two-panel allocation-agreement figure; Compact
+reports allocation agreement in a table.
 Compact reports Greedy–Heuristic and Greedy–Exhaustive allocation matches in
 a table by dimension and K. Extended shows Greedy–Heuristic matches in separate
 1D and 2D plot panels. Total-budget agreement is omitted because all methods
