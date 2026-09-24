@@ -51,10 +51,6 @@ jupyter lab problem-2-min-error-seq/01_compact_analysis.ipynb
 
 - `01_compact_analysis.ipynb`: all five methods, including exhaustive search.
 - `02_extended_analysis.ipynb`: the four scalable methods on extended data.
-- `03_heuristic_ablation.ipynb`: near-uniform/VND allocation crossed with
-  greedy/beam tree construction on the extended test sample.
-- `04_beam_width_comparison.ipynb`: matched comparison of beam widths 1, 3,
-  and 5 on the extended test sample.
 - `final_figures.ipynb`: figures and tables from saved full results only.
 
 The first two notebooks run independently. They load saved results by default;
