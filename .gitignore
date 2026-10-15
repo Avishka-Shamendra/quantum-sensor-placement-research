@@ -34,3 +34,7 @@ min-error-global/results/
 # Minimum-error sequential experiments.
 problem-2-min-error-seq/inputs/
 problem-2-min-error-seq/results/
+
+# Reproducible Problem 3 inputs and analysis outputs (kept locally).
+problem-3-global-pgm/inputs/*/
+problem-3-global-pgm/results/*/

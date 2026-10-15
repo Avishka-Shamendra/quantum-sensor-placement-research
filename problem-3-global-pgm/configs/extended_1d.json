@@ -1,0 +1,31 @@
+{
+  "study": "extended",
+  "dimension": 1,
+  "models": [
+    "gaussian",
+    "sinusoidal",
+    "quadratic"
+  ],
+  "k_values": [
+    3,
+    5,
+    8,
+    12
+  ],
+  "m_values": [
+    4,
+    8,
+    12
+  ],
+  "replicates": 10,
+  "phase_scale_c": 1.0,
+  "sensor_budgets": [
+    4,
+    8,
+    16,
+    24,
+    32
+  ],
+  "test_replicates_per_cell": 5,
+  "seed": 31100001
+}
