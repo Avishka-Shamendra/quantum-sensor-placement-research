@@ -1,0 +1,78 @@
+{
+  "imported/gaussian/cfg.json": {
+    "archive_member": "state-optimization/state_optimization/gaussian/cfg.json",
+    "sha256": "11c0b26b65c973e797d6de4749b44543aa20fb1466dfdaf8b949cf31c97e103a"
+  },
+  "imported/gaussian/data/set.csv": {
+    "archive_member": "state-optimization/state_optimization/gaussian/data/set.csv",
+    "sha256": "be688953ffed2c938e450b18dc75090622b94f2795b3d5c1ad893c5d63e74388"
+  },
+  "imported/gaussian/out/res.csv": {
+    "archive_member": "state-optimization/state_optimization/gaussian/out/res.csv",
+    "sha256": "39dae314508e02fd3a9e70e92fd9f84094fec7e1a9d91f1b9a104b1da55b3933"
+  },
+  "imported/gaussian/out/prob.csv": {
+    "archive_member": "state-optimization/state_optimization/gaussian/out/prob.csv",
+    "sha256": "ac2579f28a5a22f08a69cd0dcedf920053c67b19d659d68e9b99ed6f5c7d20ab"
+  },
+  "imported/gaussian/out/val.csv": {
+    "archive_member": "state-optimization/state_optimization/gaussian/out/val.csv",
+    "sha256": "22a334f5611fb8e965e294fa91e54753c441a932b0c74133e10ba6f7a445a315"
+  },
+  "imported/gaussian/out/pgm.csv": {
+    "archive_member": "state-optimization/state_optimization/gaussian/out/pgm.csv",
+    "sha256": "e023f3590248f2dc56bf15e5423028e1f82b5565f715482f6777a1714d37d613"
+  },
+  "imported/gaussian/out/equal_sdp.csv": {
+    "archive_member": "state-optimization/state_optimization/gaussian/out/equal_sdp.csv",
+    "sha256": "189dcaffaa14c0192425b06df023cb9c44ab800a4da27c457be1a3982f542e6c"
+  },
+  "imported/sinusoidal/cfg.json": {
+    "archive_member": "state-optimization/state_optimization/sine/cfg.json",
+    "sha256": "924f193d61e1f85e2df96f872ea0ce8cd2f5188d2e3973b8b1807b8febbc5568"
+  },
+  "imported/sinusoidal/data/set.csv": {
+    "archive_member": "state-optimization/state_optimization/sine/data/set.csv",
+    "sha256": "40692b339fcee39ba18517e76294cafa08f654e077500a612b9cbef25a7bf3e9"
+  },
+  "imported/sinusoidal/data/r.csv": {
+    "archive_member": "state-optimization/state_optimization/sine/data/r.csv",
+    "sha256": "a115fe4262dc426044d105ef5c57d5db4248fc005fd3dd3619ab11e22e398dea"
+  },
+  "imported/sinusoidal/out/res.csv": {
+    "archive_member": "state-optimization/state_optimization/sine/out/res.csv",
+    "sha256": "d46ae903d52b0d20c3a9cf65844413435472846f0feb28579184f5d1c28f443e"
+  },
+  "imported/sinusoidal/out/prob.csv": {
+    "archive_member": "state-optimization/state_optimization/sine/out/prob.csv",
+    "sha256": "a651700d506da9e52137d3c1201b106f1ad841e926b0b61bdf48496b74ac228f"
+  },
+  "imported/sinusoidal/out/val.csv": {
+    "archive_member": "state-optimization/state_optimization/sine/out/val.csv",
+    "sha256": "c6bdb31b9bfe8e61115dc5f46134f9145250e25e19e3f8358b0497fbb526f448"
+  },
+  "imported/quadratic/cfg.json": {
+    "archive_member": "state-optimization/state_optimization/quadratic/cfg.json",
+    "sha256": "12d073d861c64ceeaf5c53e777070e1d9071b8eff7cd0ca0627b8dbe07478218"
+  },
+  "imported/quadratic/data/set.csv": {
+    "archive_member": "state-optimization/state_optimization/quadratic/data/set.csv",
+    "sha256": "6df928075b5a54ada1a8b9c9995314251442e181d97921dd6c032db45b233932"
+  },
+  "imported/quadratic/data/r.csv": {
+    "archive_member": "state-optimization/state_optimization/quadratic/data/r.csv",
+    "sha256": "7bf0ec6506aac49ee835ffe0c694adab344543dd2c79496db4d829f7d436c10d"
+  },
+  "imported/quadratic/out/res.csv": {
+    "archive_member": "state-optimization/state_optimization/quadratic/out/res.csv",
+    "sha256": "cf492b0bae0b16f3f423d63226d47dcb7405d2c5612d7d21853051c4d24f53e2"
+  },
+  "imported/quadratic/out/prob.csv": {
+    "archive_member": "state-optimization/state_optimization/quadratic/out/prob.csv",
+    "sha256": "dc194c5c9b120f9becd64530221fad8b08c09e913488256a55b92f85460c552d"
+  },
+  "imported/quadratic/out/val.csv": {
+    "archive_member": "state-optimization/state_optimization/quadratic/out/val.csv",
+    "sha256": "46b122dcf8c734bc1d7f4df8310ce38b2f7e2bfa15a88c20280f3cf8e99920bc"
+  }
+}
