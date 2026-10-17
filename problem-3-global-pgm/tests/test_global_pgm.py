@@ -67,8 +67,7 @@ class GlobalPGMTests(unittest.TestCase):
         state /= np.linalg.norm(state)
         gram = lambda n: state_vector_gram(f, n, lambda counts: state[:2**sum(counts)]/np.linalg.norm(state[:2**sum(counts)]))
         exact = exhaustive_search(3, 3, gram)
-        from src.search import phase_differences
-        greedy = greedy_search(3, 3, phase_differences(f))
+        greedy = greedy_search(3, 3, np.array([np.angle(np.exp(1j*(f[i]-f[j]))) for i in range(len(f)) for j in range(i+1,len(f))]))
         self.assertEqual(exact.evaluations, comb(5, 2))
         self.assertEqual(sum(exact.allocation), 3)
         self.assertLessEqual(exact.pgm_error, pgm_error(gram(greedy.allocation))+1e-12)

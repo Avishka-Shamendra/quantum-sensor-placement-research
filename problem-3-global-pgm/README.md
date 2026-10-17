@@ -19,3 +19,5 @@ Exactly four figures are produced: Compact state curves using Exhaustive and heu
 The dataset generator and validation commands are documented in [benchmark_pipeline/README.md](benchmark_pipeline/README.md). Cached results remain separate; source, settings and dataset fingerprints prevent stale-result reuse.
 
 Extended uses the exact Problem 2 Extended CSV instances: K=3–10, M=2–10, 10 replicates per family/configuration/dimension, 4,320 total. Problem 3 retains joint-lower-bound budgets and normalization. Compact retains K,M=3–5 and 50 replicates per cell and 2,700 instances. The positive 0.01 gap filter is removed; exactly indistinguishable pairs remain invalid for a finite joint bound.
+
+Greedy and VND take signed `r_ijm` values directly from the phase CSV. Greedy selects the pair minimizing `sum_m n_m*abs(r_ijm)` and adds a sensor at its location maximizing `abs(r_ijm)`. VND uses the mean capped separation `mean_{i<j} min(pi, sum_m n_m*abs(r_ijm))`. Manifest field values are not algorithm inputs. Result policy `csv_rijm_pair_greedy_score_vnd_v2` separates these results from earlier allocations based on unwrapped fields.

@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 import numpy as np
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from src.search import greedy_search,phase_differences
+from src.search import greedy_search
 
 class GreedyTests(unittest.TestCase):
     def test_least_pair_uses_smaller_maximum_then_location_index(self):
@@ -16,7 +16,10 @@ class GreedyTests(unittest.TestCase):
         self.assertEqual(greedy_search(1,2,np.ones((3,2))).allocation,(1,0))
         self.assertEqual(greedy_search(0,2,d).allocation,(0,0))
 
-    def test_actual_phase_differences_are_not_wrapped_or_log_overlaps(self):
-        np.testing.assert_array_equal(phase_differences([[0,1],[4,-2]],c=2),[[8,6]])
+    def test_signed_csv_phases_use_magnitudes(self):
+        r_ijm=np.array([[-2.,0.],[0.,-1.],[1.,-1.]])
+        self.assertEqual(greedy_search(1,2,r_ijm).allocation,(0,1))
+        self.assertEqual(greedy_search(5,2,r_ijm).allocation,
+                         greedy_search(5,2,np.abs(r_ijm)).allocation)
 
 if __name__=='__main__':unittest.main()

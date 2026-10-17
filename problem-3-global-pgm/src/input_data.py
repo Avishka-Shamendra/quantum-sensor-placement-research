@@ -3,8 +3,8 @@ import csv
 import numpy as np
 
 
-def load_field_input(path, *, c=1.0):
-    """Return relative fields with f_0m=0 and c*f_km=-r_0km.
+def load_phase_input(path, *, c=1.0):
+    """Return relative fields and signed CSV r_ijm in lexicographic pair order.
 
     Absolute fields cannot be recovered from gaps. A common phase rotation at
     each location is hypothesis-independent and leaves every Gram overlap
@@ -32,7 +32,8 @@ def load_field_input(path, *, c=1.0):
         raise ValueError('empty phase input')
     K = max(j for i, j, m in entries)+1
     M = max(m for i, j, m in entries)+1
-    if len(entries) != K*(K-1)//2*M:
+    expected={(i,j,m) for i in range(K) for j in range(i+1,K) for m in range(M)}
+    if set(entries) != expected:
         raise ValueError('every canonical i,j,m entry must appear exactly once')
     phases = np.zeros((K, M))
     for k in range(1, K):
@@ -42,4 +43,12 @@ def load_field_input(path, *, c=1.0):
         residual = np.angle(np.exp(1j*(phases[i,m]-phases[j,m]-value)))
         if abs(residual) > 1e-10:
             raise ValueError('phase gaps are inconsistent across field pairs')
-    return phases/c
+    r_ijm = np.array([[entries[i,j,m] for m in range(M)]
+                      for i in range(K) for j in range(i+1,K)])
+    return phases/c, r_ijm
+
+
+def load_field_input(path, *, c=1.0):
+    """Reconstruct relative fields from the signed phase CSV for PGM evaluation."""
+    fields, _ = load_phase_input(path, c=c)
+    return fields

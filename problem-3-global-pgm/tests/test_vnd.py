@@ -28,7 +28,7 @@ class VNDTests(unittest.TestCase):
 
     def test_score_saturation_and_validation(self):
         self.assertAlmostEqual(separation_score((2,1),np.array([[2.,0.],[0.,1.]])),(np.pi+1)/2)
-        with self.assertRaises(ValueError):vnd_search(2,2,[[-1,1]])
+        with self.assertRaises(ValueError):vnd_search(2,2,[[-np.pi,1]])
         with self.assertRaises(TimeoutError):vnd_search(2,2,[[1,1]],time_limit=-1)
 
 if __name__=='__main__':unittest.main()

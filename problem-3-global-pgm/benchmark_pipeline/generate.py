@@ -51,8 +51,7 @@ def cell(task):
     if study=='extended' and source:
         return copy_cell(task)
     directory=Path(output)/study/f'{dimension}d';directory.mkdir(parents=True,exist_ok=True)
-    cellname=f'{model}_k{K}_m{M}';checkpoint=directory/f'audit_{cellname}.json'
-    if checkpoint.exists():return json.loads(checkpoint.read_text())
+    cellname=f'{model}_k{K}_m{M}'
     accepted=[];attempts=[];cap=16 if study=='compact' else 50
     with tempfile.TemporaryDirectory() as tmp:
         path=Path(tmp)/'candidate.csv'
@@ -75,7 +74,6 @@ def cell(task):
     result=dict(study=study,dimension=dimension,field_family=model,K=K,M=M,quota=quota,
         candidates_attempted=len(attempts),validity_rejections=sum(a['reason']!='accepted' for a in attempts),
         accepted=len(accepted),shortfall=quota-len(accepted),attempts=attempts,cases=accepted)
-    temp=checkpoint.with_suffix('.tmp');temp.write_text(json.dumps(result,indent=2));temp.replace(checkpoint)
     return result
 
 
@@ -99,8 +97,6 @@ def copy_cell(task):
     study,dimension,model,K,M,seed,quota,limit,output,source_root=task
     source=Path(source_root)/f'benchmark_{dimension}d'
     directory=Path(output)/study/f'{dimension}d';directory.mkdir(parents=True,exist_ok=True)
-    checkpoint=directory/f'audit_{model}_k{K}_m{M}.json'
-    if checkpoint.exists():return json.loads(checkpoint.read_text())
     selected=[c for c in source_manifest(str(source))['cases'] if (c['field_model'],c['K'],c['M'])==(model,K,M)]
     selected=sorted(selected,key=lambda c:c['replicate'])[:quota]
     if len(selected)!=quota:raise ValueError('Problem 2 source has insufficient instances')
@@ -120,24 +116,24 @@ def copy_cell(task):
         accepted.append(meta);attempts.append(dict(attempt=original['replicate'],generation_seed=original['generation_seed'],reason='accepted',file=original['file']))
     result=dict(study=study,dimension=dimension,field_family=model,K=K,M=M,quota=quota,candidates_attempted=len(attempts),
         validity_rejections=0,accepted=len(accepted),shortfall=0,attempts=attempts,cases=accepted)
-    temp=checkpoint.with_suffix('.tmp');temp.write_text(json.dumps(result,indent=2));temp.replace(checkpoint)
     return result
 
 
-def finalize(output,settings):
+def finalize(output,settings,results):
     report={}
     for study in settings.get('studies', ['compact','extended']):
         allcases=[];audits=[]
         for dim in [1,2]:
             directory=output/study/f'{dim}d';directory.mkdir(parents=True,exist_ok=True)
-            cells=[json.loads(p.read_text()) for p in sorted(directory.glob('audit_*.json'))]
+            cells=sorted((r for r in results if r['study']==study and r['dimension']==dim),
+                         key=lambda r:(r['field_family'],r['K'],r['M']))
             cases=[c for a in cells for c in a['cases']]
             manifest=dict(schema_version=4,dataset_version=output.name,
                 design=dict(study=study,dimension=dim,phase_scale_c=1.,test_replicates_per_cell=1,**settings),
                 dicke_policy=DICKE_POLICY,sampling='Problem 2 identical CSV instances' if study=='extended' else 'independent ordinary random draws; exclude exactly indistinguishable pairs only',
                 models={m:dict(formula=fields.FIELD_FORMULAS[m][dim],parameter_ranges=fields.FIELD_PARAMETER_RANGES[m][dim]) for m in fields.FIELD_MODELS},
                 input_format=dict(columns=['i','j','m','r_ijm'],indexing='zero-based',
-                    heuristic_phase_differences='actual unwrapped differences from field_values'),cases=cases)
+                    heuristic_phase_input='absolute values of signed CSV r_ijm'),cases=cases)
             (directory/'manifest.json').write_text(json.dumps(manifest,indent=2)+'\n')
             allcases.extend(cases);audits.extend(cells)
         report[study]=dict(instances=len(allcases),cells_completed=len(audits),
@@ -155,7 +151,10 @@ def main():
     parser.add_argument('--problem2-inputs',type=Path,default=ROOT.parent/'problem-2-min-error-seq/inputs')
     parser.add_argument('--studies',nargs='+',choices=['compact','extended'],default=['compact','extended'])
     parser.add_argument('--compact-replicates',type=int,default=50)
-    args=parser.parse_args();output=args.output.resolve();output.mkdir(parents=True,exist_ok=True)
+    args=parser.parse_args();output=args.output.resolve()
+    if output.exists() and any(output.iterdir()):
+        parser.error('Output directory must be empty; choose a new output directory')
+    output.mkdir(parents=True,exist_ok=True)
     settings=dict(studies=args.studies,compact_replicates=args.compact_replicates,seed=args.seed,max_attempts=args.max_attempts,dry_run=args.dry_run,problem2_inputs=str(args.problem2_inputs.resolve()),minimum_phase_gap=0.0)
     if args.compact_replicates < 1:parser.error('--compact-replicates must be positive')
     protected=[ROOT/'src'/name for name in ['probes.py','pgm.py']]+[ROOT.parent/'problem-1-zero-error/src/field_models.py',ROOT/'src/normalization.py',Path(__file__)]
@@ -169,7 +168,6 @@ def main():
         source_hashes[directory.name]=digest.hexdigest()
     provenance['problem2_source_sha256']=source_hashes
     path=output/'generation_config.json'
-    if path.exists() and json.loads(path.read_text())!=provenance:raise ValueError('Version directory has different settings/source; choose a new output')
     path.write_text(json.dumps(provenance,indent=2))
     tasks=[]
     for study in settings.get('studies', ['compact','extended']):
@@ -183,10 +181,11 @@ def main():
                         task=(study,dim,model,K,M,args.seed,quota,args.max_attempts,str(output))
                         tasks.append(task+(str(args.problem2_inputs.resolve()),) if study=='extended' else task)
     print(f'{len(tasks)} configurations; output={output}',flush=True)
+    results=[]
     with ProcessPoolExecutor(max_workers=args.workers) as pool:
         for i,future in enumerate(as_completed([pool.submit(cell,t) for t in tasks]),1):
-            r=future.result();print(f'{i}/{len(tasks)} {r["study"]} {r["dimension"]}D {r["field_family"]} K{r["K"]} M{r["M"]}: {r["accepted"]}, shortfall={r["shortfall"]}',flush=True)
-    report=finalize(output,settings)
+            r=future.result();results.append(r);print(f'{i}/{len(tasks)} {r["study"]} {r["dimension"]}D {r["field_family"]} K{r["K"]} M{r["M"]}: {r["accepted"]}, shortfall={r["shortfall"]}',flush=True)
+    report=finalize(output,settings,results)
     for study,r in report.items():print(study,'instances',r['instances'],'unfilled configurations',len(r['shortfalls']),flush=True)
     assert all(hashlib.sha256(Path(p).read_bytes()).hexdigest()==h for p,h in provenance['source_sha256'].items())
 

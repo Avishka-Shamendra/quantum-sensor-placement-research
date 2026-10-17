@@ -5,6 +5,7 @@ import csv
 import json
 import numpy as np
 from src.probes import FAMILIES
+from src.search import ALGORITHM_POLICY
 from src.figures import STATE_STYLES
 
 METHODS = ('greedy', 'vnd')
@@ -52,6 +53,8 @@ def complete_states(rows,methods):
 
 
 def prepare(records,study,output,seed=20261014,resamples=2000):
+    if any(r.get("algorithm_policy") != ALGORITHM_POLICY for r in records):
+        raise ValueError("Saved results predate the CSV r_ijm policy; recompute allocations before reporting.")
     methods=METHODS+tuple(m for m in ('near_uniform','random') if any(r['method']==m for r in records))
     output=Path(output)
     output.mkdir(parents=True,exist_ok=True)

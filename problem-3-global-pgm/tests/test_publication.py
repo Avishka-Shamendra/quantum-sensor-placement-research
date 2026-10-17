@@ -6,6 +6,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT),str(ROOT/'benchmark_pipeline')]
 from publication import estimate,prepare,complete_states
 from src.probes import FAMILIES
+from src.search import ALGORITHM_POLICY
 
 
 def fixture():
@@ -16,7 +17,7 @@ def fixture():
                 for N,fraction in [(2,.25),(4,.5),(6,.75),(8,1.)]:
                     for pi,probe in enumerate(FAMILIES):
                         for method,gap in [('exhaustive',0),('greedy',.003),('vnd',.001),('near_uniform',.02),('random',.03)]:
-                            rows.append(dict(dimension=dim,case=f'{sample}{case_index}',N=N,K=3,M=3,probe=probe,field_model='gaussian',
+                            rows.append(dict(algorithm_policy=ALGORITHM_POLICY,dimension=dim,case=f'{sample}{case_index}',N=N,K=3,M=3,probe=probe,field_model='gaussian',
                                 method=method,pgm_error=.4-.03*N+.01*pi+.01*case_index+gap*(1+.1*case_index),
                                 status='optimal' if method=='exhaustive' else 'greedy_complete',budget_ratio=N/8,
                                 target_fractions=[fraction],runtime_seconds=.02))
@@ -24,6 +25,12 @@ def fixture():
 
 
 class PublicationTests(unittest.TestCase):
+    def test_rejects_previous_allocation_policy(self):
+        rows=fixture()
+        rows[0]['algorithm_policy']='phase_only_pair_greedy_score_vnd_v1'
+        with tempfile.TemporaryDirectory() as tmp, self.assertRaises(ValueError):
+            prepare(rows,'compact',tmp)
+
     def test_confidence_clusters_repeated_budgets(self):
         base=dict(dimension=1,K=3,M=3,field_model='gaussian')
         rows=[dict(base,case='a',value=0.)]*5+[dict(base,case='b',value=1.)]

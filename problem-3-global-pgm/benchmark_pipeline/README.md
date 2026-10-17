@@ -4,7 +4,7 @@ The active Compact dataset is `inputs/compact`; Extended remains `inputs/extende
 
 Compact uses K,M in {3,4,5}, with 50 instances per family/configuration/dimension (2,700 total). Extended uses K in {3,...,10} and M in {2,...,10}, with 10 instances per cell (4,320 total), identical to Problem 2. Budgets are the distinct ceilings of {0.25,0.5,0.75,1} times min(N_LB, cap), with caps 16 and 50 respectively. Actual budgets and N/N_LB ratios are recorded. The joint lower bound is certified by the existing integer program; a numerical certification failure retries without solver presolve and with equivalent positive row scaling, preserving the original feasibility and optimality checks. Such failures never reject a candidate on difficulty grounds.
 
-CSV files retain `i,j,m,r_ijm` with canonical wrapped signed phase gaps. Manifests additionally store the actual field values, parameters and locations, so heuristic phase differences are computed directly from the original fields with the encoding factor included. Field instances are reused across all budgets, algorithms and states. Only the final Compact and Extended datasets are retained in `inputs`.
+CSV files retain `i,j,m,r_ijm` with canonical wrapped signed phase gaps. Greedy and VND read signed r_ijm directly from the CSV and use its absolute value in their separation scores. The phase scale is already included. Manifest field values, parameters and locations are retained for generation provenance only; algorithms do not read those field values. Field instances are reused across all budgets, algorithms and states. Only the final Compact and Extended datasets are retained in `inputs`.
 
 From the Problem 3 directory:
 
@@ -13,7 +13,7 @@ From the Problem 3 directory:
 ../.venv/bin/python benchmark_pipeline/validate.py inputs/compact
 ```
 
-Extended CSVs are copied byte-for-byte from `problem-2-min-error-seq/inputs/benchmark_1d` and `benchmark_2d`. Both problems use the shared Problem 1 field generators; actual field values are reconstructed from Problem 2 recorded seeds and verified against the CSVs. Only the joint bound and budget metadata are recomputed. Source manifests and CSVs are fingerprinted, and every copied CSV records its source and SHA-256. Generation resumes completed configuration checkpoints only when settings and source fingerprints match. Validation regenerates every input from its seed, verifies all rejection decisions, checks exact CSV values and budget schedules, and independently resolves the joint lower bounds.
+Extended CSVs are copied byte-for-byte from `problem-2-min-error-seq/inputs/benchmark_1d` and `benchmark_2d`. Both problems use the shared Problem 1 field generators; actual field values are reconstructed from Problem 2 recorded seeds and verified against the CSVs. Only the joint bound and budget metadata are recomputed. Source manifests and CSVs are fingerprinted, and every copied CSV records its source and SHA-256. Generation requires an empty output directory and writes the final manifests after all configurations finish. It does not use generation checkpoints; an interrupted generation must be restarted in a new empty directory. Validation reconstructs every accepted input from its seed, checks configuration counts, exact CSV values and budget schedules, and independently resolves the joint lower bounds. Analysis-result resumption is unchanged.
 
 ## Reporting
 

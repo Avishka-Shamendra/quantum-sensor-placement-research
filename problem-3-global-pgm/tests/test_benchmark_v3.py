@@ -5,7 +5,7 @@ from unittest.mock import patch
 import numpy as np
 ROOT=Path(__file__).resolve().parents[1]
 sys.path[:0]=[str(ROOT),str(ROOT/'benchmark_pipeline')]
-from generate import budgets, draw, cell
+from generate import budgets, draw, cell, finalize
 from reports import build_report
 from src.analysis import select_cases,run_analysis
 from src.search import ALGORITHM_POLICY
@@ -34,6 +34,20 @@ class BenchmarkV3Tests(unittest.TestCase):
             result=cell(('compact',1,'gaussian',2,1,77,1,1,tmp))
             self.assertEqual(result['accepted'],1)
             self.assertEqual(result['validity_rejections'],0)
+
+    def test_generation_has_no_checkpoint_dependency(self):
+        rows=[(0,1,0,.2)]
+        meta=dict(K=2,M=1,min_best_pair_phase_gap=.2,generation_seed=1)
+        with tempfile.TemporaryDirectory() as tmp, patch('generate.draw',return_value=(rows,meta.copy())) as drawing, patch('generate.joint_sensor_lower_bound',return_value=16):
+            task=('compact',1,'gaussian',2,1,77,1,1,tmp)
+            first=cell(task)
+            second=cell(task)
+            self.assertEqual(drawing.call_count,2)
+            self.assertEqual(first,second)
+            self.assertFalse(list(Path(tmp).rglob('audit_*.json')))
+            finalize(Path(tmp),dict(studies=['compact'],dry_run=True),[first])
+            saved=json.loads((Path(tmp)/'compact/1d/manifest.json').read_text())
+            self.assertEqual(saved['cases'],first['cases'])
 
     def test_extended_copies_problem2_bytes_and_uses_joint_budgets(self):
         source=ROOT.parent/'problem-2-min-error-seq/inputs'

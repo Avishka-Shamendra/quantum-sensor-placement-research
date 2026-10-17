@@ -1,17 +1,26 @@
-"""Instance-level summaries and the two publication figures."""
+"""Saved-result summaries and publication figures."""
+import hashlib
+import json
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import t
 
-from .analysis import FAMILIES
+from .states import validate_weights
 
+FAMILIES = ('gaussian', 'sinusoidal', 'quadratic')
+KS = (3, 4, 5)
+NS = (2, 4, 6, 8, 10)
 STATE_STYLES = {
     'optimized': ('Optimized Dicke sectors', '#1f77b4', 'o', '-'),
     'product': ('Product', '#2ca02c', '^', '-.'),
     'ghz': ('GHZ', '#9467bd', 'D', ':'),
     'equal': ('Equal Dicke sectors', '#8c564b', 'v', '--'),
 }
+BUDGET_STYLES = dict(zip(NS, [('#0072B2', 'o'), ('#D55E00', 's'),
+                             ('#009E73', '^'), ('#7B2CBF', 'D'), ('#C58A00', 'v')]))
+SYMMETRY_TOLERANCE = 1e-5
 
 
 def summarize(frame, keys, value):
@@ -23,86 +32,180 @@ def summarize(frame, keys, value):
     return s.drop(columns='std')
 
 
-def strategy_rows(frame):
+def validate_measurement_table(frame):
+    expected = pd.MultiIndex.from_product(
+        [FAMILIES, KS, NS, STATE_STYLES, range(30)],
+        names=['family', 'k', 'n', 'state', 'inst'])
+    actual = pd.MultiIndex.from_frame(frame[list(expected.names)])
+    if actual.has_duplicates or len(expected.difference(actual)) or len(actual.difference(expected)):
+        raise ValueError('Expected 30 saved instances per family, K, budget and state')
+    if not np.isfinite(frame[['optimal_error', 'pgm_error']].to_numpy()).all():
+        raise ValueError('Saved measurement errors must be finite')
+
+
+def load_saved_weights(frame, root):
+    """Read weights corresponding to the saved optimized-state measurements."""
+    manifest = json.loads((root / 'imported/manifest.json').read_text())
     rows = []
-    for r in frame.to_dict('records'):
-        rows.append(dict(family=r['family'], k=r['k'], n=r['n'], inst=r['inst'],
-                         strategy=r['state'] + '_pgm', error=r['pgm_error']))
-        if r['state'] == 'optimized':
-            rows.append(dict(family=r['family'], k=r['k'], n=r['n'], inst=r['inst'],
-                             strategy='optimized_povm', error=r['optimal_error']))
+    for family in FAMILIES:
+        relative = f'imported/{family}/out/prob.csv'
+        path = root / relative
+        if hashlib.sha256(path.read_bytes()).hexdigest() != manifest[relative]['sha256']:
+            raise ValueError(f'Weight checksum mismatch: {family}')
+        archive = pd.read_csv(path)
+        for r in frame[(frame.family == family) & (frame.state == 'optimized')].itertuples():
+            if r.source == 'archive':
+                g = archive[(archive.k == r.k) & (archive.inst == r.inst) & (archive.n == r.n)].sort_values('w')
+                if list(g.w) != list(range(r.n + 1)):
+                    raise ValueError('Incomplete archived weights')
+                p = validate_weights(g.p.to_numpy(), r.n)
+            else:
+                candidates = []
+                for path in (root / 'results/checkpoints' / family).glob(f'*/k{r.k}_i{r.inst}_n{r.n}_optimized.json'):
+                    item = json.loads(path.read_text())
+                    if (abs(item['optimal_error'] - r.optimal_error) < 1e-12 and
+                            abs(item['pgm_error'] - r.pgm_error) < 1e-12):
+                        candidates.append(validate_weights(item['p'], r.n))
+                if not candidates or any(not np.allclose(p, candidates[0], atol=1e-12, rtol=0) for p in candidates[1:]):
+                    raise ValueError('No unambiguous saved weights match the measurements')
+                p = candidates[0]
+            asymmetry = float(np.max(np.abs(p - p[::-1])))
+            if abs(asymmetry - r.reflection_asymmetry) > 1e-10:
+                raise ValueError('Saved weights disagree with the measurement-table symmetry statistic')
+            for w, value in enumerate(p):
+                rows.append(dict(family=family, k=r.k, m=1, n=r.n, inst=r.inst,
+                                 w=w, p=value, reflected_p=p[r.n-w]))
     return pd.DataFrame(rows)
 
 
 def make_results(frame, root):
+    validate_measurement_table(frame)
+    frame = frame.assign(m=1)
     out = root / 'results'
     out.mkdir(parents=True, exist_ok=True)
-    errors = summarize(strategy_rows(frame), ['family', 'k', 'n', 'strategy'], 'error')
+    keys = ['family', 'k', 'm', 'n', 'state']
+    errors = summarize(frame, keys, 'optimal_error')
     paired = frame.assign(degradation=frame.pgm_error - frame.optimal_error)
-    degradation = summarize(paired, ['family', 'k', 'n', 'state'], 'degradation')
-    runtime = frame.groupby(['family', 'k', 'state']).agg(
+    degradation = summarize(paired, keys, 'degradation')
+    runtime = frame.groupby(keys).agg(
         cases=('inst', 'size'), mean_measurement_seconds=('measurement_seconds', 'mean'),
-        mean_optimization_seconds=('optimization_seconds', 'mean'))
-    validation = frame.groupby(['family', 'k']).agg(
-        evaluated_states=('state', 'size'), max_dual_residual=('dual_residual', 'max'),
-        minimum_pgm_gap=('pgm_error', lambda x: float('nan')))
-    validation['minimum_pgm_gap'] = paired.groupby(['family', 'k']).degradation.min()
+        mean_optimization_seconds=('optimization_seconds', 'mean')).reset_index()
+    validation = paired.groupby(keys).agg(
+        cases=('inst', 'size'), max_dual_residual=('dual_residual', 'max'),
+        minimum_pgm_gap=('degradation', 'min')).reset_index()
     optimized = frame[frame.state == 'optimized'].copy()
     optimized['absolute_saved_error_difference'] = optimized.saved_error_difference.abs()
-    audit = optimized.groupby(['family', 'k']).agg(
+    audit = optimized.groupby(['family', 'k', 'm', 'n']).agg(
         cases=('inst', 'size'), converged=('optimizer_converged', 'sum'),
-        maximum_saved_error_difference=('absolute_saved_error_difference', 'max'),
-        maximum_reflection_asymmetry=('reflection_asymmetry', 'max'))
-    for name, table in [('error_summary', errors), ('measurement_degradation', degradation),
-                        ('runtime_summary', runtime), ('validation_summary', validation), ('optimization_audit', audit)]:
-        table.to_csv(out / (name + '.csv'), index=name not in ('error_summary', 'measurement_degradation'))
-    figures = make_figures(frame, root)
-    return dict(errors=errors, degradation=degradation, runtime=runtime, validation=validation,
-                optimization_audit=audit, figures=figures)
+        maximum_saved_error_difference=('absolute_saved_error_difference', 'max')).reset_index()
+    weights = load_saved_weights(frame, root)
+    weights['absolute_pair_difference'] = abs(weights.p - weights.reflected_p)
+    cases = weights.groupby(['family', 'k', 'm', 'n', 'inst']).absolute_pair_difference.max().rename('asymmetry').reset_index()
+    group = ['family', 'k', 'm', 'n']
+    symmetry = summarize(cases, group, 'asymmetry')
+    details = cases.assign(within_tolerance=cases.asymmetry <= SYMMETRY_TOLERANCE).groupby(group).agg(
+        maximum_asymmetry=('asymmetry', 'max'), fraction_within_tolerance=('within_tolerance', 'mean')).reset_index()
+    symmetry = symmetry.merge(details, on=group)
+    symmetry['tolerance'] = SYMMETRY_TOLERANCE
+    weight_summary = summarize(weights, group + ['w'], 'p')
+    overall_errors = summarize_across_k(frame, 'optimal_error')
+    overall_degradation = summarize_across_k(paired, 'degradation')
+    tables = dict(overall_errors=overall_errors, overall_degradation=overall_degradation, errors=errors, degradation=degradation, symmetry=symmetry,
+                  weight_summary=weight_summary, runtime=runtime, validation=validation,
+                  optimization_audit=audit)
+    filenames = dict(overall_errors='figure_1_summary', overall_degradation='figure_2_summary', errors='error_summary', degradation='measurement_degradation',
+                     symmetry='symmetry_summary', weight_summary='weight_summary',
+                     runtime='runtime_summary', validation='validation_summary', optimization_audit='optimization_audit')
+    for name, table in tables.items():
+        table.to_csv(out / (filenames[name] + '.csv'), index=False)
+    weights.to_csv(out / 'saved_weights.csv', index=False)
+    cases.to_csv(out / 'symmetry_by_instance.csv', index=False)
+    tables['figures'] = make_figures(frame, root, weights=weights)
+    return tables
 
 
-def make_figures(frame, root):
-    """Export the two K=4 figures from saved per-state measurement errors."""
+def summarize_across_k(frame, value):
+    """Equal-weight K means with stratified Welch confidence intervals."""
+    keys = ['family', 'm', 'n', 'state']
+    strata = frame.assign(m=1).groupby(keys + ['k'])[value].agg(['mean', 'var', 'count']).reset_index()
+    rows = []
+    for key, group in strata.groupby(keys):
+        components = group['var'].to_numpy() / group['count'].to_numpy() / len(KS)**2
+        variance = components.sum()
+        denominator = np.sum(components**2 / (group['count'].to_numpy() - 1))
+        df = variance**2 / denominator if denominator > 0 else np.inf
+        half = float(t.ppf(.975, df) * np.sqrt(variance))
+        mean = float(group['mean'].mean())
+        rows.append(dict(zip(keys, key), count=int(group['count'].sum()), mean=mean,
+                         ci95=half, lower95=mean-half, upper95=mean+half))
+    return pd.DataFrame(rows)
+
+
+def configure_style():
+    plt.rcParams.update({'font.family': 'serif', 'font.serif': ['Times New Roman'],
+                         'font.size': 12, 'axes.titlesize': 12, 'axes.labelsize': 12,
+                         'xtick.labelsize': 12, 'ytick.labelsize': 12, 'legend.fontsize': 12,
+                         'figure.titlesize': 12, 'mathtext.fontset': 'stix',
+                         'pdf.fonttype': 42, 'ps.fonttype': 42,
+                         'axes.spines.top': False, 'axes.spines.right': False})
+
+
+def export(fig, out, number):
+    for extension in ('pdf', 'png'):
+        fig.savefig(out / f'figure_{number}.{extension}', dpi=600, bbox_inches='tight')
+
+
+def make_figures(frame, root, weights=None):
+    """Plot all saved K and N values at M=1 without evaluating objectives."""
+    validate_measurement_table(frame)
+    if weights is None:
+        weights = load_saved_weights(frame, root)
     out = root / 'results'
     out.mkdir(parents=True, exist_ok=True)
-    selected = frame[frame.k == 4]
-    expected = pd.MultiIndex.from_product(
-        [FAMILIES, [2, 4, 6, 8, 10], STATE_STYLES, range(30)],
-        names=['family', 'n', 'state', 'inst'])
-    actual = pd.MultiIndex.from_frame(selected[['family', 'n', 'state', 'inst']])
-    if actual.has_duplicates or len(expected.difference(actual)) or len(actual.difference(expected)):
-        raise ValueError('Figures require 30 saved instances per K=4 family, budget and state')
-    if not np.isfinite(selected[['optimal_error', 'pgm_error']].to_numpy()).all():
-        raise ValueError('Saved measurement errors must be finite')
-    optimal = summarize(selected, ['family', 'k', 'n', 'state'], 'optimal_error')
-    paired = selected.assign(degradation=selected.pgm_error - selected.optimal_error)
-    degradation = summarize(paired, ['family', 'k', 'n', 'state'], 'degradation')
-    plt.rcParams.update({'font.family': 'serif', 'font.serif': ['Times New Roman', 'Times', 'DejaVu Serif'],
-                         'font.size': 12, 'pdf.fonttype': 42, 'ps.fonttype': 42,
-                         'axes.spines.top': False, 'axes.spines.right': False})
+    configure_style()
+    optimal = summarize_across_k(frame, 'optimal_error')
+    paired = frame.assign(degradation=frame.pgm_error - frame.optimal_error)
+    degradation = summarize_across_k(paired, 'degradation')
     figures = []
-    for number in (1, 2):
-        fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.6), sharex=True)
+    for number, summary in ((1, optimal), (2, degradation)):
+        fig, axes = plt.subplots(1, 3, figsize=(11, 3.8), sharex=True, sharey=True)
         for ax, family in zip(axes, FAMILIES):
-            if number == 1:
-                data = optimal[(optimal.family == family) & (optimal.k == 4)]
-            else:
-                data = degradation[(degradation.family == family) & (degradation.k == 4)]
-
+            data = summary[summary.family == family]
             for key, (label, color, marker, line) in STATE_STYLES.items():
                 g = data[data.state == key].sort_values('n')
                 ax.plot(g.n, g['mean'], label=label, color=color, marker=marker, linestyle=line, ms=4, lw=1.4)
             ax.set_title(family.capitalize())
+            ax.set_xticks(NS)
             ax.set_xlabel(r'Sensor count, $N$')
-            ax.set_xticks([2, 4, 6, 8, 10])
             ax.grid(alpha=.2)
             if number == 2:
                 ax.axhline(0, color='black', lw=.6)
         axes[0].set_ylabel('Mean discrimination error' if number == 1 else 'Mean excess error from PGM')
         handles, labels = axes[0].get_legend_handles_labels()
-        fig.legend(handles, labels, loc='upper center', ncol=4, frameon=False, fontsize=10)
-        fig.tight_layout(rect=(0, 0, 1, .87))
-        for extension in ('pdf', 'png'):
-            fig.savefig(out / f'figure_{number}.{extension}', dpi=600, bbox_inches='tight')
+        fig.legend(handles, labels, loc='upper center', ncol=4, frameon=False)
+        fig.tight_layout(rect=(0, 0, 1, .90))
+        export(fig, out, number)
         figures.append(fig)
+    fig, axes = plt.subplots(1, 3, figsize=(11, 4.3), sharex=True, sharey=True)
+    limit = max(.5, float(weights.p.max()) * 1.06)
+    for ax, family in zip(axes, FAMILIES):
+        selected = weights[weights.family == family]
+        for n, (color, marker) in BUDGET_STYLES.items():
+            g = selected[(selected.n == n) & (2*selected.w < selected.n)]
+            ax.scatter(g.p, g.reflected_p, label=f'$N={n}$', color=color,
+                       marker=marker, s=26, alpha=.95, edgecolors='white', linewidths=.25,
+                       zorder=3, rasterized=True)
+        ax.plot([0, limit], [0, limit], color='black', linestyle='--', lw=.9, zorder=2, label=r'$p_w=p_{N-w}$')
+        ax.set_title(family.capitalize())
+        ax.set_xlim(-.015, limit)
+        ax.set_ylim(-.015, limit)
+        ax.set_aspect('equal', adjustable='box')
+        ax.grid(alpha=.2)
+        ax.set_xlabel(r'$p_w$')
+    axes[0].set_ylabel(r'$p_{N-w}$')
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='upper center', ncol=6, frameon=False, markerscale=1.5)
+    fig.tight_layout(rect=(0, 0, 1, .91))
+    export(fig, out, 3)
+    figures.append(fig)
     return figures

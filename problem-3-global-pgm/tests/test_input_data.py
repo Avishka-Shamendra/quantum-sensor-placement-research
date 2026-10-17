@@ -7,7 +7,7 @@ import unittest
 import numpy as np
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from src.input_data import load_field_input
+from src.input_data import load_field_input, load_phase_input
 from src import FAMILIES, balanced, pgm_error, probe_gram, state_vector_gram, allocations
 
 
@@ -35,6 +35,15 @@ class PhaseInputTests(unittest.TestCase):
                     after=pgm_error(probe_gram(relative,n,family,c=c))
                     self.assertAlmostEqual(before,after,places=7)
                 self.assertAlmostEqual(pgm_error(state_vector_gram(fields,n,psi,c=c)),pgm_error(state_vector_gram(relative,n,psi,c=c)),places=7)
+
+    def test_signed_phases_preserve_wrapped_pairs_and_include_scale(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'input.csv'
+            path.write_text('i,j,m,r_ijm\n0,1,0,2.5\n0,2,0,-2.5\n1,2,0,'+str(2*np.pi-5)+'\n')
+            fields, r_ijm=load_phase_input(path,c=2.)
+            np.testing.assert_allclose(r_ijm[:,0],[2.5,-2.5,2*np.pi-5])
+            self.assertAlmostEqual(abs(2*(fields[1,0]-fields[2,0])),5.)
+            self.assertLess(abs(r_ijm[2,0]),np.pi)
 
     def test_reject_invalid_phase_tables(self):
         valid=[(0,1,0,0.2),(0,2,0,0.4),(1,2,0,0.2)]

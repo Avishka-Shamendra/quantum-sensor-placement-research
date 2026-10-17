@@ -4,7 +4,7 @@
 
 Open `01_single_location_analysis.ipynb` from this directory or the repository root and run the cells in order. The setup cell installs missing dependencies into the active kernel. Alternatively, install them with `python -m pip install -r requirements.txt`.
 
-The status line reports the current family, K, instance, budget and state, followed by completed, cached and newly evaluated counts. Completed evaluations are saved automatically. Restarting the notebook resumes from validated checkpoints. Use one writer per checkpoint directory.
+The notebook defaults to `RUN_ANALYSIS=False` and reports from saved measurements and weights. Set `RUN_ANALYSIS=True` only to perform missing evaluations. Analysis runs display progress and save completed evaluations for resumption. Use one writer per checkpoint directory.
 
 ## Experiment
 
@@ -24,9 +24,12 @@ Missing or invalid optimized weights use the original settings: eight SLSQP star
 
 ## Results
 
-- Figure 1: mean discrimination error versus N for five strategies at K = 4, with one panel per field family.
-- Figure 2: paired PGM-minus-optimal-POVM error versus N for four state choices at K = 4, with one panel per field family.
+Each figure has three panels: Gaussian, sinusoidal and quadratic. Figures 1–2 average equally over K = 3, 4, 5, with 30 instances per K. Figure 3 retains individual points from all K values. Figure-summary tables provide stratified Welch 95% intervals for the equal-weight means; the separate K tables are retained. M = 1 is fixed; no other location counts are available.
 
-Figures show mean curves without shaded bands. Tables include pointwise 95% Student-t intervals across 30 independent instances. Tables cover every K, family and budget, including measurement degradation, runtime and validation summaries. Runtime summaries distinguish historical optimization time from measurement-evaluation time; cache-loading time is excluded.
+- Figure 1: mean optimal-POVM error versus N for four input states.
+- Figure 2: mean paired PGM-minus-optimal-POVM error versus N for the same states.
+- Figure 3: optimized-sector probabilities p_w versus p_(N-w), colored by N. Each point represents a pair of distinct reflected sectors from one instance; the diagonal indicates reflection symmetry. Central sectors are excluded.
 
-Outputs are saved in `results/` as vector PDF, 600-dpi PNG and CSV. Figures request Times New Roman with a serif fallback. The numerical implementations are in `single_location/`; lightweight algebraic tests are in `tests/`.
+Figures show no confidence bands. The optimal-POVM and measurement-penalty tables report means and 95% Student-t intervals across 30 instances for every family, K, M = 1, N and state. The symmetry table summarizes the per-instance maximum absolute reflected-weight difference, including the fraction within 1e-5. Sector-weight means and confidence intervals, per-instance symmetry values, runtimes and numerical validation are exported separately. Symmetry is measured on the saved weights without symmetrization or averaging across instances before calculating the differences.
+
+Outputs are saved in `results/` as PDF, 600-dpi PNG and CSV, using Times New Roman at 12 pt. The numerical implementations are in `single_location/`; lightweight checks are in `tests/`.

@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
+from src.search import ALGORITHM_POLICY
 from src.analysis import ROOT, select_cases, summarize, run_analysis
 
 
@@ -28,6 +29,29 @@ class AnalysisTests(unittest.TestCase):
                 self.assertEqual(set(counts.values()),{reps})
                 self.assertTrue(all(c['sensor_budgets']==[b['N'] for b in c['budget_schedule']] for c in selected))
                 self.assertEqual(set(Counter(c['field_model'] for c in selected).values()),{expected//3})
+
+    def test_allocation_ignores_manifest_fields_and_uses_signed_csv(self):
+        import numpy as np
+        from src.search import greedy_search, vnd_search
+        with tempfile.TemporaryDirectory() as directory:
+            project=Path(directory);(project/'src').mkdir()
+            dataset=project/'dataset'
+            phase=2*np.pi-6
+            case=dict(file='case.csv',replicate=1,field_model='gaussian',K=2,M=2,
+                      phase_scale_c=2.,sensor_budgets=[1],field_values=[[0,0],[3,.2]])
+            for dim in (1,2):
+                folder=dataset/f'{dim}d';folder.mkdir(parents=True)
+                (folder/'manifest.json').write_text(json.dumps(dict(design=dict(test_replicates_per_cell=1),cases=[case])))
+                (folder/'case.csv').write_text(f'i,j,m,r_ijm\n0,1,0,{phase}\n0,1,1,-0.4\n')
+            def checked(solver):
+                def call(N,M,r_ijm,**kwargs):
+                    np.testing.assert_allclose(r_ijm,[[phase,-.4]],rtol=0,atol=1e-15)
+                    return solver(N,M,r_ijm,**kwargs)
+                return call
+            with patch('src.analysis.ROOT',project), patch.dict('src.analysis.SOLVERS',
+                    {'greedy':checked(greedy_search),'vnd':checked(vnd_search)}):
+                records,_=run_analysis('extended',dataset_root=dataset)
+            self.assertTrue(all(r['allocation']==[0,1] for r in records))
 
     def test_runner_preserves_saved_budgets_and_resumes(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -84,7 +108,7 @@ class AnalysisTests(unittest.TestCase):
                 self.assertTrue(all(r['pgm_evaluations']==20 for r in baseline if r['method']=='random'))
 
     def test_extended_switch_and_matched_three_methods(self):
-        base=dict(algorithm_policy='phase_only_pair_greedy_score_vnd_v1',dimension=1,case='a',field_model='gaussian',K=3,M=2,N=2,probe='product',runtime_seconds=0.1,allocation=[1,1])
+        base=dict(algorithm_policy=ALGORITHM_POLICY,dimension=1,case='a',field_model='gaussian',K=3,M=2,N=2,probe='product',runtime_seconds=0.1,allocation=[1,1])
         rows=[dict(base,method='exhaustive',status='optimal',pgm_error=0.1),
               dict(base,method='greedy',status='local_optimum',pgm_error=0.3),
               dict(base,method='vnd',status='local_optimum',pgm_error=0.2)]
@@ -110,7 +134,7 @@ class AnalysisTests(unittest.TestCase):
                 self.assertEqual(len(records),20)
 
     def test_only_complete_pairs_enter_summary(self):
-        base=dict(algorithm_policy='phase_only_pair_greedy_score_vnd_v1',dimension=1,case='a',field_model='gaussian',K=3,M=2,N=2,probe='product',runtime_seconds=0.1,allocation=[1,1])
+        base=dict(algorithm_policy=ALGORITHM_POLICY,dimension=1,case='a',field_model='gaussian',K=3,M=2,N=2,probe='product',runtime_seconds=0.1,allocation=[1,1])
         rows=[dict(base,method='exhaustive',status='optimal',pgm_error=0.2),
               dict(base,method='greedy',status='local_optimum',pgm_error=0.3),
               dict(base,case='b',method='exhaustive',status='timeout'),

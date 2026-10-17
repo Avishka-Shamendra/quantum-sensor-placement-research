@@ -7,9 +7,9 @@ from math import comb
 from pathlib import Path
 from time import perf_counter
 import numpy as np
-from .input_data import load_field_input
+from .input_data import load_phase_input
 from .probes import FAMILIES, DICKE_POLICY, probe_gram
-from .search import exhaustive_search, greedy_search, vnd_search, ALGORITHM_POLICY, phase_differences, separation_score
+from .search import exhaustive_search, greedy_search, vnd_search, ALGORITHM_POLICY
 from .pgm import pgm_error
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -106,9 +106,9 @@ def run_analysis(study, mode='test', *, run=True, resume=True, max_allocations=2
             for index, case in enumerate(cases):
                 print(f"Snapshot {index+1}/{len(cases)} | {dimension}D | {case['field_model']} | "
                       f"K={case['K']}, M={case['M']}", flush=True)
-                fields = load_field_input(directory/case['file'], c=case['phase_scale_c'])
-                actual_fields = np.asarray(case.get('field_values', fields), dtype=float)
-                differences = phase_differences(actual_fields, c=case['phase_scale_c'])
+                fields, r_ijm = load_phase_input(directory/case['file'], c=case['phase_scale_c'])
+                if fields.shape != (case['K'], case['M']):
+                    raise ValueError('Manifest dimensions disagree with the phase CSV')
                 budgets = case['sensor_budgets']
                 for N in budgets:
                     for probe in FAMILIES:
@@ -159,7 +159,7 @@ def run_analysis(study, mode='test', *, run=True, resume=True, max_allocations=2
                                                 a.update(allocation=list(candidates[0]),allocations=[list(n) for n in candidates],status='baseline_complete',
                                                          runtime_seconds=perf_counter()-allocation_start)
                                             else:
-                                                a.update(SOLVERS[method](N,case['M'],differences,time_limit=time_limit).to_dict())
+                                                a.update(SOLVERS[method](N,case['M'],r_ijm,time_limit=time_limit).to_dict())
                                             a['allocation']=list(a['allocation'])
                                         except TimeoutError as error:
                                             a.update(status='timeout',reason=str(error),runtime_seconds=perf_counter()-allocation_start)
@@ -199,7 +199,7 @@ def write_table(path, rows, columns):
 def summarize(records, output, *, methods=None):
     """Use only groups completed by every requested method; report all statuses."""
     if any(r.get('algorithm_policy') != ALGORITHM_POLICY for r in records):
-        raise ValueError('Old algorithm results: rerun analysis for phase-only Greedy and VND.')
+        raise ValueError('Saved allocation results use an older phase-input policy; recompute with CSV r_ijm.')
     if any(r['probe'] in ('local_dicke', 'global_dicke') and r.get('dicke_policy') != DICKE_POLICY for r in records):
         raise ValueError('Saved Dicke results use an older state definition. Rerun the analysis for the equal-sector superposition.')
     output = Path(output)
