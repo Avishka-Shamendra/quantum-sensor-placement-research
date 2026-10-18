@@ -33,3 +33,9 @@ Summary tables report mean sensor count, confidence limits, mean runtime, mean a
 The notebook can run the same independent binary budget search using the unchanged Problem 2 Greedy allocation and greedy decision-tree builder. It uses the same perfect fallback and full actual-error verification. Set `RUN_ANALYSIS=True` to compute missing Greedy results; the existing VND search module and its matching caches are preserved. No Greedy search is performed in saved-results mode. After a combined run, set `SAVED_RESULTS` to its printed output directory for later plotting-only sessions.
 
 The figure uses green for VND + Beam Search and red dashed for Greedy, with each method's median and interquartile band. When both methods are available, comparisons use the same instances completed by both methods at every target. Greedy is not coupled to VND or its beam-search tree. Its sensor-by-sensor allocation can be slow at large midpoint budgets; the optional existing per-budget time limit applies to both methods. A timeout remains incomplete rather than being treated as infeasibility.
+
+## Computational cutoff
+
+`MAX_SENSOR_BOUND=5000` excludes instances whose saved perfect-discrimination bound exceeds 5,000 sensors, for both methods. This selects 4,289 of 4,320 full-study instances: 5 exclusions in 1D and 26 in 2D. Results describe the retained subset; exclusions appear in `skipped.json` and the coverage table. Set the cutoff to `None` to use the original unrestricted runner.
+
+The cutoff runner reuses the original per-instance cache signatures and binary-budget search. Completed targets and budget steps remain reusable with `RESUME=True`. Summary files are written separately under `results/comparison_limited/`; unrestricted outputs and dataset files are preserved.

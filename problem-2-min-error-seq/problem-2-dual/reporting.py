@@ -27,7 +27,7 @@ def interval(rows, seed, resamples):
     return float(low), float(high)
 
 
-def report(rows, failures, output, targets, *, resamples=2000, seed=20261015):
+def report(rows, failures, output, targets, *, resamples=2000, seed=20261015, skipped=()):
     """Require completed, verified solutions at every target for paired curves."""
     import matplotlib.pyplot as plt
     if type(resamples) is not int or resamples < 2:
@@ -51,7 +51,9 @@ def report(rows, failures, output, targets, *, resamples=2000, seed=20261015):
     for dim in (1,2):
         attempted = {key for key in groups if key[0] == dim}
         attempted.update((f['dimension'],f['case']) for f in failures if f['dimension'] == dim)
-        coverage.append(dict(dimension=f'{dim}D',selected_instances=len(attempted),
+        excluded = {(s['dimension'], s['case']) for s in skipped if s['dimension'] == dim}
+        coverage.append(dict(dimension=f'{dim}D',selected_instances=len(attempted | excluded),
+            included_instances=len(attempted),skipped_instances=len(excluded),
             complete_paired_instances=sum(key[0] == dim for key in eligible),
             failed_instances=len({f['case'] for f in failures if f['dimension'] == dim}),
             interrupted_targets=sum(r['dimension'] == dim and r['status'] != 'completed' for r in rows)))
@@ -69,6 +71,7 @@ def report(rows, failures, output, targets, *, resamples=2000, seed=20261015):
                     mean_budget_search_seconds=float(np.mean([r['search_seconds'] for r in selected])),
                     mean_achieved_error=float(np.mean([r['actual_error'] for r in selected])),
                     max_achieved_error=max(r['actual_error'] for r in selected),all_feasible=True))
+    write_csv(output/'skipped_instances.csv',list(skipped))
     write_csv(output/'summary.csv',summary); write_csv(output/'coverage.csv',coverage)
     write_csv(output/'verified_solutions.csv', [{k:r[k] for k in
         ('dimension','case','method','field_model','K','M','epsilon','N_min_seq','N','actual_error','runtime_seconds',
@@ -81,11 +84,12 @@ def report(rows, failures, output, targets, *, resamples=2000, seed=20261015):
         fig.subplots_adjust(left=.1,right=.98,bottom=.2,top=.88,wspace=.25)
         for dim, ax in zip((1,2),axes):
             selected = [r for r in summary if r['dimension'] == f'{dim}D']
-            ax.set_title(f'({"a" if dim==1 else "b"}) {dim}D')
+            ax.set_title({1: '(a) One-dimensional dataset',
+                          2: '(b) Two-dimensional dataset'}[dim])
             ax.set_xlabel(r'Target error, $\epsilon$'); ax.set_xticks(targets)
             ax.grid(axis='y',alpha=.2)
             if selected:
-                styles = {'vnd_beam':('VND + Beam Search','#2ca02c','o','-'),
+                styles = {'vnd_beam':('Heuristic','#2ca02c','o','-'),
                           'greedy':('Greedy','#d62728','s','--')}
                 for method in methods:
                     series = [r for r in selected if r['method']==method]
@@ -94,7 +98,7 @@ def report(rows, failures, output, targets, *, resamples=2000, seed=20261015):
                     x=[r['epsilon'] for r in series];y=[r['median_required_sensors'] for r in series]
                     ax.plot(x,y,color=color,marker=marker,linestyle=linestyle,label=label)
                     ax.fill_between(x,[r['q25_required_sensors'] for r in series],[r['q75_required_sensors'] for r in series],color=color,alpha=.15)
-                ax.legend(frameon=False,title='Median; band: 25th–75th percentile',title_fontsize=10)
+                ax.legend(frameon=False)
             else:
                 ax.text(.5,.5,'No complete verified comparisons',ha='center',transform=ax.transAxes)
         for ax in axes:
