@@ -9,7 +9,7 @@ import numpy as np
 from .config import FAMILIES, FRACTIONS, atomic_json
 
 METHODS = ('sequential', 'joint')
-STYLES = {'sequential': ('Sequential', '#2ca02c', '^', '-.'),
+STYLES = {'sequential': ('Sequential', '#2ca02c', '^', '-'),
           'joint': ('Joint', '#9467bd', 'D', ':')}
 STYLE = {
     'font.family': 'Times New Roman', 'font.size': 12, 'axes.titlesize': 12,
@@ -92,7 +92,7 @@ def make_report(rows, output, config):
                           marker=marker, linestyle=line, markersize=3.5, lw=1.1)
                 axis.fill_between(FRACTIONS, series('low'), series('high'),
                                   color=color, alpha=.13, lw=0)
-            axis.set_title(f'({"a" if dimension == 1 else "b"}) {dimension}D')
+            axis.set_title({1: '(a) One-dimensional', 2: '(b) Two-dimensional'}[dimension])
             axis.set_xlabel('Target sensor-budget fraction')
             axis.set_xticks(FRACTIONS)
             axis.set_ylim(-.02, 1.02)
