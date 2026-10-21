@@ -75,6 +75,20 @@ class AnalysisTests(unittest.TestCase):
                 with patch('src.analysis.probe_gram',side_effect=AssertionError('should reuse results')):
                     resumed,_=run_analysis('compact','test')
                     self.assertEqual(records,resumed)
+                self.assertEqual(output, project/'results/compact/test')
+                stale = output/'old_plot.txt'
+                stale.write_text('obsolete')
+                fresh, same_output = run_analysis('compact','test',resume=False)
+                self.assertEqual(output, same_output)
+                self.assertFalse(stale.exists())
+                self.assertEqual(len(fresh), len(records))
+                info = json.loads((output/'run_info.json').read_text())
+                info['signature'] = 'outdated'
+                (output/'run_info.json').write_text(json.dumps(info))
+                with self.assertRaises(FileNotFoundError):
+                    run_analysis('compact','test',run=False)
+                refreshed, _ = run_analysis('compact','test',resume=True)
+                self.assertEqual(len(refreshed), len(records))
 
     def test_state_independent_allocations_and_partial_resume(self):
         from src.search import greedy_search, vnd_search
@@ -105,7 +119,17 @@ class AnalysisTests(unittest.TestCase):
                 self.assertEqual((g.call_count,v.call_count,pgm.call_count),(2,2,21))
                 baseline,_=run_analysis('extended',dataset_root=dataset,include_baselines=True)
                 self.assertEqual(len(baseline),40)
-                self.assertTrue(all(r['pgm_evaluations']==20 for r in baseline if r['method']=='random'))
+                self.assertTrue(all(r['pgm_evaluations']==1 for r in baseline if r['method']=='random'))
+                random_rows = [r for r in baseline if r['method']=='random']
+                for dim in (1, 2):
+                    rows = [r for r in random_rows if r['dimension']==dim]
+                    self.assertEqual(len({tuple(r['allocation']) for r in rows}), 1)
+                    for r in rows:
+                        self.assertEqual(sum(r['allocation']), 3)
+                        self.assertEqual(len(r['allocations']), 1)
+                with patch('src.analysis.probe_gram', side_effect=AssertionError('reuse single draw')):
+                    cached, _ = run_analysis('extended', dataset_root=dataset, include_baselines=True)
+                    self.assertEqual(baseline, cached)
 
     def test_extended_switch_and_matched_three_methods(self):
         base=dict(algorithm_policy=ALGORITHM_POLICY,dimension=1,case='a',field_model='gaussian',K=3,M=2,N=2,probe='product',runtime_seconds=0.1,allocation=[1,1])

@@ -10,7 +10,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 import numpy as np
 
-from publication import SUCCESS
+from publication import SUCCESS, estimate
 from src.probes import FAMILIES, DICKE_POLICY
 from src.search import ALGORITHM_POLICY
 
@@ -39,18 +39,20 @@ STUDIES = ('compact', 'extended')
 ALLOCATION_METHODS = ('greedy', 'vnd', 'near_uniform', 'random')
 
 
-def load_saved_runs(root, run_ids):
+def load_saved_runs(root):
     """Require complete current-policy coverage; never start or resume a solver."""
     root = Path(root)
     datasets, provenance = {}, {}
     for study in STUDIES:
-        run = root / 'results' / study / 'full' / run_ids[study]
+        run = root / 'results' / study / 'full'
         info = json.loads((run / 'run_info.json').read_text())
         settings = info['settings']
-        if (settings['algorithm_policy'] != ALGORITHM_POLICY
-                or settings['dicke_policy'] != DICKE_POLICY
-                or settings['study'] != study or settings['mode'] != 'full'):
-            raise ValueError(f'Incompatible saved run: {run}')
+        expected = dict(algorithm_policy=ALGORITHM_POLICY, dicke_policy=DICKE_POLICY,
+                        study=study, mode='full')
+        mismatches = [f"{key}: saved={settings.get(key)!r}, expected={value!r}"
+                      for key, value in expected.items() if settings.get(key) != value]
+        if mismatches:
+            raise ValueError(f"Incompatible saved run: {run}; " + '; '.join(mismatches))
         required_methods = (*ALLOCATION_METHODS, 'exhaustive') if study == 'compact' else ALLOCATION_METHODS
         expected, manifests = {}, {}
         for dimension in (1, 2):
@@ -87,7 +89,7 @@ def load_saved_runs(root, run_ids):
                         raise ValueError(f'Record/manifest mismatch: {study}, {key}, {probe}, {method}')
                     selected.append(record)
         datasets[study] = selected
-        provenance[study] = dict(run_id=run_ids[study], settings=settings,
+        provenance[study] = dict(results_directory=str(run.relative_to(root)), settings=settings,
                                  records_sha256=hashlib.sha256(records_path.read_bytes()).hexdigest(),
                                  manifest_sha256=manifests, case_budgets=len(expected),
                                  completed_records=len(selected))
@@ -193,12 +195,17 @@ def create_outputs(datasets, output):
             for column, dimension in enumerate((1, 2)):
                 axis = axes[row, column]
                 for index, method in enumerate(bar_methods):
-                    points = [stats([r for r in gaps if r['dimension'] == dimension
+                    points = [estimate([r for r in gaps if r['dimension'] == dimension
                                      and r['method'] == method and r['probe'] == probe], 'gap')
                               for probe in FAMILIES]
                     x = np.arange(len(FAMILIES)) + (index - (len(bar_methods) - 1) / 2) * .19
                     axis.bar(x, [v['mean'] for v in points], width=.19,
                              color=METHOD_STYLES[method][1], alpha=.85, zorder=2)
+                    low = np.array([v['low'] for v in points])
+                    high = np.array([v['high'] for v in points])
+                    axis.vlines(x, low, high, color='black', lw=.65, zorder=3)
+                    axis.hlines(low, x-.035, x+.035, color='black', lw=.65, zorder=3)
+                    axis.hlines(high, x-.035, x+.035, color='black', lw=.65, zorder=3)
                     data.extend(dict(study=study, dimension=dimension, probe=probe,
                                      method=method, reference=reference, **value)
                                 for probe, value in zip(FAMILIES, points))

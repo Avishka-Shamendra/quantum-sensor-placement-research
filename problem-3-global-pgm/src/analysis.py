@@ -2,9 +2,11 @@
 import csv
 import hashlib
 import json
+import shutil
 from collections import Counter, defaultdict
 from math import comb
 from pathlib import Path
+from random import Random
 from time import perf_counter
 import numpy as np
 from .input_data import load_phase_input
@@ -73,17 +75,21 @@ def run_analysis(study, mode='test', *, run=True, resume=True, max_allocations=2
             digest.update((directory/case['file']).read_bytes())
         datasets.append((dimension, directory, cases))
     signature = digest.hexdigest()
-    output = ROOT/'results'/study/mode/signature[:16]
+    output = ROOT/'results'/study/mode
     path = output/'records.jsonl'
     records = []
-    if path.exists() and (resume or not run):
+    info_path = output/'run_info.json'
+    saved_info = json.loads(info_path.read_text()) if info_path.exists() else {}
+    matching = saved_info.get('signature') == signature
+    if path.exists() and matching and (resume or not run):
         records = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
     if not run:
         if not records:
-            raise FileNotFoundError('No results match these inputs, settings and source. Set RUN_ANALYSIS=True.')
+            raise FileNotFoundError('No matching saved results. Set RUN_ANALYSIS=True.')
         return records, output
-    if path.exists() and not resume:
-        raise FileExistsError('Use RESUME=True or remove this run directory explicitly for a fresh run.')
+    # A fresh run replaces this study/mode; only matching runs may resume.
+    if output.exists() and (not resume or not matching):
+        shutil.rmtree(output)
     output.mkdir(parents=True, exist_ok=True)
     (output/'run_info.json').write_text(json.dumps(dict(signature=signature, settings=settings),indent=2)+'\n')
     selection = [dict(dimension=dimension, case=case['file'], field_model=case['field_model'],
@@ -151,11 +157,11 @@ def run_analysis(study, mode='test', *, run=True, resume=True, max_allocations=2
                                                     candidates=[tuple(N//M+(m<N%M) for m in range(M))]
                                                 else:
                                                     seed=int.from_bytes(hashlib.sha256(json.dumps(allocation_key).encode()).digest()[:16],'big')
-                                                    rng=np.random.default_rng(seed);candidates=[]
-                                                    for _ in range(20):
-                                                        bars=sorted(rng.choice(N+M-1,size=M-1,replace=False))
-                                                        limits=[-1,*bars,N+M-1]
-                                                        candidates.append(tuple(int(limits[i+1]-limits[i]-1) for i in range(M)))
+                                                    rng = Random(seed)
+                                                    allocation = [0] * M
+                                                    for _ in range(N):
+                                                        allocation[rng.randrange(M)] += 1
+                                                    candidates = [tuple(allocation)]
                                                 a.update(allocation=list(candidates[0]),allocations=[list(n) for n in candidates],status='baseline_complete',
                                                          runtime_seconds=perf_counter()-allocation_start)
                                             else:
@@ -171,9 +177,8 @@ def run_analysis(study, mode='test', *, run=True, resume=True, max_allocations=2
                                     record['allocation_runtime_seconds'] = a['runtime_seconds']
                                     evaluation_start = perf_counter()
                                     if a['status'] != 'timeout':
-                                        candidates=a.get('allocations',[a['allocation']])
-                                        record['pgm_error'] = float(np.mean([pgm_error(probe_gram(fields,n,probe,c=case['phase_scale_c'])) for n in candidates]))
-                                        record['pgm_evaluations'] = len(candidates)
+                                        record['pgm_error'] = pgm_error(probe_gram(fields,a['allocation'],probe,c=case['phase_scale_c']))
+                                        record['pgm_evaluations'] = 1
                                     record['pgm_evaluation_seconds'] = perf_counter()-evaluation_start if a['status'] != 'timeout' else 0.0
                                     record['search_runtime_seconds'] = None
                                     record['runtime_seconds'] = a['runtime_seconds']/len(FAMILIES)+record['pgm_evaluation_seconds']

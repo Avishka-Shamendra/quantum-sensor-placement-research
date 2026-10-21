@@ -43,7 +43,7 @@ def exhaustive_search(N, M, gram_for_allocation, *, max_allocations=1_000_000):
     return SearchResult(best, error, count, perf_counter()-start, 'optimal')
 
 
-ALGORITHM_POLICY = 'csv_rijm_pair_greedy_score_vnd_v2'
+ALGORITHM_POLICY = 'csv_rijm_pair_greedy_score_vnd_v3_single_random'
 
 
 @dataclass(frozen=True)
