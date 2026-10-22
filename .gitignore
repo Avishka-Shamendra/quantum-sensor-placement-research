@@ -19,18 +19,6 @@ problem-1-zero-error/results/global/test/
 problem-1-zero-error/results/methods/full/1d/
 problem-1-zero-error/results/methods/full/2d/
 
-# Deterministic minimum-error benchmark inputs and exact-search outputs.
-min-error-sequential/inputs/compact_benchmark_1d/
-min-error-sequential/inputs/compact_benchmark_2d/
-min-error-sequential/inputs/benchmark_1d/
-min-error-sequential/inputs/benchmark_2d/
-min-error-global/inputs/compact_benchmark_1d/
-min-error-global/inputs/compact_benchmark_2d/
-min-error-global/inputs/benchmark_1d/
-min-error-global/inputs/benchmark_2d/
-min-error-sequential/results/
-min-error-global/results/
-
 # Minimum-error sequential experiments.
 problem-2-min-error-seq/inputs/
 problem-2-min-error-seq/results/
