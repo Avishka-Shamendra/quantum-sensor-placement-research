@@ -14,7 +14,6 @@ K=3,4,5 and N=2,4,6,8,10, with 30 instances per field family and K:
 - `imported/`: original CSV inputs, configurations, saved weights/results, and
   a checksum manifest. Older cases remain available but are excluded by the notebook.
 - `results/`: measurements, optimized weights, checkpoints, tables, and PDF/PNG exports.
-- `tests/`: small numerical checks.
 
 ## Run
 

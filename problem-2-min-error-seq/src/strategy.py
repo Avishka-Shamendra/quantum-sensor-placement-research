@@ -89,6 +89,14 @@ class OutcomeModel:
     def result(self, allocation, tree):
         if len(allocation) != self.M or sum(allocation) != self.N or any(n < 0 for n in allocation):
             raise ValueError("Allocation must use the given budget")
+        pending = [tree]
+        while pending:
+            node = pending.pop()
+            if hasattr(node, "declared_field"):
+                continue
+            if not 0 <= node.location < self.M or allocation[node.location] <= 0:
+                raise ValueError("Tree tests require an occupied location")
+            pending.extend((node.discard_i, node.discard_j))
         error = actual_tree_error(tree, self.K, self.phases, allocation)
         self.check_time()
         return StrategyResult(tuple(allocation), tree, min(1.0, max(0.0, error)))

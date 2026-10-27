@@ -8,6 +8,9 @@ from strategy import DecisionLeaf, DecisionNode, OutcomeModel, branch_weights, b
 
 def best_tree(model, allocation):
     """Optimize every node-specific pair and location for a fixed allocation."""
+    if not any(allocation):
+        return 1.0 - 1.0 / model.K, DecisionLeaf(0)
+
     @lru_cache(maxsize=50_000)
     def solve(remaining, weights):
         model.check_time()
@@ -18,6 +21,8 @@ def best_tree(model, allocation):
         for pair in combinations(remaining, 2):
             i, j = pair
             for location, count in enumerate(allocation):
+                if count <= 0:
+                    continue
                 probabilities = model.probabilities(pair, location, count)
                 wi = branch_weights(weights, probabilities, i, keep_i=False)
                 wj = branch_weights(weights, probabilities, j, keep_i=True)

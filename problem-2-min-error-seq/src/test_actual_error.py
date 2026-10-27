@@ -14,8 +14,8 @@ from unittest.mock import patch
 
 from actual_error import actual_node_probabilities, actual_tree_error, off_pair_probability
 from analysis import PROJECT, run_analysis, select_cases
-from exhaustive_search import exhaustive_search
-from baselines import random_tree
+from exhaustive_search import best_tree, exhaustive_search
+from baselines import pair_score_tree, random_tree
 from greedy import build_greedy_tree, greedy, greedy_allocation, location_gain
 from heuristic import (
     DecisionLeaf as HeuristicLeaf,
@@ -43,15 +43,15 @@ METHODS = (
 )
 
 
-def all_trees(remaining, M):
+def all_trees(remaining, locations):
     """Independent literal enumeration, used only for three fields."""
-    if len(remaining) == 1:
+    if len(remaining) == 1 or not locations:
         yield DecisionLeaf(remaining[0])
         return
     for i, j in combinations(remaining, 2):
-        left = list(all_trees(tuple(f for f in remaining if f != i), M))
-        right = list(all_trees(tuple(f for f in remaining if f != j), M))
-        for location, ti, tj in product(range(M), left, right):
+        left = list(all_trees(tuple(f for f in remaining if f != i), locations))
+        right = list(all_trees(tuple(f for f in remaining if f != j), locations))
+        for location, ti, tj in product(locations, left, right):
             yield DecisionNode((i, j), location, 0.0, ti, tj)
 
 
@@ -85,7 +85,7 @@ class ActualErrorTests(unittest.TestCase):
     def test_exhaustive_matches_literal_enumeration(self):
         for budget in (0, 1, 2):
             expected = min(actual_tree_error(t, 3, PHASES, a)
-                           for a in budget_allocations(budget, 2) for t in all_trees((0, 1, 2), 2))
+                           for a in budget_allocations(budget, 2) for t in all_trees((0, 1, 2), tuple(m for m, n in enumerate(a) if n > 0)))
             result = exhaustive_search(3, 2, budget, PHASES)
             self.assertAlmostEqual(result.actual_error, expected)
 
@@ -102,6 +102,42 @@ class ActualErrorTests(unittest.TestCase):
             self.assertAlmostEqual(method(3, 2, 0, PHASES).actual_error, 2 / 3)
             zeros = {pair: [0.0, 0.0] for pair in PHASES}
             self.assertAlmostEqual(method(3, 2, 3, zeros).actual_error, 2 / 3)
+
+    def assert_occupied_tests(self, tree, allocation):
+        if hasattr(tree, "declared_field"):
+            return
+        self.assertGreater(allocation[tree.location], 0)
+        self.assert_occupied_tests(tree.discard_i, allocation)
+        self.assert_occupied_tests(tree.discard_j, allocation)
+
+    def test_sparse_allocations_use_only_occupied_locations(self):
+        for allocation in ((0, 1), (1, 0)):
+            model = OutcomeModel(3, 2, 1, PHASES)
+            trees = [best_tree(model, allocation)[1],
+                     build_greedy_tree(model, allocation),
+                     pair_score_tree(model, allocation)]
+            trees.extend(random_tree(model, allocation, Random(seed)) for seed in range(10))
+            for tree in trees:
+                self.assert_occupied_tests(tree, allocation)
+        for method in METHODS:
+            for budget in (0, 1, 2):
+                result = method(3, 2, budget, PHASES)
+                self.assert_occupied_tests(result.decision_tree, result.allocation)
+                if budget == 0:
+                    self.assertTrue(hasattr(result.decision_tree, "declared_field"))
+
+    def test_pair_location_ties_exclude_empty_locations(self):
+        locations, errors = _compute_pair_errors(((0, 1),), 2, (0, 1), {(0, 1): (-1.0, 0.0)})
+        self.assertEqual(locations[(0, 1)], 1)
+        self.assertEqual(errors[(0, 1)], 0.5)
+        with self.assertRaises(ValueError):
+            _compute_pair_errors(((0, 1),), 2, (0, 0), {(0, 1): (-1.0, 0.0)})
+
+    def test_result_rejects_empty_location_tests(self):
+        model = OutcomeModel(2, 2, 1, {(0, 1): (-1.0, 0.0)})
+        tree = DecisionNode((0, 1), 0, 0.5, DecisionLeaf(1), DecisionLeaf(0))
+        with self.assertRaisesRegex(ValueError, "occupied location"):
+            model.result((0, 1), tree)
 
     def test_inconsistent_field_phases_rejected(self):
         with self.assertRaises(ValueError):

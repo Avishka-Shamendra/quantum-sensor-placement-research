@@ -14,7 +14,6 @@ Both methods use identical inputs, priors, and actual sensor counts.
 - `comparison/reporting.py`: figure and field-family table.
 - `data/<mode>/<fingerprint>/`: CSV inputs, seeds, parameters, and manifests.
 - `results/<mode>/<fingerprint>/`: checkpoints, matched records, and exports.
-- `tests/`: small pipeline checks.
 
 ## Run
 

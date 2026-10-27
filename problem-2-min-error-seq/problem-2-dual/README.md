@@ -11,7 +11,6 @@ are verified feasible solutions, not certified global minima.
 - `budget_limited.py`: shared instance cutoff and cache reuse.
 - `reporting.py`: paired summaries, figure, and tables.
 - `results/`: per-instance checkpoints, saved solutions, and exports.
-- `tests/`: small cutoff and cache checks.
 
 ## Run
 

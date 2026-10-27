@@ -36,6 +36,9 @@ def greedy_allocation(model):
 def build_greedy_tree(model, allocation):
     """Build a tree using only the smallest current pairwise error at each node."""
 
+    if not any(allocation):
+        return DecisionLeaf(0)
+
     def build(remaining):
         model.check_time()
         if len(remaining) == 1:
@@ -43,6 +46,8 @@ def build_greedy_tree(model, allocation):
         candidates = []
         for pair in combinations(remaining, 2):
             for location, count in enumerate(allocation):
+                if count <= 0:
+                    continue
                 candidates.append(
                     (model.pair_error(pair, location, count), pair, location)
                 )

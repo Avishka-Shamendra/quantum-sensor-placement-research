@@ -14,7 +14,7 @@ Near-Uniform, and Random allocations (paper §5.5).
 - `inputs/{compact,extended}/{1d,2d}/`: phase CSVs and manifests.
 - `01_compact_analysis.ipynb`, `02_extended_analysis.ipynb`: the two studies.
 - `final_figures.ipynb`: two publication figures and a compact runtime table.
-- `results/`: saved records, tables, and PDF/PNG figures; `tests/`: small checks.
+- `results/`: saved records, tables, and PDF/PNG figures.
 
 Compact uses K,M=3–5 and 50 replicates per family/combination: 2,700 instances.
 Extended copies Problem 2's 4,320 extended instances. Both use three field

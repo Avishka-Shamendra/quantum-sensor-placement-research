@@ -88,6 +88,9 @@ def heuristic(
         move_sizes,
     )
 
+    if N == 0:
+        return model.result((0,) * M, DecisionLeaf(0))
+
     current_allocation = _initial_allocation(M, N, initialization, random_seed)
     _, current_pair_errors = _compute_pair_errors(
         pairs, M, current_allocation, model.phases
@@ -284,11 +287,15 @@ def _compute_pair_errors(
     pair_locations: dict[Pair, int] = {}
     pair_errors: dict[Pair, float] = {}
 
+    locations = tuple(m for m in range(M) if allocation[m] > 0)
+    if not locations:
+        raise ValueError("Pairwise tests require an occupied location")
+
     for pair in pairs:
-        best_location = 0
+        best_location = locations[0]
         best_error = 0.5
 
-        for location in range(M):
+        for location in locations:
             location_error = pair_error_probability(
                 phase_gaps[pair][location], allocation[location]
             )
