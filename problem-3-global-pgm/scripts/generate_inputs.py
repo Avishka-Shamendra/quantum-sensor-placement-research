@@ -4,7 +4,6 @@ import csv
 import importlib.util
 import json
 from pathlib import Path
-from random import Random
 from hashlib import sha256
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -50,19 +49,19 @@ def generate(config, output):
                     identity = json.dumps(['problem3-v2', config['seed'], config.get('study', 'custom'),
                                            config['dimension'], model, K, M, replicate], separators=(',', ':'))
                     seed = int.from_bytes(sha256(identity.encode()).digest()[:16], 'big')
-                    rng = Random(seed)
-                    locations = fields.sensing_locations(config['dimension'], M, rng)
-                    values, parameters = fields.FIELD_MODELS[model](K, locations, rng)
+                    rows, metadata = fields.generate_case(
+                        model, config['dimension'], K, M, seed, c=config['phase_scale_c'],
+                        min_best_pair_phase_gap=fields.DEFAULT_MIN_BEST_PAIR_PHASE_GAP)
                     filename = f'case_{len(cases)+1:05d}.csv'
                     with (output / filename).open('w', newline='') as stream:
                         writer = csv.writer(stream)
                         writer.writerow(('i', 'j', 'm', 'r_ijm'))
-                        writer.writerows((i, j, m, format(r, '.17g')) for i, j, m, r in fields.phase_gap_rows(values, config['phase_scale_c']))
-                    cases.append(dict(file=filename, K=K, M=M, field_model=model, spatial_dimension=config['dimension'],
-                                      generation_seed=seed, replicate=replicate+1,
-                                      sensor_locations=locations, field_parameters=parameters,
-                                      phase_scale_c=config['phase_scale_c'], sensor_budgets=config['sensor_budgets']))
-    manifest = dict(schema_version=2, design=config, seed_scheme='sha256/problem3-v2', sampling='unfiltered random field draws',
+                        writer.writerows((i, j, m, format(r, '.17g')) for i, j, m, r in rows)
+                    cases.append(dict(metadata, file=filename, replicate=replicate+1,
+                                      sensor_budgets=config['sensor_budgets']))
+    manifest = dict(schema_version=2, design=dict(config, minimum_phase_gap=fields.DEFAULT_MIN_BEST_PAIR_PHASE_GAP),
+                    seed_scheme='sha256/problem3-v2',
+                    sampling='random field draws conditioned on max_m |r_ijm| >= 0.01 for every pair',
                     input_format={'columns': ['i', 'j', 'm', 'r_ijm'], 'indexing': 'zero-based'},
                     models={model: dict(formula=fields.FIELD_FORMULAS[model][config['dimension']],
                                         parameter_ranges=fields.FIELD_PARAMETER_RANGES[model][config['dimension']]) for model in config['models']},

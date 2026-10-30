@@ -3,7 +3,7 @@ from pathlib import Path
 from collections import Counter
 import argparse,csv,json,hashlib
 import numpy as np
-from generate import draw,budgets,source_values,fields
+from generate_benchmarks import draw,budgets,source_values,fields,MINIMUM_PHASE_GAP
 from src.input_data import load_field_input
 from src.normalization import joint_sensor_lower_bound
 from src.analysis import select_cases
@@ -11,9 +11,12 @@ from src.analysis import select_cases
 
 def validate(root,recheck_bounds=True):
     root=Path(root);summary={};shortfalls=[]
-    settings=json.loads((root/'generation_config.json').read_text())['settings']
+    config=root/'generation_config.json'
+    if not config.exists() and (root/'1d').is_dir():
+        config=root.parent/'generation_config.json'
+    settings=json.loads(config.read_text())['settings']
     matched='problem2_inputs' in settings
-    threshold=settings.get('minimum_phase_gap',.01)
+    threshold=max(settings.get('minimum_phase_gap',MINIMUM_PHASE_GAP),MINIMUM_PHASE_GAP)
     studies=[root.name] if (root/'1d').is_dir() else settings.get('studies', ('compact','extended'))
     for study in studies:
         count=0
@@ -44,7 +47,9 @@ def validate(root,recheck_bounds=True):
                     actual=np.array([[float(row[k]) for k in reader.fieldnames] for row in reader])
                 np.testing.assert_array_equal(actual,np.asarray(rows))
                 raw=np.asarray(c['field_values']);np.testing.assert_allclose(f,raw-raw[0],atol=1e-12)
-                assert c['min_best_pair_phase_gap']>0 if matched else c['min_best_pair_phase_gap']>=threshold
+                minimum_gap=float(np.min(np.max(abs(actual[:,3].reshape(-1,c['M'])),axis=1)))
+                assert minimum_gap>=threshold, f'{path}: pair phase gap below {threshold}'
+                assert minimum_gap==c['min_best_pair_phase_gap']
                 if recheck_bounds:assert joint_sensor_lower_bound(path)==c['N_LB_joint']
                 maximum,schedule=budgets(c['N_LB_joint'],16 if study=='compact' else 50)
                 assert (c['N_max'],c['budget_schedule'])==(maximum,schedule)

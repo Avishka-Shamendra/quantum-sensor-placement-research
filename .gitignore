@@ -4,25 +4,6 @@ __pycache__/
 .ipynb_checkpoints/
 .jupyter-notebook/
 
-# Large deterministic benchmark intermediates are regenerated from fixed seeds.
-problem-1-zero-error/inputs/benchmark_1d/
-problem-1-zero-error/inputs/benchmark_2d/
-problem-1-zero-error/inputs/scale_1d/
-problem-1-zero-error/inputs/scale_2d/
-problem-1-zero-error/results/algorithm_comparison/benchmark_1d_results_full/
-problem-1-zero-error/results/algorithm_comparison/benchmark_2d_results_full/
-
-# Short output paths: test previews and deterministic per-dataset intermediates.
-problem-1-zero-error/results/methods/test/
-problem-1-zero-error/results/nmin/test/
-problem-1-zero-error/results/global/test/
-problem-1-zero-error/results/methods/full/1d/
-problem-1-zero-error/results/methods/full/2d/
-
-# Minimum-error sequential experiments.
-problem-2-min-error-seq/inputs/
-problem-2-min-error-seq/results/
-
-# Reproducible Problem 3 inputs and analysis outputs (kept locally).
-problem-3-global-pgm/inputs/*/
-problem-3-global-pgm/results/*/
+# Generated datasets and results remain local in every problem folder.
+inputs/
+results/

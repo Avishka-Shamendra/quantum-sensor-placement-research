@@ -10,7 +10,7 @@ from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 import numpy as np
 
-from publication import SUCCESS, estimate
+from .publication import SUCCESS, estimate
 from src.probes import FAMILIES, DICKE_POLICY
 from src.search import ALGORITHM_POLICY
 
