@@ -1,6 +1,6 @@
 """Saved-result summaries and publication figures."""
-import hashlib
 import json
+from hashlib import sha256
 
 import numpy as np
 import pandas as pd
@@ -34,56 +34,67 @@ def summarize(frame, keys, value):
 
 def validate_measurement_table(frame):
     expected = pd.MultiIndex.from_product(
-        [FAMILIES, KS, NS, STATE_STYLES, range(30)],
-        names=['family', 'k', 'n', 'state', 'inst'])
+        [range(1, 3), FAMILIES, KS, NS, STATE_STYLES, range(50)],
+        names=['dimension', 'family', 'k', 'n', 'state', 'inst'])
     actual = pd.MultiIndex.from_frame(frame[list(expected.names)])
     if actual.has_duplicates or len(expected.difference(actual)) or len(actual.difference(expected)):
-        raise ValueError('Expected 30 saved instances per family, K, budget and state')
+        raise ValueError('Expected 50 instances per dimension, family, K, budget and state')
     if not np.isfinite(frame[['optimal_error', 'pgm_error']].to_numpy()).all():
         raise ValueError('Saved measurement errors must be finite')
 
 
 def load_saved_weights(frame, root):
-    """Read weights corresponding to the saved optimized-state measurements."""
-    manifest = json.loads((root / 'imported/manifest.json').read_text())
+    """Reuse consolidated weights only when they match the measurement records."""
+    optimized = frame[frame.state == 'optimized']
+    columns = ['dimension', 'family', 'k', 'n', 'inst', 'checkpoint',
+               'optimal_error', 'pgm_error', 'reflection_asymmetry']
+    signature = sha256(optimized[columns].sort_values(columns[:5]).to_csv(index=False).encode()).hexdigest()
+    out = root / 'results/exact_sdp'
+    csv_path, metadata_path = out / 'saved_weights.csv', out / 'saved_weights_meta.json'
+    if csv_path.exists() and metadata_path.exists():
+        try:
+            metadata = json.loads(metadata_path.read_text())
+            if (metadata['measurements_sha256'] == signature and
+                    metadata['weights_sha256'] == sha256(csv_path.read_bytes()).hexdigest()):
+                return pd.read_csv(csv_path)
+        except (ValueError, KeyError):
+            pass
+    print(f"Loading {len(optimized)} saved weight checkpoints; subsequent reports use the consolidated CSV.", flush=True)
     rows = []
-    for family in FAMILIES:
-        relative = f'imported/{family}/out/prob.csv'
-        path = root / relative
-        if hashlib.sha256(path.read_bytes()).hexdigest() != manifest[relative]['sha256']:
-            raise ValueError(f'Weight checksum mismatch: {family}')
-        archive = pd.read_csv(path)
-        for r in frame[(frame.family == family) & (frame.state == 'optimized')].itertuples():
-            if r.source == 'archive':
-                g = archive[(archive.k == r.k) & (archive.inst == r.inst) & (archive.n == r.n)].sort_values('w')
-                if list(g.w) != list(range(r.n + 1)):
-                    raise ValueError('Incomplete archived weights')
-                p = validate_weights(g.p.to_numpy(), r.n)
-            else:
-                candidates = []
-                for path in (root / 'results/checkpoints' / family).glob(f'*/k{r.k}_i{r.inst}_n{r.n}_optimized.json'):
-                    item = json.loads(path.read_text())
-                    if (abs(item['optimal_error'] - r.optimal_error) < 1e-12 and
-                            abs(item['pgm_error'] - r.pgm_error) < 1e-12):
-                        candidates.append(validate_weights(item['p'], r.n))
-                if not candidates or any(not np.allclose(p, candidates[0], atol=1e-12, rtol=0) for p in candidates[1:]):
-                    raise ValueError('No unambiguous saved weights match the measurements')
-                p = candidates[0]
-            asymmetry = float(np.max(np.abs(p - p[::-1])))
-            if abs(asymmetry - r.reflection_asymmetry) > 1e-10:
-                raise ValueError('Saved weights disagree with the measurement-table symmetry statistic')
-            for w, value in enumerate(p):
-                rows.append(dict(family=family, k=r.k, m=1, n=r.n, inst=r.inst,
-                                 w=w, p=value, reflected_p=p[r.n-w]))
-    return pd.DataFrame(rows)
+    checkpoint_root = (root / 'results/exact_sdp/checkpoints').resolve()
+    for r in optimized.itertuples():
+        path = (root / r.checkpoint).resolve()
+        if not path.is_relative_to(checkpoint_root):
+            raise ValueError('Invalid checkpoint path')
+        item = json.loads(path.read_text())
+        if (item['source'] != 'joint_sdp' or
+                abs(item['optimal_error']-r.optimal_error) > 1e-12 or
+                abs(item['pgm_error']-r.pgm_error) > 1e-12):
+            raise ValueError('Saved weights disagree with the measurement table')
+        p = validate_weights(item['p'], r.n)
+        if abs(float(np.max(np.abs(p-p[::-1])))-r.reflection_asymmetry) > 1e-10:
+            raise ValueError('Saved weights disagree with the symmetry statistic')
+        for w, value in enumerate(p):
+            rows.append(dict(dimension=r.dimension, family=r.family, k=r.k, m=1, n=r.n,
+                             inst=r.inst, w=w, p=value, reflected_p=p[r.n-w]))
+    weights = pd.DataFrame(rows)
+    out.mkdir(parents=True, exist_ok=True)
+    temporary = csv_path.with_suffix('.tmp')
+    weights.to_csv(temporary, index=False)
+    temporary.replace(csv_path)
+    metadata = dict(measurements_sha256=signature, weights_sha256=sha256(csv_path.read_bytes()).hexdigest())
+    temporary = metadata_path.with_suffix('.tmp')
+    temporary.write_text(json.dumps(metadata) + '\n')
+    temporary.replace(metadata_path)
+    return weights
 
 
 def make_results(frame, root):
     validate_measurement_table(frame)
     frame = frame.assign(m=1)
-    out = root / 'results'
+    out = root / 'results/exact_sdp'
     out.mkdir(parents=True, exist_ok=True)
-    keys = ['family', 'k', 'm', 'n', 'state']
+    keys = ['dimension', 'family', 'k', 'm', 'n', 'state']
     errors = summarize(frame, keys, 'optimal_error')
     paired = frame.assign(degradation=frame.pgm_error - frame.optimal_error)
     degradation = summarize(paired, keys, 'degradation')
@@ -94,14 +105,14 @@ def make_results(frame, root):
         cases=('inst', 'size'), max_dual_residual=('dual_residual', 'max'),
         minimum_pgm_gap=('degradation', 'min')).reset_index()
     optimized = frame[frame.state == 'optimized'].copy()
-    optimized['absolute_saved_error_difference'] = optimized.saved_error_difference.abs()
-    audit = optimized.groupby(['family', 'k', 'm', 'n']).agg(
+    audit = optimized.groupby(['dimension', 'family', 'k', 'm', 'n']).agg(
         cases=('inst', 'size'), converged=('optimizer_converged', 'sum'),
-        maximum_saved_error_difference=('absolute_saved_error_difference', 'max')).reset_index()
+        maximum_optimality_gap=('optimality_gap', 'max'),
+        maximum_primal_residual=('primal_residual', 'max')).reset_index()
     weights = load_saved_weights(frame, root)
     weights['absolute_pair_difference'] = abs(weights.p - weights.reflected_p)
-    cases = weights.groupby(['family', 'k', 'm', 'n', 'inst']).absolute_pair_difference.max().rename('asymmetry').reset_index()
-    group = ['family', 'k', 'm', 'n']
+    cases = weights.groupby(['dimension', 'family', 'k', 'm', 'n', 'inst']).absolute_pair_difference.max().rename('asymmetry').reset_index()
+    group = ['dimension', 'family', 'k', 'm', 'n']
     symmetry = summarize(cases, group, 'asymmetry')
     details = cases.assign(within_tolerance=cases.asymmetry <= SYMMETRY_TOLERANCE).groupby(group).agg(
         maximum_asymmetry=('asymmetry', 'max'), fraction_within_tolerance=('within_tolerance', 'mean')).reset_index()
@@ -118,19 +129,18 @@ def make_results(frame, root):
                      runtime='runtime_summary', validation='validation_summary', optimization_audit='optimization_audit')
     for name, table in tables.items():
         table.to_csv(out / (filenames[name] + '.csv'), index=False)
-    weights.to_csv(out / 'saved_weights.csv', index=False)
     cases.to_csv(out / 'symmetry_by_instance.csv', index=False)
     tables['figures'] = make_figures(frame, root, weights=weights)
     return tables
 
 
 def summarize_across_k(frame, value):
-    """Equal-weight K means with stratified Welch confidence intervals."""
+    """Equal-weight dimension/K means with stratified Welch intervals."""
     keys = ['family', 'm', 'n', 'state']
-    strata = frame.assign(m=1).groupby(keys + ['k'])[value].agg(['mean', 'var', 'count']).reset_index()
+    strata = frame.assign(m=1).groupby(keys + ['dimension', 'k'])[value].agg(['mean', 'var', 'count']).reset_index()
     rows = []
     for key, group in strata.groupby(keys):
-        components = group['var'].to_numpy() / group['count'].to_numpy() / len(KS)**2
+        components = group['var'].to_numpy() / group['count'].to_numpy() / len(group)**2
         variance = components.sum()
         denominator = np.sum(components**2 / (group['count'].to_numpy() - 1))
         df = variance**2 / denominator if denominator > 0 else np.inf
@@ -160,7 +170,7 @@ def make_figures(frame, root, weights=None):
     validate_measurement_table(frame)
     if weights is None:
         weights = load_saved_weights(frame, root)
-    out = root / 'results'
+    out = root / 'results/exact_sdp'
     out.mkdir(parents=True, exist_ok=True)
     configure_style()
     optimal = summarize_across_k(frame, 'optimal_error')
@@ -171,13 +181,18 @@ def make_figures(frame, root, weights=None):
         fig, axes = plt.subplots(1, 3, figsize=(11, 3.8), sharex=True, sharey=True)
         for ax, family in zip(axes, FAMILIES):
             data = summary[summary.family == family]
-            for key, (label, color, marker, line) in STATE_STYLES.items():
+            for index, (key, (label, color, marker, line)) in enumerate(STATE_STYLES.items()):
                 g = data[data.state == key].sort_values('n')
-                ax.plot(g.n, g['mean'], label=label, color=color, marker=marker, linestyle=line, ms=4, lw=1.4)
+                if number == 2:
+                    width = 0.38
+                    offset = (index - (len(STATE_STYLES)-1)/2) * width
+                    ax.bar(g.n + offset, g['mean'], width=width, color=color, label=label, zorder=3)
+                else:
+                    ax.plot(g.n, g['mean'], label=label, color=color, marker=marker, linestyle=line, ms=4, lw=1.4)
             ax.set_title(family.capitalize())
             ax.set_xticks(NS)
             ax.set_xlabel(r'Sensor count, $N$')
-            ax.grid(alpha=.2)
+            ax.grid(axis='y' if number == 2 else 'both', alpha=.2)
             if number == 2:
                 ax.axhline(0, color='black', lw=.6)
         axes[0].set_ylabel('Mean discrimination error' if number == 1 else 'Mean excess error from PGM')

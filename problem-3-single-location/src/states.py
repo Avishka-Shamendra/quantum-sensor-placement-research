@@ -1,11 +1,13 @@
-"""Dicke-sector states and the original Gram-matrix PGM evaluator."""
+"""Dicke-sector states and Gram-matrix PGM evaluation."""
 from math import comb
 import numpy as np
 
 def pgm_error(phi, p):
     phi = np.asarray(phi, dtype=float)
     p = np.asarray(p, dtype=float)
-    if np.min(p) < -1e-10 or p.sum() <= 0:
+    if phi.ndim != 1 or len(phi) < 2 or not np.isfinite(phi).all():
+        raise ValueError('Invalid field phases')
+    if p.ndim != 1 or not len(p) or not np.isfinite(p).all() or np.min(p) < -1e-10 or p.sum() <= 0:
         raise ValueError('Invalid Dicke-weight probabilities')
     p = np.clip(p, 0.0, None)
     p /= p.sum()
