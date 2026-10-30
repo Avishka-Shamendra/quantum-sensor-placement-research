@@ -14,7 +14,8 @@ def main():
     parser.add_argument("--study", choices=("compact", "extended"), default="compact")
     parser.add_argument("--mode", choices=("test", "full"), default="test")
     parser.add_argument("--exact-k-max", type=int, default=4)
-    parser.add_argument("--time-limit", type=float, default=30.0)
+    parser.add_argument("--time-limit", type=float, default=None,
+                        help="Optional limit in seconds per method/budget; default: no limit")
     parser.add_argument("--fresh", action="store_true")
     args = parser.parse_args()
     run_analysis(project=PROJECT, study=args.study, mode=args.mode, exact_k_max=args.exact_k_max,

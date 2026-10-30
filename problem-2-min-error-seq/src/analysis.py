@@ -164,13 +164,13 @@ def summarize(rows, methods):
 
 
 def run_analysis(*, project=PROJECT, study="compact", mode="test", exact_k_max=4,
-                 time_limit=30.0, resume=True, beam_width=3, max_iterations=30):
+                 time_limit=None, resume=True, beam_width=3, max_iterations=30):
     """Save actual errors, trees, timings, and explicit timeout records."""
     project = Path(project)
     entries = select_cases(project, study, mode, exact_k_max)
     methods = COMPACT_METHODS if study == "compact" else EXTENDED_METHODS
-    if not isfinite(time_limit) or time_limit <= 0:
-        raise ValueError("time_limit must be positive and finite")
+    if time_limit is not None and (not isfinite(time_limit) or time_limit <= 0):
+        raise ValueError("time_limit must be positive and finite, or None")
     settings = {"study": study, "mode": mode, "exact_k_max": exact_k_max,
                 "time_limit": time_limit, "beam_width": beam_width, "max_iterations": max_iterations}
     code = b"".join(p.read_bytes() for p in sorted((PROJECT / "src").glob("*.py")))
@@ -187,7 +187,9 @@ def run_analysis(*, project=PROJECT, study="compact", mode="test", exact_k_max=4
     dataset_completed = Counter()
     print(f"{study}/{mode}: {len(entries)} cases, methods: {', '.join(methods)}", flush=True)
     if study == "compact":
-        print(f"Exact comparison uses K <= {exact_k_max}; limit {time_limit:g}s per method/budget.", flush=True)
+        print(f"Exact comparison uses K <= {exact_k_max}.", flush=True)
+    limit_description = "No time limit" if time_limit is None else f"Time limit: {time_limit:g}s"
+    print(f"{limit_description} per method/budget.", flush=True)
     for dataset, path, metadata in entries:
         K, M, phases = load_phase_input(path)
         if K != metadata["K"] or M != metadata["M"]:
@@ -212,12 +214,17 @@ def run_analysis(*, project=PROJECT, study="compact", mode="test", exact_k_max=4
                        "budget_level": level,
                        "budget_fraction": budget / metadata["minimum_sensors_for_zero_error"],
                        "method": method, "status": "ok", "actual_error": None,
-                       "allocation": None, "decision_tree": None, "seconds": None}
+                       "allocation": None, "decision_tree": None, "seconds": None,
+                       "iterations_run": None, "accepted_moves": None,
+                       "max_iterations": None, "stopping_reason": None}
                 begin = perf_counter()
                 try:
                     result = SOLVERS[method](K, M, budget, phases, **options)
                     row.update(actual_error=result.actual_error, allocation=list(result.allocation),
                                decision_tree=tree_to_dict(result.decision_tree))
+                    if method == "Heuristic":
+                        row.update(iterations_run=result.iterations_run, accepted_moves=result.accepted_moves,
+                                   max_iterations=result.max_iterations, stopping_reason=result.stopping_reason)
                 except SearchTimeout:
                     row["status"] = "timeout"
                 row["seconds"] = perf_counter() - begin

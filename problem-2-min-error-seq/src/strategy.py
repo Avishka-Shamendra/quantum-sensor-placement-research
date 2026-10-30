@@ -33,6 +33,10 @@ class StrategyResult:
     allocation: tuple[int, ...]
     decision_tree: DecisionTree
     actual_error: float
+    iterations_run: int | None = None
+    accepted_moves: int | None = None
+    max_iterations: int | None = None
+    stopping_reason: str | None = None
 
 
 def tree_to_dict(tree):

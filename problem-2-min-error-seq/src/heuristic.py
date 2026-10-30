@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from itertools import combinations
 from math import isfinite
 from numbers import Real
@@ -89,7 +89,8 @@ def heuristic(
     )
 
     if N == 0:
-        return model.result((0,) * M, DecisionLeaf(0))
+        return replace(model.result((0,) * M, DecisionLeaf(0)), iterations_run=0,
+                       accepted_moves=0, max_iterations=max_iterations, stopping_reason="zero_budget")
 
     current_allocation = _initial_allocation(M, N, initialization, random_seed)
     _, current_pair_errors = _compute_pair_errors(
@@ -150,7 +151,9 @@ def heuristic(
         beam_width,
         check_time=model.check_time,
     )
-    return model.result(current_allocation, tree)
+    return replace(model.result(current_allocation, tree), iterations_run=iterations_run,
+                   accepted_moves=accepted_moves, max_iterations=max_iterations,
+                   stopping_reason=stopping_reason)
 
 
 

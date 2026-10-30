@@ -28,6 +28,7 @@ if str(ZERO_ERROR_SOURCE_ROOT) not in sys.path:
     sys.path.insert(0, str(ZERO_ERROR_SOURCE_ROOT))
 
 from field_models import (  # noqa: E402
+    DEFAULT_MIN_BEST_PAIR_PHASE_GAP,
     FIELD_FORMULAS,
     FIELD_MODELS,
     FIELD_PARAMETER_RANGES,
@@ -64,8 +65,7 @@ def _draw_case(model, dimension, K, M, seed, phase_scale):
         M,
         seed=seed,
         c=phase_scale,
-        max_attempts=1,
-        min_best_pair_phase_gap=0.0,
+        min_best_pair_phase_gap=DEFAULT_MIN_BEST_PAIR_PHASE_GAP,
     )
 
 
@@ -123,7 +123,7 @@ def generate_factorial_dataset(
     case_number = 0
     dataset_code = crc32(dataset.encode())
 
-    # Sample each design cell with independent deterministic seeds.
+    # Separate replicate seeds so rejection retries cannot overlap.
     for model in selected_models:
         for (K, M), replicate_count in zip(factorial_cells, cell_replicates):
             cell_code = crc32(f"{model}:{dimension}:{K}:{M}".encode())
@@ -134,7 +134,7 @@ def generate_factorial_dataset(
                     dimension,
                     K,
                     M,
-                    data_seed + replicate - 1,
+                    data_seed + (replicate - 1) * 1_000_003,
                     phase_scale,
                 )
 
@@ -173,7 +173,7 @@ def generate_factorial_dataset(
             print(f"{dataset}: {model} K={K} M={M}, saved {replicate_count} draws")
 
     manifest = {
-        "schema_version": 4,
+        "schema_version": 5,
         "dataset": dataset,
         "description": description,
         "input_format": {
@@ -212,7 +212,10 @@ def generate_factorial_dataset(
             "phase_scale_c": phase_scale,
             "budget_fractions_of_capped_range": budget_fractions,
             "budget_cap": budget_cap,
-            "sampling": "unfiltered random field draws",
+            "sampling": "random field draws conditioned on the pairwise phase-gap threshold",
+            "min_best_pair_phase_gap": DEFAULT_MIN_BEST_PAIR_PHASE_GAP,
+            "validity_rule": "For every pair (i, j), max_m abs(r_ijm) >= min_best_pair_phase_gap",
+            "replicate_seed_stride": 1_000_003,
             "budget_cap_constraint": (
                 "The cap limits exhaustive-search runtime and is not a "
                 "constraint of the sensor-allocation problem."

@@ -8,6 +8,7 @@ from pathlib import Path
 from statistics import fmean, stdev
 
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 
 
 STYLES = {
@@ -387,3 +388,46 @@ def summary_markdown(rows):
             f"{float(row['mean_error_probability']):.5f} | {float(row['mean_seconds']):.4f} | {gap} |"
         )
     return "\n".join(lines)
+
+
+def iteration_summary(rows):
+    """Count completed VND evaluations, keeping missing diagnostics explicit."""
+    summary = []
+    for dimension in (1, 2):
+        selected = [r for r in rows if r["method"] == "Heuristic" and int(r["dimension"]) == dimension]
+        recorded = [r for r in selected if r["status"] == "ok"
+                    and r.get("iterations_run") not in (None, "")
+                    and r.get("stopping_reason") not in (None, "")]
+        reached = sum(r.get("max_iterations") not in (None, "")
+                      and int(r["iterations_run"]) >= int(r["max_iterations"]) for r in recorded)
+        summary.append(dict(dimension=dimension, evaluations=len(selected),
+            recorded=len(recorded), missing_diagnostics=len(selected)-len(recorded),
+            reached_limit=reached,
+            stopped_at_limit=sum(r["stopping_reason"] == "maximum_iterations" for r in recorded),
+            converged=sum(r["stopping_reason"] == "vnd_converged" for r in recorded)))
+    return summary
+
+
+def plot_iterations(rows):
+    """Show VND neighborhood scans per instance-budget evaluation."""
+    summary = iteration_summary(rows)
+    if any(r["missing_diagnostics"] or not r["recorded"] for r in summary):
+        raise ValueError("Iteration diagnostics are incomplete. Run the analysis with the updated code first.")
+    _plot_style()
+    figure, axes = plt.subplots(1, 2, figsize=(11.5, 4.2), sharey=True)
+    for axis, dimension in zip(axes, (1, 2)):
+        distribution = defaultdict(int)
+        for row in rows:
+            if row["method"] == "Heuristic" and int(row["dimension"]) == dimension:
+                distribution[int(row["iterations_run"])] += 1
+        iterations = sorted(distribution)
+        axis.bar(iterations, [distribution[n] for n in iterations],
+                 color=STYLES["Heuristic"][0])
+        axis.set_title(TITLES[dimension], fontsize=12)
+        axis.set_xlabel("VND iterations")
+        axis.xaxis.set_major_locator(MaxNLocator(integer=True))
+        axis.yaxis.set_major_locator(MaxNLocator(integer=True))
+        axis.grid(axis="y", alpha=0.22)
+    axes[0].set_ylabel("Number of runs")
+    figure.subplots_adjust(top=0.88, bottom=0.16, wspace=0.08)
+    return figure
