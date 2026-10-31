@@ -7,7 +7,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 from src import FAMILIES, DICKE_POLICY, exhaustive_search, greedy_search, vnd_search, probe_gram
-from src.input_data import load_field_input
+from src.input_data import load_phase_input
+from src.pgm import pgm_error
 from src.search import ALGORITHM_POLICY
 
 
@@ -29,7 +30,7 @@ def main():
     # Exclusive creation prevents accidental destruction of previous results.
     with args.output.open('x') as stream:
         for case in manifest['cases'][:args.limit_cases]:
-            f = load_field_input(args.dataset / case['file'], c=case['phase_scale_c'])
+            f, r_ijm = load_phase_input(args.dataset / case['file'], c=case['phase_scale_c'])
             for N in case['sensor_budgets']:
                 for family in args.families:
                     gram = lambda n: probe_gram(f, n, family, c=case['phase_scale_c'])
@@ -37,8 +38,15 @@ def main():
                         record = dict(case=case['file'], K=len(f), M=f.shape[1], N=N,
                                       family=family, method=method, dicke_policy=DICKE_POLICY,algorithm_policy=ALGORITHM_POLICY, phase_scale_c=case['phase_scale_c'])
                         try:
-                            result = exhaustive_search(N, f.shape[1], gram, max_allocations=args.max_allocations) if method == 'exhaustive' else {'greedy': greedy_search, 'vnd': vnd_search}[method](N, f.shape[1], gram)
+                            if method == 'exhaustive':
+                                result = exhaustive_search(N, f.shape[1], gram, max_allocations=args.max_allocations)
+                            elif method == 'greedy':
+                                result = greedy_search(N, f.shape[1], gram)
+                            else:
+                                result = vnd_search(N, f.shape[1], r_ijm)
                             record.update(result.to_dict())
+                            if method == 'vnd':
+                                record['pgm_error'] = pgm_error(gram(result.allocation))
                         except ValueError as error:
                             record.update(status='not_completed', reason=str(error))
                         stream.write(json.dumps(record)+'\n')

@@ -145,6 +145,14 @@ def run_analysis(study, mode='test', *, run=True, resume=True, max_allocations=2
                                     record.update(allocation_runtime_seconds=None, pgm_evaluation_seconds=None,
                                                   search_runtime_seconds=perf_counter()-start)
                                     record['runtime_seconds'] = record['search_runtime_seconds']
+                                elif method == 'greedy':
+                                    result = greedy_search(N,case['M'],gram,time_limit=time_limit)
+                                    record.update(result.to_dict())
+                                    record['allocation'] = list(result.allocation)
+                                    record.update(allocation_runtime_seconds=result.runtime_seconds,
+                                                  pgm_evaluation_seconds=0.0,
+                                                  pgm_evaluations=result.evaluations,
+                                                  search_runtime_seconds=result.runtime_seconds)
                                 else:
                                     allocation_key = (dimension,case['file'],N,method)
                                     if allocation_key not in allocation_cache:
@@ -204,7 +212,7 @@ def write_table(path, rows, columns):
 def summarize(records, output, *, methods=None):
     """Use only groups completed by every requested method; report all statuses."""
     if any(r.get('algorithm_policy') != ALGORITHM_POLICY for r in records):
-        raise ValueError('Saved allocation results use an older phase-input policy; recompute with CSV r_ijm.')
+        raise ValueError('Saved results use an older allocation policy; rerun the analysis.')
     if any(r['probe'] in ('local_dicke', 'global_dicke') and r.get('dicke_policy') != DICKE_POLICY for r in records):
         raise ValueError('Saved Dicke results use an older state definition. Rerun the analysis for the equal-sector superposition.')
     output = Path(output)

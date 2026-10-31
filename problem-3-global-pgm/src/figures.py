@@ -9,7 +9,7 @@ from .search import ALGORITHM_POLICY
 METHOD_STYLES = {
     'exhaustive': ('Exhaustive', '#1f77b4', 'o', '-'),
     'greedy': ('Greedy', '#d62728', 's', '--'),
-    'vnd': ('VND', '#2ca02c', '^', '-.'),
+    'vnd': ('VND (State Independent)', '#2ca02c', '^', '-.'),
 }
 STATE_STYLES = {
     'product': ('Product', '#1f77b4', 'o', '-'),

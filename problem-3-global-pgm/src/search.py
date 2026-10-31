@@ -43,7 +43,7 @@ def exhaustive_search(N, M, gram_for_allocation, *, max_allocations=1_000_000):
     return SearchResult(best, error, count, perf_counter()-start, 'optimal')
 
 
-ALGORITHM_POLICY = 'csv_rijm_pair_greedy_score_vnd_v3_single_random'
+ALGORITHM_POLICY = 'pgm_greedy_csv_rijm_score_vnd_v4_single_random'
 
 
 @dataclass(frozen=True)
@@ -70,25 +70,37 @@ def separation_score(allocation, r_ijm):
     return float(np.minimum(np.pi, np.abs(r_ijm) @ np.asarray(allocation)).mean())
 
 
-def greedy_search(N, M, r_ijm, *, time_limit=None):
-    """Serve the least-separated pair; ties use smaller pair maximum then pair order.
+def greedy_search(N, M, gram_for_allocation, *, time_limit=None):
+    """Add each sensor at the location giving the lowest PGM error.
 
-    Location ties use the smallest index. No Gram matrix or PGM is evaluated.
+    Exact ties retain the smallest location index.
     """
-    N, M, r_ijm = _validate_phases(N, M, r_ijm)
+    N, M = integer(N, 'N'), integer(M, 'M', 1)
     start = perf_counter()
-    n = np.zeros(M, dtype=int)
-    accumulated = np.zeros(len(r_ijm))
-    maxima = np.abs(r_ijm).max(axis=1)
-    for _ in range(N):
+    n = (0,) * M
+    evaluations = 0
+
+    def evaluate(candidate):
+        nonlocal evaluations
         if time_limit is not None and perf_counter()-start > time_limit:
             raise TimeoutError('allocation time limit exceeded')
-        pair = min(range(len(r_ijm)), key=lambda i: (accumulated[i], maxima[i], i))
-        location = int(np.argmax(np.abs(r_ijm[pair])))
-        n[location] += 1
-        accumulated += np.abs(r_ijm[:, location])
-    return AllocationResult(tuple(map(int,n)), separation_score(n,r_ijm), N,
-                            perf_counter()-start, 'greedy_complete')
+        value = pgm_error(gram_for_allocation(candidate))
+        evaluations += 1
+        return value
+
+    if N == 0:
+        error = evaluate(n)
+    for _ in range(N):
+        best, error = None, float('inf')
+        for location in range(M):
+            candidate = list(n)
+            candidate[location] += 1
+            candidate = tuple(candidate)
+            value = evaluate(candidate)
+            if value < error:
+                best, error = candidate, value
+        n = best
+    return SearchResult(n, error, evaluations, perf_counter()-start, 'greedy_complete')
 
 
 def vnd_search(N, M, r_ijm, *, tolerance=1e-12, time_limit=None):

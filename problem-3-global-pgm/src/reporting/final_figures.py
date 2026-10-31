@@ -1,4 +1,4 @@
-"""Two publication figures and a runtime table from saved Problem 3 runs."""
+"""Error and runtime summaries from saved Problem 3 runs."""
 from collections import defaultdict
 import csv
 import hashlib
@@ -18,7 +18,7 @@ from src.search import ALGORITHM_POLICY
 METHOD_STYLES = {
     'exhaustive': ('Exhaustive', '#1f77b4', 'o', '-'),
     'greedy': ('Greedy', '#d62728', 's', '--'),
-    'vnd': ('VND', '#2ca02c', '^', '-.'),
+    'vnd': ('VND (State Independent)', '#2ca02c', '^', '-.'),
     'near_uniform': ('Near-Uniform', '#9467bd', 'D', ':'),
     'random': ('Random', '#8c564b', 'x', '--'),
 }
@@ -136,11 +136,90 @@ def _save(figure, styles, output, name, data, *, bars=False):
         writer.writerows(data)
 
 
+def allocation_gaps(records, study):
+    reference = 'exhaustive' if study == 'compact' else 'greedy'
+    pairs = defaultdict(dict)
+    for record in records:
+        pairs[record['dimension'], record['case'], record['N'], record['probe']][record['method']] = record
+    gaps = []
+    for group in pairs.values():
+        for method in ALLOCATION_METHODS:
+            record = group[method]
+            gap = record['pgm_error'] - group[reference]['pgm_error']
+            if study == 'compact' and gap < -1e-7:
+                raise ValueError('Saved result beats Exhaustive beyond numerical tolerance.')
+            gaps.append(dict(record, gap=gap, reference=reference))
+    return gaps
+
+
+def standalone_seconds(record):
+    seconds = (record['search_runtime_seconds'] if record['method'] == 'exhaustive'
+               else record['allocation_runtime_seconds'] + record['pgm_evaluation_seconds'])
+    if not np.isfinite(seconds) or seconds <= 0:
+        raise ValueError('Missing or nonpositive saved runtime.')
+    return seconds
+
+
+def worst_gap_table(gaps, output):
+    rows = []
+    for study in STUDIES:
+        for dimension in (1, 2):
+            for probe in FAMILIES:
+                selected = [r for r in gaps[study] if r['dimension'] == dimension and r['probe'] == probe]
+                rows.append(dict(dataset=f'{study.title()} {dimension}D',
+                                 input_state=STATE_STYLES[probe][0],
+                                 reference='Exhaustive' if study == 'compact' else 'Greedy',
+                                 **{METHOD_STYLES[m][0]: max(r['gap'] for r in selected if r['method'] == m)
+                                    for m in ALLOCATION_METHODS}))
+    with (output / 'table_2_maximum_gaps.csv').open('w', newline='') as stream:
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+    lines = ['| ' + ' | '.join(rows[0]) + ' |', '| ' + ' | '.join(['---'] * len(rows[0])) + ' |']
+    for row in rows:
+        lines.append('| ' + ' | '.join(f'{v:.8g}' if isinstance(v, float) else v for v in row.values()) + ' |')
+    markdown = '\n'.join(lines)
+    (output / 'table_2_maximum_gaps.md').write_text(markdown + '\n')
+    return markdown
+
+
+def runtime_ecdf(datasets, output):
+    data = []
+    with plt.rc_context(STYLE):
+        figure, axes = _panels(['Cumulative proportion', 'Cumulative proportion'], 'Runtime (ms)')
+        for row, study in enumerate(STUDIES):
+            pairs = defaultdict(dict)
+            for record in datasets[study]:
+                if record['method'] in ('greedy', 'vnd'):
+                    pairs[record['dimension'], record['case'], record['N'], record['probe']][record['method']] = record
+            if any(set(pair) != {'greedy', 'vnd'} for pair in pairs.values()):
+                raise ValueError('Runtime comparisons require matched Greedy and VND records.')
+            for column, dimension in enumerate((1, 2)):
+                axis = axes[row, column]
+                for method in ('greedy', 'vnd'):
+                    seconds = [standalone_seconds(pair[method]) for key, pair in pairs.items() if key[0] == dimension]
+                    x = np.sort(np.asarray(seconds) * 1000)
+                    if not len(x):
+                        raise ValueError('No matched runtime observations.')
+                    y = np.arange(1, len(x) + 1) / len(x)
+                    label, color, _, line = METHOD_STYLES[method]
+                    axis.step(np.r_[x[0], x], np.r_[0., y], where='post', color=color,
+                              linestyle=line, label=label)
+                    data.extend(dict(study=study, dimension=dimension, method=method,
+                                     runtime_ms=float(t), cumulative_proportion=float(p)) for t, p in zip(x, y))
+                axis.set_xscale('log')
+                axis.set_ylim(0, 1)
+        _save(figure, [METHOD_STYLES[m] for m in ('greedy', 'vnd')], output,
+              'figure_3_runtime_ecdf', data)
+    return figure
+
+
 def create_outputs(datasets, output):
-    """Export two four-panel mean-error figures and a Compact runtime table."""
+    """Export error figures, runtime distributions, and summary tables."""
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
     figures = []
+    gaps_by_study = {study: allocation_gaps(datasets[study], study) for study in STUDIES}
     def stats(rows, value):
         clusters = defaultdict(list)
         for record in rows:
@@ -155,7 +234,7 @@ def create_outputs(datasets, output):
                               r'Mean normalized budget, $N/N_{\mathrm{LB}}^{\mathrm{joint}}$')
         data = []
         for row, study in enumerate(STUDIES):
-            reference = 'exhaustive' if study == 'compact' else 'vnd'
+            reference = 'vnd'
             for column, dimension in enumerate((1, 2)):
                 for probe in FAMILIES:
                     selected = [r for r in datasets[study] if r['dimension'] == dimension
@@ -175,23 +254,13 @@ def create_outputs(datasets, output):
         _save(figure, STATE_STYLES.values(), output, 'figure_1_input_states', data)
         figures.append(figure)
 
-        figure, axes = _panels(['Mean error gap from Exhaustive', 'Mean error difference from VND'])
+        figure, axes = _panels(['Mean error gap from Exhaustive', 'Mean error difference from Greedy'])
         data = []
         for row, study in enumerate(STUDIES):
-            reference = 'exhaustive' if study == 'compact' else 'vnd'
-            pairs = defaultdict(dict)
-            for r in datasets[study]:
-                pairs[r['dimension'], r['case'], r['N'], r['probe']][r['method']] = r
+            reference = 'exhaustive' if study == 'compact' else 'greedy'
             bar_methods = tuple(m for m in ALLOCATION_METHODS
-                                if study == 'compact' or m != 'vnd')
-            gaps = []
-            for group in pairs.values():
-                for method in bar_methods:
-                    r = group[method]
-                    gap = r['pgm_error'] - group[reference]['pgm_error']
-                    if study == 'compact' and gap < -1e-7:
-                        raise ValueError('Saved result beats Exhaustive beyond numerical tolerance.')
-                    gaps.append(dict(r, gap=gap))
+                                if study == 'compact' or m != 'greedy')
+            gaps = gaps_by_study[study]
             for column, dimension in enumerate((1, 2)):
                 axis = axes[row, column]
                 for index, method in enumerate(bar_methods):
@@ -223,10 +292,7 @@ def create_outputs(datasets, output):
             for record in datasets['compact']:
                 if record['dimension'] != dimension or record['method'] != method:
                     continue
-                seconds = (record['search_runtime_seconds'] if method == 'exhaustive'
-                           else record['allocation_runtime_seconds'] + record['pgm_evaluation_seconds'])
-                if not np.isfinite(seconds) or seconds <= 0:
-                    raise ValueError('Missing or nonpositive saved runtime.')
+                seconds = standalone_seconds(record)
                 selected.append(dict(record, standalone_ms=1000 * seconds))
             value = stats(selected, 'standalone_ms')
             table.append(dict(dimension=f'{dimension}D', method=METHOD_STYLES[method][0],
@@ -241,4 +307,6 @@ def create_outputs(datasets, output):
         lines.append(f"| {row['dimension']} | {row['method']} | {row['mean_ms']:.3f} |")
     markdown = '\n'.join(lines)
     (output / 'table_1_runtime.md').write_text(markdown + '\n')
-    return figures, markdown
+    maximum_gaps = worst_gap_table(gaps_by_study, output)
+    figures.append(runtime_ecdf(datasets, output))
+    return figures, markdown, maximum_gaps

@@ -10,7 +10,7 @@ from src.figures import STATE_STYLES
 
 METHODS = ('greedy', 'vnd')
 STYLES = {'greedy': ('Greedy', '#d62728', 's', '--'),
-          'vnd': ('VND', '#2ca02c', '^', '-.'),
+          'vnd': ('VND (State Independent)', '#2ca02c', '^', '-.'),
           'near_uniform': ('Near-Uniform', '#9467bd', 'D', ':'),
           'random': ('Random', '#7f7f7f', 'x', ':')}
 LABELS = {**{k:v[0] for k,v in STYLES.items()}, 'exhaustive':'Exhaustive'}
@@ -54,18 +54,17 @@ def complete_states(rows,methods):
 
 def prepare(records,study,output,seed=20261014,resamples=2000):
     if any(r.get("algorithm_policy") != ALGORITHM_POLICY for r in records):
-        raise ValueError("Saved results predate the CSV r_ijm policy; recompute allocations before reporting.")
+        raise ValueError("Saved results do not match the allocation policy; rerun the analysis before reporting.")
     methods=METHODS+tuple(m for m in ('near_uniform','random') if any(r['method']==m for r in records))
     output=Path(output)
     output.mkdir(parents=True,exist_ok=True)
-    reference_method='exhaustive' if study=='compact' else 'vnd'
-    state_rows=complete_states(records,(reference_method,))
+    state_rows=complete_states(records,('vnd',))
     gap_rows=complete_states(records,(*methods,'exhaustive') if study=='compact' else methods)
     pairs=defaultdict(dict)
     for r in gap_rows:pairs[r['dimension'],r['case'],r['N'],r['probe']][r['method']]=r
     gaps=[]
     for group in pairs.values():
-        reference=group['exhaustive']['pgm_error'] if study=='compact' else group['vnd']['pgm_error']
+        reference=group['exhaustive']['pgm_error'] if study=='compact' else group['greedy']['pgm_error']
         for method in methods:
             r=group[method];gap=r['pgm_error']-reference
             if study=='compact' and gap < -TOLERANCE:raise AssertionError('A compared method beat the exhaustive reference beyond tolerance')
@@ -90,7 +89,7 @@ def prepare(records,study,output,seed=20261014,resamples=2000):
                 completed=[r for r in attempted if r['status'] in SUCCESS]
                 if not attempted:continue
                 times=[r['runtime_seconds'] for r in completed]
-                allocation_runs={(r['case'],r['N']):r['allocation_runtime_seconds'] for r in completed
+                allocation_runs={(r['case'],r['N'],r['probe'] if method=='greedy' else None):r['allocation_runtime_seconds'] for r in completed
                                  if r.get('allocation_runtime_seconds') is not None}
                 allocation_times=list(allocation_runs.values())
                 pgm_times=[r['pgm_evaluation_seconds'] for r in completed if r.get('pgm_evaluation_seconds') is not None]
@@ -126,7 +125,8 @@ def prepare(records,study,output,seed=20261014,resamples=2000):
     (output/'report_settings.json').write_text(json.dumps(dict(seed=seed,resamples=resamples,confidence=.95,
         bootstrap='field-instance clusters stratified by K, M, and field family',
         weighting='equal field-instance weight; average unique budgets within instance for bars',
-        reference='Exhaustive' if study=='compact' else 'VND per instance/budget/state; negative gaps indicate lower error than VND'),indent=2))
+        input_state_allocation='VND',
+        reference='Exhaustive' if study=='compact' else 'Greedy per instance/budget/state; negative gaps indicate lower error than Greedy'),indent=2))
     return dict(methods=methods,state_rows=state_rows,gaps=gaps,quality=quality,runtime=runtime,outcomes=outcomes,coverage=coverage,
                 output=output,seed=seed,resamples=resamples)
 
@@ -178,10 +178,10 @@ def figures(report,study,zoom=True):
             if not any(r['dimension']==dim for r in report['state_rows']):ax.text(.5,.5,'No complete comparisons',ha='center',transform=ax.transAxes)
         handles=[Line2D([],[],color=s[1],marker=s[2],ls=s[3],label=s[0]) for s in STATE_STYLES.values()]
         finish(fig,handles,[s[0] for s in STATE_STYLES.values()],f'figure_{number}_input_states')
-        bar_methods=tuple(m for m in methods if study=='compact' or m!='vnd')
+        bar_methods=tuple(m for m in methods if study=='compact' or m!='greedy')
         detail_methods=tuple(m for m in bar_methods if m in ('greedy','vnd'))
         number=2 if study=='compact' else 4
-        reference='Exhaustive' if study=='compact' else 'VND'
+        reference='Exhaustive' if study=='compact' else 'Greedy'
         fig,axes=panel(f'Mean error difference from {reference}',False)
         for dim,ax in zip([1,2],axes):
             positions=np.arange(5);width=.8/len(bar_methods);bars={}
@@ -198,7 +198,7 @@ def figures(report,study,zoom=True):
             scale=max(map(abs,finite),default=0);detail=max(map(abs,heuristic),default=0)
             if zoom and 0<detail<.35*scale:
                 ax.set_ylim(bottom=min(0,min(finite))-.05*scale,top=max(0,max(finite))+.8*scale)
-                inset=ax.inset_axes([.13,.65,.82,.27]);inset.set_title('Greedy / VND detail' if study=='compact' else 'Greedy detail',fontsize=12)
+                inset=ax.inset_axes([.13,.65,.82,.27]);inset.set_title('Greedy / VND detail' if study=='compact' else 'VND detail',fontsize=12)
                 for method in detail_methods:
                     x,y,lo,hi=bars[method];inset.bar(x,y,width,color=STYLES[method][1]);inset.vlines(x,lo,hi,color='black',lw=.5)
                 inset.set_ylim(min(0,min(heuristic))-.1*detail,max(0,max(heuristic))+.1*detail)
