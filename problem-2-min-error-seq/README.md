@@ -1,7 +1,7 @@
 # Problem 2: sequential minimum-error discrimination
 
 Allocation and decision-tree comparisons using complete discrimination errors,
-including off-pair outcomes (paper §4.6).
+including off-pair outcomes (paper §4.4).
 
 ## Files
 
@@ -15,7 +15,7 @@ including off-pair outcomes (paper §4.6).
 - `src/ablation.py`: matched ablations, checkpoints, and the combined 1D/2D figure.
 - `final_figures.ipynb`: publication figures from saved full results.
 - `results/`: records, tables, figures, timeouts, and supplementary studies.
-- [problem-2-dual/](problem-2-dual/README.md): target-error budget searches (§4.7).
+- [problem-2-dual/](problem-2-dual/README.md): target-error budget searches (§4.5).
 
 Both dimensions use Gaussian, sinusoidal, and quadratic fields. Compact:
 K,M=3–4, 50 replicates per combination, 600 instances per dimension.

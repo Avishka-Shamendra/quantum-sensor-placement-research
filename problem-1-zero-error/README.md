@@ -1,7 +1,7 @@
 # Problem 1: perfect discrimination
 
 Sequential dynamic programming and Greedy allocation, with a joint
-perfect-discrimination sensor lower bound (paper §§3.7–3.8).
+perfect-discrimination sensor lower bound (paper §§3.4–3.5).
 
 ## Files
 

@@ -1,6 +1,6 @@
 # Problem 2 dual: sensor budgets for a target error
 
-Greedy and VND + Beam Search budget searches for paper §4.7. Reported counts
+Greedy and VND + Beam Search budget searches for paper §4.5. Reported counts
 are verified feasible solutions, not certified global minima.
 
 ## Files
