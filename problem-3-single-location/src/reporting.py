@@ -49,7 +49,7 @@ def load_saved_weights(frame, root):
     columns = ['dimension', 'family', 'k', 'n', 'inst', 'checkpoint',
                'optimal_error', 'pgm_error', 'reflection_asymmetry']
     signature = sha256(optimized[columns].sort_values(columns[:5]).to_csv(index=False).encode()).hexdigest()
-    out = root / 'results/exact_sdp'
+    out = root / 'results/full'
     csv_path, metadata_path = out / 'saved_weights.csv', out / 'saved_weights_meta.json'
     if csv_path.exists() and metadata_path.exists():
         try:
@@ -61,7 +61,7 @@ def load_saved_weights(frame, root):
             pass
     print(f"Loading {len(optimized)} saved weight checkpoints; subsequent reports use the consolidated CSV.", flush=True)
     rows = []
-    checkpoint_root = (root / 'results/exact_sdp/checkpoints').resolve()
+    checkpoint_root = (root / 'results/full/checkpoints').resolve()
     for r in optimized.itertuples():
         path = (root / r.checkpoint).resolve()
         if not path.is_relative_to(checkpoint_root):
@@ -92,7 +92,7 @@ def load_saved_weights(frame, root):
 def make_results(frame, root):
     validate_measurement_table(frame)
     frame = frame.assign(m=1)
-    out = root / 'results/exact_sdp'
+    out = root / 'results/full'
     out.mkdir(parents=True, exist_ok=True)
     keys = ['dimension', 'family', 'k', 'm', 'n', 'state']
     errors = summarize(frame, keys, 'optimal_error')
@@ -170,7 +170,7 @@ def make_figures(frame, root, weights=None):
     validate_measurement_table(frame)
     if weights is None:
         weights = load_saved_weights(frame, root)
-    out = root / 'results/exact_sdp'
+    out = root / 'results/full'
     out.mkdir(parents=True, exist_ok=True)
     configure_style()
     optimal = summarize_across_k(frame, 'optimal_error')

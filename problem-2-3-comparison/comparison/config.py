@@ -36,12 +36,18 @@ class Config:
     seed: int = 20261018
     beam_width: int = 3
     sequential_max_iterations: int | None = 30
+    sequential_algorithm: str = 'vnd_beam'
+    joint_algorithm: str = 'greedy'
     bootstrap_samples: int = 2000
     bootstrap_seed: int = 20261019
 
     def __post_init__(self):
-        if self.mode not in ('test', 'full'):
-            raise ValueError("mode must be 'test' or 'full'")
+        if self.sequential_algorithm not in ('vnd_beam', 'greedy'):
+            raise ValueError('sequential_algorithm must be vnd_beam or greedy')
+        if self.joint_algorithm not in ('greedy', 'vnd'):
+            raise ValueError('joint_algorithm must be greedy or vnd')
+        if self.mode not in ('test', 'compact', 'full'):
+            raise ValueError("mode must be 'compact' or 'full' ('test' is an alias)")
         if self.beam_width < 1 or self.bootstrap_samples < 2:
             raise ValueError('beam_width must be positive; bootstrap_samples >= 2')
         if self.sequential_max_iterations is not None and self.sequential_max_iterations < 0:

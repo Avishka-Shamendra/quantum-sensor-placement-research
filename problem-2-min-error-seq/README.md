@@ -59,3 +59,8 @@ checkpoints are saved under `results/ablation/`; no new inputs are generated.
 Final figures require both full studies and the full ablation. Restart the kernel
 when switching notebooks. Checks:
 `python problem-2-min-error-seq/src/test_actual_error.py -q`.
+
+Ablation exports now use `results/ablation/{full,test}/` directly. The audited
+`storage_compatibility.json` preserves existing numerical cache identities across
+this storage-only change. Retired beam-width/heuristic-ablation outputs and outdated test runs were
+removed; current full results remain available.

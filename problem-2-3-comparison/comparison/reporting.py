@@ -71,6 +71,13 @@ def family_table(rows):
 def make_report(rows, output, config):
     """Export only Figure 1 and Table 1, plus machine-readable plot estimates."""
     output.mkdir(parents=True, exist_ok=True)
+    for row in rows:
+        for method in METHODS:
+            if row.get(f'{method}_algorithm') != getattr(config, f'{method}_algorithm'):
+                raise ValueError('Report configuration does not match evaluated algorithms')
+    names = {'vnd_beam': 'VND + Beam', 'vnd': 'VND', 'greedy': 'Greedy'}
+    styles = {m: (f'{s[0]} ({names[getattr(config, m + "_algorithm")]})', *s[1:])
+              for m, s in STYLES.items()}
     rng = np.random.default_rng(config.bootstrap_seed)
     estimates = []
     with plt.rc_context(STYLE):
@@ -85,7 +92,7 @@ def make_report(rows, output, config):
                 estimates.append(dict(dimension=dimension, fraction=fraction, estimate=interval))
                 points.append(interval)
             for method_index, method in enumerate(METHODS):
-                label, color, marker, line = STYLES[method]
+                label, color, marker, line = styles[method]
                 def series(key):
                     return [p[key][method_index] if p else np.nan for p in points]
                 axis.plot(FRACTIONS, series('mean'), label=label, color=color,
@@ -99,7 +106,7 @@ def make_report(rows, output, config):
             axis.grid(axis='y', alpha=.2, zorder=0)
         axes[0].set_ylabel('Mean discrimination error')
         handles = [Line2D([], [], label=s[0], color=s[1], marker=s[2], linestyle=s[3])
-                   for s in STYLES.values()]
+                   for s in styles.values()]
         figure.legend(handles=handles, loc='lower center', bbox_to_anchor=(.5, .01),
                       ncol=2, frameon=False)
         figure.savefig(output / 'figure_1_sequential_vs_joint_error.pdf')

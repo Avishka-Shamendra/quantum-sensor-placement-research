@@ -97,6 +97,14 @@ def load_inputs(root, dimension, family):
     return base, data
 
 
+def evaluation_signature(base, cfg, versions):
+    """Identify numerical work independently of report/storage code and paths."""
+    code = b''.join((Path(__file__).parent / name).read_bytes()
+                    for name in ('opt.py', 'sdp.py', 'states.py'))
+    return hashlib.sha256(code + json.dumps(dict(cfg=cfg, versions=versions), sort_keys=True).encode() +
+        b''.join((base/name).read_bytes() for name in ('manifest.json', 'set.csv', 'r.csv'))).hexdigest()
+
+
 def run_analysis(root, ks=KS, ns=NS, progress=None, dimensions=(1, 2), solver='auto', sdp_eps=1e-8):
     """Evaluate all four input states; reuse only matching validated checkpoints."""
     root = Path(root)
@@ -105,17 +113,16 @@ def run_analysis(root, ks=KS, ns=NS, progress=None, dimensions=(1, 2), solver='a
     cfg = dict(solver=solver, sdp_eps=sdp_eps, tolerance=TOL, method='joint_sdp_v1')
     inputs = {(d, f): load_inputs(root, d, f) for d in dimensions for f in FAMILIES}
     versions = dict(python=platform.python_version(), numpy=np.__version__, cvxpy=cp.__version__, solvers=cp.installed_solvers())
-    code = b''.join(p.read_bytes() for p in sorted(Path(__file__).parent.glob('*.py')))
-    out = root / 'results/exact_sdp'
+    out = root / 'results/full'
     started = time.perf_counter()
     total, completed, reused = 2*len(FAMILIES)*len(KS)*50*len(NS)*4, 0, 0
     report = progress or (lambda message: print(message, flush=True))
     rows = []
     for (dimension, family), (base, data) in inputs.items():
-        signature = hashlib.sha256(code + json.dumps(dict(cfg=cfg, versions=versions), sort_keys=True).encode() +
-            b''.join((base/name).read_bytes() for name in ('manifest.json', 'set.csv', 'r.csv'))).hexdigest()[:20]
-        cache = out / 'checkpoints' / f'{dimension}d' / family / signature
-        atomic_json(cache/'settings.json', dict(configuration=cfg, environment=versions, dimension=dimension, family=family))
+        signature = evaluation_signature(base, cfg, versions)
+        cache = out / 'checkpoints' / f'{dimension}d' / family
+        atomic_json(cache/'settings.json', dict(configuration=cfg, environment=versions,
+                                               dimension=dimension, family=family, signature=signature))
         for (k, inst), group in data.groupby(['k', 'inst'], sort=True):
             phi = group.sort_values('field').phi.to_numpy(float)
             label = f'{dimension}D | {family} | K={k} | instance {int(inst)+1}/50'
@@ -127,6 +134,8 @@ def run_analysis(root, ks=KS, ns=NS, progress=None, dimensions=(1, 2), solver='a
                     if path.exists():
                         try:
                             item = json.loads(path.read_text())
+                            if item.get('evaluation_signature') != signature:
+                                raise ValueError('Checkpoint settings, sources or inputs changed')
                             validate_measurements(item, phi, n)
                             if p is not None and not np.allclose(item['p'], p, atol=1e-12, rtol=0):
                                 raise ValueError('Prescribed state changed')
@@ -144,6 +153,7 @@ def run_analysis(root, ks=KS, ns=NS, progress=None, dimensions=(1, 2), solver='a
                             item = dict(evaluate(p, phi, n, cfg), source='prescribed',
                                         optimization_seconds=0., optimizer_converged=None)
                         validate_measurements(item, phi, n)
+                        item['evaluation_signature'] = signature
                         atomic_json(path, item)
                     else:
                         reused += 1

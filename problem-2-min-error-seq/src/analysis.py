@@ -122,12 +122,13 @@ def select_cases(project, study, mode, exact_k_max):
 def _checkpoint_rows(path):
     rows = {}
     if path.exists():
-        for line in path.read_text().splitlines():
-            try:
-                row = json.loads(line)
-                rows[(row["fingerprint"], row["dataset"], row["case"], row["N"], row["method"])] = row
-            except (ValueError, KeyError):
-                continue  # Ignore an interrupted append.
+        with path.open() as stream:
+            for line in stream:
+                try:
+                    row = json.loads(line)
+                    rows[(row["fingerprint"], row["dataset"], row["case"], row["N"], row["method"])] = row
+                except (ValueError, KeyError):
+                    continue  # Ignore an interrupted append.
     return rows
 
 
@@ -163,6 +164,18 @@ def summarize(rows, methods):
     return summary
 
 
+def compatible_source_digest(project, key, digest):
+    """Retain cache identities for audited storage-only source changes."""
+    path = Path(project) / 'storage_compatibility.json'
+    aliases = json.loads(path.read_text()) if path.exists() else {}
+    return aliases.get(key, {}).get(digest, digest)
+
+
+def source_code_hash(project):
+    code = b''.join(p.read_bytes() for p in sorted((Path(project) / 'src').glob('*.py')))
+    return compatible_source_digest(project, 'source', sha256(code).hexdigest())
+
+
 def run_analysis(*, project=PROJECT, study="compact", mode="test", exact_k_max=4,
                  time_limit=None, resume=True, beam_width=3, max_iterations=30):
     """Save actual errors, trees, timings, and explicit timeout records."""
@@ -173,12 +186,26 @@ def run_analysis(*, project=PROJECT, study="compact", mode="test", exact_k_max=4
         raise ValueError("time_limit must be positive and finite, or None")
     settings = {"study": study, "mode": mode, "exact_k_max": exact_k_max,
                 "time_limit": time_limit, "beam_width": beam_width, "max_iterations": max_iterations}
-    code = b"".join(p.read_bytes() for p in sorted((PROJECT / "src").glob("*.py")))
-    code_hash = sha256(code).hexdigest()
+    code_hash = source_code_hash(project)
     output = project / "results" / study / mode
     output.mkdir(parents=True, exist_ok=True)
     checkpoint = output / "records.jsonl"
     cached = _checkpoint_rows(checkpoint) if resume else {}
+    fingerprints = {(dataset, path.stem): sha256(
+        path.read_bytes() + json.dumps(settings, sort_keys=True).encode() + code_hash.encode()
+        + json.dumps(metadata, sort_keys=True).encode()).hexdigest()
+        for dataset, path, metadata in entries}
+    current_keys = {(fingerprints[dataset, path.stem], dataset, path.stem, budget, method)
+                    for dataset, path, metadata in entries
+                    for budget in metadata['sensor_budgets'] for method in methods}
+    current = {key: value for key, value in cached.items() if key in current_keys}
+    if not resume or len(current) != len(cached):
+        temporary = checkpoint.with_suffix('.tmp')
+        with temporary.open('w') as stream:
+            for value in current.values():
+                stream.write(json.dumps(value, allow_nan=False) + '\n')
+        temporary.replace(checkpoint)
+    cached = current
     # A newline prevents a partial final JSON record from swallowing the next append.
     with checkpoint.open("a") as stream:
         stream.write("\n")
@@ -194,8 +221,7 @@ def run_analysis(*, project=PROJECT, study="compact", mode="test", exact_k_max=4
         K, M, phases = load_phase_input(path)
         if K != metadata["K"] or M != metadata["M"]:
             raise ValueError(f"Manifest dimensions disagree with {path}")
-        fingerprint = sha256(path.read_bytes() + json.dumps(settings, sort_keys=True).encode()
-                             + code_hash.encode() + json.dumps(metadata, sort_keys=True).encode()).hexdigest()
+        fingerprint = fingerprints[dataset, path.stem]
         for level, budget in enumerate(metadata["sensor_budgets"], 1):
             for method in methods:
                 key = (fingerprint, dataset, path.stem, budget, method)

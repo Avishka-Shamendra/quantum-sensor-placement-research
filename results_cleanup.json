@@ -1,0 +1,212 @@
+{
+  "removed": [
+    {
+      "path": "problem-1-zero-error/results/algorithm_comparison",
+      "reason": "retired output layout; current method study lives in methods"
+    },
+    {
+      "path": "problem-2-min-error-seq/results/beam_width",
+      "reason": "retired beam-width study"
+    },
+    {
+      "path": "problem-2-min-error-seq/results/heuristic_ablation",
+      "reason": "superseded by current matched ablation"
+    },
+    {
+      "path": "problem-2-min-error-seq/results/compact/test",
+      "reason": "source fingerprint differs from current completed compact/full run"
+    },
+    {
+      "path": "problem-2-min-error-seq/results/final/test",
+      "reason": "legacy publication exports superseded by final/full"
+    },
+    {
+      "path": "problem-2-3-comparison/.legacy-results",
+      "reason": "retired exports; validated current caches already migrated"
+    },
+    {
+      "path": "problem-2-min-error-seq/problem-2-dual/.legacy-results",
+      "reason": "retired exports; current per-algorithm caches retained"
+    },
+    {
+      "path": "problem-3-single-location/results/measurement_degradation.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/figure_2.png",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/figure_1.pdf",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/symmetry_summary.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/weight_summary.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/figure_3.png",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/figure_1.png",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/figure_3.pdf",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/figure_2.pdf",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/saved_weights.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/checkpoints",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/optimization_audit.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/figure_2_summary.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/measurements.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/validation_summary.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/runtime_summary.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/error_summary.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/symmetry_by_instance.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-3-single-location/results/figure_1_summary.csv",
+      "reason": "superseded single-location optimization, predates exact joint SDP"
+    },
+    {
+      "path": "problem-2-min-error-seq/problem-2-dual/results/cache",
+      "reason": "removed 8620 obsolete checkpoint files; kept 8640 current keys"
+    },
+    {
+      "path": "problem-2-min-error-seq/problem-2-dual/results/compact",
+      "reason": "legacy compact exports replaced by current full-run subset"
+    },
+    {
+      "path": "problem-2-min-error-seq/results/extended/test",
+      "reason": "0 of 79836 stored records match current inputs/settings"
+    },
+    {
+      "path": "problem-2-min-error-seq/results/ablation/test",
+      "reason": "depends on the obsolete extended test run"
+    },
+    {
+      "path": "problem-1-zero-error/results/global/test",
+      "reason": "0 of 96 recorded input checksums match current inputs"
+    }
+  ],
+  "flattened": [
+    "problem-2-min-error-seq/results/ablation/test/b86577ca06b38137",
+    "problem-2-min-error-seq/results/ablation/full/a214e3c468011605",
+    "problem-3-single-location/results/exact_sdp -> results/full",
+    "problem-3-single-location/results/full/checkpoints/2d/quadratic/669ef110382c05444e29",
+    "problem-3-single-location/results/full/checkpoints/2d/gaussian/40258ec8e17fe6b5ba17",
+    "problem-3-single-location/results/full/checkpoints/2d/sinusoidal/d10abcabec116e56cc28",
+    "problem-3-single-location/results/full/checkpoints/1d/quadratic/b06485805ef90ff8f7a9",
+    "problem-3-single-location/results/full/checkpoints/1d/gaussian/bd697a408b7d6c85a9f1",
+    "problem-3-single-location/results/full/checkpoints/1d/sinusoidal/ba5eeafea57142728555"
+  ],
+  "single_location_checkpoints": 18000,
+  "dual_current_cache_files": 8640,
+  "dual_compact_solutions": 3600,
+  "sequential_records": [
+    {
+      "study": "compact/full",
+      "before": 178135,
+      "kept": 23720,
+      "removed": 154415
+    },
+    {
+      "study": "extended/full",
+      "before": 369491,
+      "kept": 68872,
+      "removed": 300619
+    }
+  ],
+  "recovered_problem1": {
+    "source_commit": "d5d9b3893053b4f329619ad839609ea1c75fe035",
+    "validation": {
+      "global": {
+        "cases": 39600,
+        "input_checksums_matched": 39600
+      },
+      "nmin": {
+        "cases": 39600,
+        "input_checksums_matched": 39600
+      }
+    },
+    "restored_files": [
+      "problem-1-zero-error/results/final/figure_1_zero_error_family_excess.pdf",
+      "problem-1-zero-error/results/final/figure_1_zero_error_family_excess.png",
+      "problem-1-zero-error/results/final/figure_2_zero_error_guarantee.pdf",
+      "problem-1-zero-error/results/final/figure_2_zero_error_guarantee.png",
+      "problem-1-zero-error/results/final/figure_3_zero_error_quality_heatmaps.pdf",
+      "problem-1-zero-error/results/final/figure_3_zero_error_quality_heatmaps.png",
+      "problem-1-zero-error/results/final/figure_4_zero_error_minimum_sensor_budget.pdf",
+      "problem-1-zero-error/results/final/figure_4_zero_error_minimum_sensor_budget.png",
+      "problem-1-zero-error/results/final/figure_5_global_minimum_comparison.pdf",
+      "problem-1-zero-error/results/final/figure_5_global_minimum_comparison.png",
+      "problem-1-zero-error/results/final/figure_6_allocation_match.pdf",
+      "problem-1-zero-error/results/final/figure_6_allocation_match.png",
+      "problem-1-zero-error/results/final/tables/figure_1_family_excess_data.csv",
+      "problem-1-zero-error/results/final/tables/figure_2_guarantee_data.csv",
+      "problem-1-zero-error/results/final/tables/figure_3_quality_heatmap_data.csv",
+      "problem-1-zero-error/results/final/tables/figure_4_minimum_sensor_budget_data.csv",
+      "problem-1-zero-error/results/final/tables/figure_5_global_minimum_comparison_data.csv",
+      "problem-1-zero-error/results/final/tables/figure_6_allocation_match_data.csv",
+      "problem-1-zero-error/results/global/full/figures/global_vs_seq_by_k.pdf",
+      "problem-1-zero-error/results/global/full/figures/global_vs_seq_by_k.png",
+      "problem-1-zero-error/results/global/full/tables/case_budgets.csv",
+      "problem-1-zero-error/results/global/full/tables/global_vs_seq_by_dimension_k.csv",
+      "problem-1-zero-error/results/global/full/tables/global_vs_seq_by_k_m.csv",
+      "problem-1-zero-error/results/methods/full/figures/allocation_match.pdf",
+      "problem-1-zero-error/results/methods/full/figures/allocation_match.png",
+      "problem-1-zero-error/results/methods/full/figures/benchmark_family_excess.pdf",
+      "problem-1-zero-error/results/methods/full/figures/benchmark_family_excess.png",
+      "problem-1-zero-error/results/methods/full/figures/benchmark_guarantee_comparison.pdf",
+      "problem-1-zero-error/results/methods/full/figures/benchmark_guarantee_comparison.png",
+      "problem-1-zero-error/results/methods/full/figures/benchmark_quality_heatmaps.pdf",
+      "problem-1-zero-error/results/methods/full/figures/benchmark_quality_heatmaps.png",
+      "problem-1-zero-error/results/methods/full/tables/allocation_match.csv",
+      "problem-1-zero-error/results/methods/full/tables/analysis_summary.json",
+      "problem-1-zero-error/results/methods/full/tables/case_metrics.csv",
+      "problem-1-zero-error/results/methods/full/tables/group_summary.csv",
+      "problem-1-zero-error/results/methods/full/tables/sample_convergence.csv",
+      "problem-1-zero-error/results/methods/full/tables/summary_findings.md",
+      "problem-1-zero-error/results/nmin/full/figures/benchmark_nmin_by_k.pdf",
+      "problem-1-zero-error/results/nmin/full/figures/benchmark_nmin_by_k.png",
+      "problem-1-zero-error/results/nmin/full/tables/case_budgets.csv",
+      "problem-1-zero-error/results/nmin/full/tables/nmin_by_dimension_k.csv"
+    ]
+  }
+}

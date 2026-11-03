@@ -11,7 +11,7 @@ from zlib import crc32
 
 import matplotlib.pyplot as plt
 
-from analysis import PROJECT, select_cases, write_csv
+from analysis import PROJECT, select_cases, write_csv, source_code_hash, compatible_source_digest
 from baselines import random_tree
 from figures import STYLES, _plot_style
 from heuristic import _build_tree_with_beam_search, _compute_pair_errors, _initial_allocation
@@ -31,15 +31,18 @@ def _context(project, mode):
     project = Path(project)
     source = project / "results/extended" / mode
     info = json.loads((source / "run.json").read_text())
-    code_hash = sha256(b"".join(p.read_bytes() for p in sorted((project / "src").glob("*.py")))).hexdigest()
+    code_hash = source_code_hash(project)
     if info["code_hash"] != code_hash:
         raise ValueError("Run notebook 02 with the current source before notebook 03")
     if info["time_limit"] is not None or info["timeout_count"]:
         raise ValueError("Notebook 03 requires completed extended results with no time limit")
     settings = dict(mode=mode, source_run=info, source_csv_sha256=_digest(source / "tables/case_errors.csv"),
-                    ablation_sha256=_digest(Path(__file__)))
-    signature = sha256(json.dumps(settings, sort_keys=True).encode()).hexdigest()
-    return source, settings, project / "results/ablation" / mode / signature[:16]
+                    ablation_sha256=compatible_source_digest(project, 'ablation', _digest(Path(__file__))))
+    output = project / "results/ablation" / mode
+    saved = output / "run.json"
+    if saved.exists() and json.loads(saved.read_text()) != settings:
+        raise ValueError("Saved ablation settings differ; clear this study output before a new run")
+    return source, settings, output
 
 
 def _beam_result(model, allocation, beam_width):

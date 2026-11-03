@@ -12,11 +12,24 @@ def prepare_dataset(project, config):
     """Generate/load independent draws; cache each instance before proceeding."""
     fields, seq, _, joint_input, normalization = implementations()
     hashes = source_hashes()
-    design = dict(schema=1, mode=config.mode, seed=config.seed, K=config.sizes,
+    data_mode = 'test' if config.mode == 'compact' else config.mode
+    design = dict(schema=1, mode=data_mode, seed=config.seed, K=config.sizes,
                   M=config.sizes, replicates=config.replicates, c=1.0,
                   minimum_best_pair_phase_gap=0.0, source_sha256=hashes)
+    # Search/report changes must not regenerate common random inputs.
+    required = ('mode', 'seed', 'K', 'M', 'replicates', 'c', 'minimum_best_pair_phase_gap')
+    for saved in sorted((Path(project) / 'data' / data_mode).glob('*/manifest.json')):
+        manifest = json.loads(saved.read_text())
+        if all(json.dumps(manifest['design'][key]) == json.dumps(design[key]) for key in required):
+            for case in manifest['cases']:
+                if hashlib.sha256((saved.parent / case['file']).read_bytes()).hexdigest() != case['csv_sha256']:
+                    raise ValueError(f'Input checksum mismatch: {case["file"]}')
+            return saved.parent, manifest
+    # Only data-generating dependencies belong in a new dataset identity.
+    design['source_sha256'] = {k: v for k, v in hashes.items() if
+        k.endswith(('field_models.py', 'input_data.py', 'normalization.py', 'optimal.py', 'phase_data.py'))}
     dataset_id = fingerprint(design)
-    directory = Path(project) / 'data' / config.mode / dataset_id[:16]
+    directory = Path(project) / 'data' / data_mode / dataset_id[:16]
     directory.mkdir(parents=True, exist_ok=True)
     cases = []
     total = 6 * len(config.sizes)**2 * config.replicates

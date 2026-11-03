@@ -42,10 +42,10 @@ def implementations():
     fields = _load('_comparison_fields', FIELDS)
     with _legacy_imports():
         sequential = {}
-        for name in ('input_data', 'actual_error', 'strategy', 'heuristic'):
+        for name in ('input_data', 'actual_error', 'strategy', 'heuristic', 'greedy'):
             module = _load(f'_comparison_seq_{name}', SEQUENTIAL / f'{name}.py')
             sequential[name] = module
-            if name != 'heuristic':
+            if name in ('input_data', 'actual_error', 'strategy'):
                 sys.modules[name] = module
     joint = _load('_comparison_joint', JOINT / '__init__.py', package=True)
     from importlib import import_module

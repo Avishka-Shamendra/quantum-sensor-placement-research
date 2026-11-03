@@ -23,4 +23,22 @@ python -m pip install -r problem-1-zero-error/requirements.txt -r problem-2-min-
 python -m jupyterlab
 ```
 
+## Current results
+
+Results use named study/mode folders, without hashed run directories:
+
+| Project | Current output locations |
+| --- | --- |
+| Problem 1 | `results/{methods,nmin,global}/{full,test}/` |
+| Problem 2 | `results/{compact,extended,ablation}/{full,test}/`, `results/final/full/` |
+| Problem 2 dual | `results/{full,compact}/`; shared current checkpoints in `results/cache/` |
+| Problem 3 single location | `results/full/`; checkpoints grouped by dimension and family |
+| Problem 3 multiple locations | `results/{compact,extended}/full/`, `results/final_figures/` |
+| Problem 2–3 comparison | `results/{full,compact}/`; independent per-algorithm checkpoints |
+
+Only completed, current modes are present. The cleanup removed retired analyses,
+legacy exports and obsolete checkpoint versions. Input datasets were untouched.
+Hashes remain internal cache-validation metadata or checkpoint filenames, not
+report-directory names. Solver results were moved/reused without rerunning studies.
+
 License: [Apache 2.0](LICENSE).

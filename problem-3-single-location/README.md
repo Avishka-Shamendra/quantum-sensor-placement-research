@@ -12,7 +12,7 @@ The state and measurement variables satisfy `X_k >= 0`, `sum(X_k) = diag(p)`,
 - `src/states.py`: prescribed states and PGM errors.
 - `src/analysis.py`, `reporting.py`: resumable evaluation and combined-dimension plots.
 - `01_single_location_analysis.ipynb`: evaluation and saved-result reporting.
-- `results/exact_sdp/`: checkpoints, tables and figures from the exact SDP.
+- `results/full/`: checkpoints, tables and figures from the exact SDP.
 
 ## Run
 
@@ -35,3 +35,5 @@ for confidence intervals, not optimization.
 Error curves average 1D and 2D equally, retaining the existing state comparisons
 and three-family layouts. PGM uses the SDP-optimized weights. Reflection plots
 pool points from both dimensions. Previous results are not used by the exact runner.
+
+Checkpoint directories use dimension/family names, with input/source/settings fingerprints stored inside JSON records. Storage and plotting edits do not invalidate numerical work.
