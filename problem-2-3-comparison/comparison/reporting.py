@@ -75,7 +75,7 @@ def make_report(rows, output, config):
         for method in METHODS:
             if row.get(f'{method}_algorithm') != getattr(config, f'{method}_algorithm'):
                 raise ValueError('Report configuration does not match evaluated algorithms')
-    names = {'vnd_beam': 'VND + Beam', 'vnd': 'VND', 'greedy': 'Greedy'}
+    names = {'vnd_beam': 'Heuristic', 'vnd': 'VND', 'greedy': 'Greedy'}
     styles = {m: (f'{s[0]} ({names[getattr(config, m + "_algorithm")]})', *s[1:])
               for m, s in STYLES.items()}
     rng = np.random.default_rng(config.bootstrap_seed)

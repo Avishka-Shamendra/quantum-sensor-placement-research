@@ -1,3 +1,0 @@
-dataset,cases,finite_pair_locations,zero_gap_unusable_locations,max_overlap_abs,mean_overlap_abs,rms_overlap_abs,violation_count,overlap_tolerance,boundary_cases,above_threshold_even_n_cases,above_threshold_odd_n_cases,worst_case,worst_pair,worst_location,worst_N_ijm
-benchmark_1d,5760,767516,4,4.673426610272335e-13,5.974077756801901e-17,1.2468824653877163e-15,0,1e-12,22,384167,383327,case_01419,"(1, 4)",0,1439901842465
-benchmark_2d,5760,767508,12,4.842180510015359e-13,7.922516258848855e-17,2.496652365083562e-15,0,1e-12,178,388378,378952,case_01597,"(0, 1)",0,788567356151
